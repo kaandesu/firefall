@@ -20,7 +20,7 @@ function Spin({ model }: { model: CabinModel }) {
   useFrame((_, dt) => g.current && (g.current.rotation.y += dt * 0.35))
   return (
     <group ref={g} position={[0, -1.4, 0]}>
-      <Cabin model={model} look={() => ({ color: '#3a4a5e' })} />
+      <Cabin model={model} look={() => ({ color: '#4a4a47' })} />
     </group>
   )
 }
@@ -68,7 +68,7 @@ function SlotCard({ slot }: { slot: (typeof SLOTS)[number] }) {
         void read(e.dataTransfer.files[0])
       }}
     >
-      <header className="pane-head text-[11px]">
+      <header className="pane-head text-body">
         <span className=" text-ink">{slot.title}</span>
         <span className="ml-auto text-faint">{st?.name ?? EXAMPLE_FILES[slot.id]}</span>
       </header>
@@ -76,22 +76,22 @@ function SlotCard({ slot }: { slot: (typeof SLOTS)[number] }) {
       {!st ? (
         <button type="button" onClick={() => input.current?.click()} className="flex flex-1 flex-col items-center justify-center gap-2 rounded-sm border border-dashed border-line-2 text-faint transition hover:border-ug/60 hover:text-ink">
           <FileUp size={20} />
-          <span className="text-[11.5px]">drop or choose {EXAMPLE_FILES[slot.id]}</span>
-          <span className="sans max-w-[220px] text-center text-[11px] text-faint">{slot.hint}</span>
+          <span className="text-body">drop or choose {EXAMPLE_FILES[slot.id]}</span>
+          <span className="sans max-w-[220px] text-center text-body text-faint">{slot.hint}</span>
         </button>
       ) : st.error ? (
         <div className="flex flex-1 flex-col gap-2">
-          <div className="flex items-start gap-2 text-[11.5px] text-bad">
+          <div className="flex items-start gap-2 text-body text-bad">
             <X size={13} className="mt-0.5 shrink-0" />
             {st.error}
           </div>
-          <button type="button" onClick={() => input.current?.click()} className="self-start text-[11px] text-ug hover:underline">
+          <button type="button" onClick={() => input.current?.click()} className="self-start text-body text-ug hover:underline">
             choose another file
           </button>
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-2">
-          <div className="flex items-center gap-2 text-[14px] text-ink">
+          <div className="flex items-center gap-2 text-emph text-ink">
             <Check size={13} className="text-ok" />
             {summary}
           </div>
@@ -101,7 +101,7 @@ function SlotCard({ slot }: { slot: (typeof SLOTS)[number] }) {
             </div>
           )}
           {slot.id === 'cabin' && intake.cabin?.value && (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-body text-muted-foreground">
               <span>vehicle</span>
               <span className="truncate text-ink">{intake.cabin.value.vehicle}</span>
               <span>volume · crew</span>
@@ -117,7 +117,7 @@ function SlotCard({ slot }: { slot: (typeof SLOTS)[number] }) {
             </div>
           )}
           {slot.id === 'materials' && intake.materials?.value && (
-            <div className="scroll-thin max-h-[150px] overflow-y-auto text-[11px]">
+            <div className="scroll-thin max-h-[150px] overflow-y-auto text-body">
               {intake.materials.value.map((r) => (
                 <div key={r.line} className="flex gap-2">
                   <span className="w-[150px] truncate text-ink">{r.part}</span>
@@ -129,16 +129,16 @@ function SlotCard({ slot }: { slot: (typeof SLOTS)[number] }) {
           )}
           <div className="mt-auto space-y-0.5">
             {issues.length === 0 ? (
-              <div className="text-[10.5px] text-ok">no issues</div>
+              <div className="text-label text-ok">no issues</div>
             ) : (
               issues.map((i) => (
-                <div key={i.text} className={cn('flex items-start gap-1.5 text-[10.5px]', i.level === 'error' ? 'text-bad' : 'text-warn')}>
+                <div key={i.text} className={cn('flex items-start gap-1.5 text-label', i.level === 'error' ? 'text-bad' : 'text-warn')}>
                   <AlertTriangle size={10} className="mt-0.5 shrink-0" />
                   {i.text}
                 </div>
               ))
             )}
-            <div className="flex gap-3 pt-1 text-[10.5px]">
+            <div className="flex gap-3 pt-1 text-label">
               <button type="button" onClick={() => setRaw(!raw)} className="text-ug hover:underline">
                 {raw ? 'hide raw' : 'raw rows'}
               </button>
@@ -147,7 +147,7 @@ function SlotCard({ slot }: { slot: (typeof SLOTS)[number] }) {
               </button>
             </div>
           </div>
-          {raw && <pre className="scroll-thin max-h-[200px] overflow-auto rounded-sm border border-line bg-bg p-2 text-[10.5px] text-muted-foreground">{st.text}</pre>}
+          {raw && <pre className="scroll-thin max-h-[200px] overflow-auto rounded-sm border border-line bg-bg p-2 text-label text-muted-foreground">{st.text}</pre>}
         </div>
       )}
     </div>
@@ -168,10 +168,10 @@ export function IntakeScreen() {
         <div className="flex items-end gap-4">
           <div>
             <div className="label">design-time fire safety review</div>
-            <h1 className="sans mt-1 text-[26px] font-semibold leading-tight">Hand over the cabin. The agents review it.</h1>
-            <p className="sans mt-1 text-[13px] text-muted-foreground">Three files and one question. The lead plans the review, you approve it, the departments run it over Lagrange.</p>
+            <h1 className="sans mt-1 text-headline font-medium leading-tight">Hand over the cabin. The agents review it.</h1>
+            <p className="sans mt-1 text-emph text-muted-foreground">Three files and one question. The lead plans the review, you approve it, the departments run it over Lagrange.</p>
           </div>
-          <button type="button" onClick={() => void loadExample()} className="key ml-auto h-[34px] shrink-0 px-4 text-[12px]">
+          <button type="button" onClick={() => void loadExample()} className="key ml-auto h-8 shrink-0 px-4 text-body">
             load example: Apollo CM-012
           </button>
         </div>
@@ -182,12 +182,12 @@ export function IntakeScreen() {
         </div>
         <div className="pane flex-row items-center gap-3 px-3 py-2.5">
           <span className="text-k-ask">›</span>
-          <input value={request} onChange={(e) => setRequest(e.target.value)} className="sans min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-faint" placeholder="what should the review answer?" onKeyDown={(e) => e.key === 'Enter' && ready && start()} />
-          <button type="button" disabled={!ready} onClick={start} className="key key-orange h-[34px] shrink-0 px-5 text-[12.5px] font-medium disabled:!bg-none disabled:!bg-surface-3 disabled:!text-faint disabled:!border-line">
+          <input value={request} onChange={(e) => setRequest(e.target.value)} className="sans min-w-0 flex-1 bg-transparent text-emph outline-none placeholder:text-faint" placeholder="what should the review answer?" onKeyDown={(e) => e.key === 'Enter' && ready && start()} />
+          <button type="button" disabled={!ready} onClick={start} className="key key-you h-8 shrink-0 px-5 text-emph font-medium disabled:!bg-none disabled:!bg-surface-3 disabled:!text-faint disabled:!border-line">
             plan the review ▸
           </button>
         </div>
-        {!ready && <div className="-mt-3 text-[11px] text-faint">{errors ? `${errors} issue${errors > 1 ? 's' : ''} to fix before the review can start` : 'add all three files, or load the example'}</div>}
+        {!ready && <div className="-mt-3 text-body text-faint">{errors ? `${errors} issue${errors > 1 ? 's' : ''} to fix before the review can start` : 'add all three files, or load the example'}</div>}
       </div>
     </div>
   )

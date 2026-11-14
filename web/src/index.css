@@ -4,16 +4,16 @@
 /* FIREFALL · FF-1 hardware look.
    Existing UI elements are restyled as hardware parts: the page is the chassis, panels are modules,
    buttons are keycaps, status dots are LEDs and the clock is a black display. Labels are lowercase and printed next to the
-   control they name. Two finishes:
-     field  light aluminium body, white keys, black print   (data-theme="field", default)
-     xy     black anodised body, graphite keys, white print  (data-theme="xy")
+   control they name. Two modes:
+     light  aluminium body, white keys, black print   (data-theme="light", default)
+     dark   black anodised body, graphite keys, white print  (data-theme="dark")
    Colour still carries meaning only. The palette is four knob colours (orange, navy, tan, graphite) plus the signal
    colours a device uses on its LEDs and screen: green, yellow, red. */
 
-@custom-variant dark (&:where([data-theme="xy"], [data-theme="xy"] *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root,
-:root[data-theme="field"] {
+:root[data-theme="light"] {
   color-scheme: light;
   /* chassis + modules */
   --bg: #d9d9d6;
@@ -47,9 +47,12 @@
   --red: #dd2a1d;
   --steel: #4e6f93;
   --plum: #8a3c6a;
+  /* the orb: your logo's blue-to-pink glow. It marks one thing only: your move */
+  --you: #3a2fd8;
+  --pink: #cf4b78;
 }
 
-:root[data-theme="xy"] {
+:root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #121212;
   --surface: #1b1b1b;
@@ -79,6 +82,8 @@
   --red: #ff4b3e;
   --steel: #8fb0d4;
   --plum: #e07bb6;
+  --you: #8f84ff;
+  --pink: #ff8fb1;
 }
 
 :root,
@@ -89,7 +94,7 @@
   --flame: var(--orange); /* hazard + primary action */
   --gold: var(--yellow); /* lagrange hub */
   --k-task: var(--navy);
-  --k-ask: var(--orange-ink);
+  --k-ask: var(--yellow);
   --k-reply: var(--green);
   --k-review: var(--tan);
   --k-fail: var(--red);
@@ -98,8 +103,8 @@
   --warn: var(--orange-ink);
   --bad: var(--red);
 
-  /* org = one of the four knob colours, like the OP-1's four encoders */
-  --org-prime: var(--orange);
+  /* org = a knob colour. Your own team is plain ink; orange is kept for fire */
+  --org-prime: var(--ink);
   --org-psi: var(--navy);
   --org-wstf: var(--graphite);
   --org-sma: var(--tan);
@@ -111,7 +116,7 @@
   --card-foreground: var(--ink);
   --popover: var(--surface-2);
   --popover-foreground: var(--ink);
-  --primary: var(--orange);
+  --primary: var(--you);
   --primary-foreground: #ffffff;
   --secondary: var(--surface-3);
   --secondary-foreground: var(--ink);
@@ -121,10 +126,23 @@
   --destructive: var(--red);
   --border: var(--line);
   --input: var(--line-2);
-  --ring: var(--orange);
+  --ring: var(--you);
 }
 
 @theme inline {
+  /* five type steps and nothing else: label · body · emph · title · headline (+ one display size for hero lines) */
+  --text-label: 10px;
+  --text-label--line-height: 1.35;
+  --text-body: 11.5px;
+  --text-body--line-height: 1.45;
+  --text-emph: 13px;
+  --text-emph--line-height: 1.4;
+  --text-title: 17px;
+  --text-title--line-height: 1.25;
+  --text-headline: 24px;
+  --text-headline--line-height: 1.15;
+  --text-display: 34px;
+  --text-display--line-height: 1.05;
   --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-lcd: "Doto", "JetBrains Mono", monospace;
@@ -150,6 +168,8 @@
   --color-viewport: var(--viewport);
   --color-screen-ink: var(--screen-ink);
   --color-orange: var(--orange);
+  --color-you: var(--you);
+  --color-pink: var(--pink);
   --color-navy: var(--navy);
   --color-tan: var(--tan);
   --color-graphite: var(--graphite);
@@ -237,7 +257,7 @@
   }
   /* printed legend next to a control: small, lowercase, quiet */
   .label {
-    @apply text-[11px] lowercase tracking-normal text-muted-foreground;
+    @apply text-label lowercase tracking-normal text-muted-foreground;
   }
   /* dot rows, like the ··· between the TX-6 knobs and faders */
   .grid-bg {
@@ -265,10 +285,10 @@
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
   }
   .pane[data-focus="true"] {
-    border-color: color-mix(in oklab, var(--orange) 55%, var(--line));
+    border-color: color-mix(in oklab, var(--you) 45%, var(--line));
     box-shadow:
       inset 0 1px 0 var(--hi),
-      0 0 0 1px color-mix(in oklab, var(--orange) 25%, transparent),
+      0 0 0 1px color-mix(in oklab, var(--you) 18%, transparent),
       0 12px 26px -16px var(--shadow);
   }
   /* the module's printed legend row */
@@ -353,7 +373,7 @@
       0 1px 0 3px var(--hi);
   }
 
-  /* Inside a display the print is always light, whatever the finish: the screen re-scopes the tokens so charts and
+  /* Inside a display the print is always light, in either mode: the screen re-scopes the tokens so charts and
      text drawn with var(--ink) / var(--line) stay legible on black. */
   .bg-viewport,
   .lcd {
@@ -372,6 +392,8 @@
     --yellow: #ffc21a;
     --red: #ff4b3e;
     --orange-ink: #ff6a33;
+    --you: #8f84ff;
+    --pink: #ff8fb1;
     color: var(--ink);
   }
 
@@ -418,29 +440,19 @@
   display: none;
 }
 
-@property --halo-angle {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
+/* working: the module's edge breathes in the orb colour (one of three motions: press, breathe, needle) */
 .work-halo {
   position: absolute;
   inset: -3px;
-  border-radius: 12px;
-  padding: 1.5px;
-  background: conic-gradient(from var(--halo-angle), transparent 0 65%, color-mix(in oklab, var(--orange) 45%, transparent) 82%, var(--orange) 96%, transparent 100%);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: halo-spin 1.6s linear infinite;
+  border-radius: 13px;
+  border: 1.5px solid var(--you);
+  box-shadow: 0 0 14px -4px var(--you);
+  animation: halo-breathe 1.6s ease-in-out infinite;
   pointer-events: none;
 }
-@keyframes halo-spin {
-  to {
-    --halo-angle: 360deg;
-  }
+@keyframes halo-breathe {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.9; }
 }
 
 @keyframes comet {
@@ -456,17 +468,14 @@
   animation: comet 1s ease-out 1 forwards;
 }
 
-@keyframes pulse-ring {
-  0% { transform: scale(0.9); opacity: 0.9; }
-  100% { transform: scale(1.6); opacity: 0; }
-}
+/* waiting on a person: the same breathe, in pink */
 .pulse-ring::after {
   content: "";
   position: absolute;
   inset: -3px;
   border-radius: inherit;
-  border: 1.5px solid currentColor;
-  animation: pulse-ring 1.4s ease-out infinite;
+  border: 1.5px solid var(--pink);
+  animation: halo-breathe 1.6s ease-in-out infinite;
 }
 @keyframes blink {
   50% { opacity: 0; }
@@ -540,4 +549,174 @@
     inset 0 1px 0 var(--hi),
     0 2px 0 var(--key-edge),
     0 6px 10px -6px var(--shadow);
+}
+
+/* ── the orb key: every "your move" control (approve, answer, adopt, continue) ── */
+.key-you {
+  border-color: #1d27c4;
+  background: linear-gradient(180deg, #f39ab6 0%, #8a4fe6 46%, #2a3cff 100%);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(10, 10, 80, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 2px 0 #141c9c,
+    0 0 18px -4px rgba(52, 72, 255, 0.75);
+}
+.key-you:active:not(:disabled) {
+  box-shadow: inset 0 2px 4px rgba(10, 10, 80, 0.45), 0 0 10px -4px rgba(52, 72, 255, 0.6);
+}
+.key-you:disabled {
+  opacity: 1;
+  border-color: var(--line);
+  background: var(--surface-3);
+  color: var(--faint);
+  text-shadow: none;
+  box-shadow: none;
+}
+/* a card that is waiting on you */
+.you-card {
+  border: 1px solid color-mix(in oklab, var(--you) 55%, transparent);
+  background: color-mix(in oklab, var(--you) 7%, var(--surface));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--you) 12%, transparent), 0 0 32px -10px color-mix(in oklab, var(--you) 70%, transparent);
+}
+.text-you-grad {
+  background: linear-gradient(90deg, var(--pink), var(--you));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── shortcut legend printed on a key ── */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  line-height: 1;
+  color: currentColor;
+  opacity: 0.75;
+  border: 1px solid color-mix(in oklab, currentColor 35%, transparent);
+}
+
+/* ── a reading: any measured number sits on a small black display ── */
+.reading {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 2px 6px 1px;
+  border-radius: 5px;
+  line-height: 1;
+}
+.reading > .v {
+  font-family: var(--font-lcd);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.reading > .u {
+  font-size: 0.62em;
+  color: var(--muted);
+}
+
+/* the orb breathes while something is being worked on */
+@keyframes orb-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(0.94); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+.orb-busy .orb-glow {
+  transform-origin: 16px 16px;
+  animation: orb-breathe 1.6s ease-in-out infinite;
+}
+.gauge-needle {
+  transform-origin: 16px 16px;
+  transition: transform 0.6s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .orb-busy .orb-glow,
+  .work-halo,
+  .pulse-ring::after { animation: none; }
+}
+
+/* ── present: the same parts, read from across a room ── */
+.present .text-label { font-size: 12px; }
+.present .text-body { font-size: 14.5px; }
+.present .text-emph { font-size: 16px; }
+.present .reading { font-size: 15px; }
+
+/* ── report pages: print / PDF ──────────────────────────────────────────────
+   Always prints in light mode, one numbered section per page, displays and charts kept as designed,
+   every link spelled out so a claim can be traced to its source on paper. */
+@page {
+  size: A4;
+  margin: 16mm 15mm 18mm;
+  @top-left {
+    content: "firefall · fire hazard review";
+    font: 8.5px Inter, sans-serif;
+    color: #8e8e89;
+  }
+  @bottom-right {
+    content: counter(page) " / " counter(pages);
+    font: 8.5px "JetBrains Mono", monospace;
+    color: #8e8e89;
+  }
+}
+@media print {
+  :root,
+  :root[data-theme="dark"] {
+    color-scheme: light;
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f5f5f3;
+    --surface-3: #ececea;
+    --line: #dcdcd8;
+    --line-2: #c6c6c2;
+    --ink: #121212;
+    --muted: #5d5d59;
+    --faint: #8e8e89;
+    --navy: #2443b5;
+    --tan: #8c6440;
+    --graphite: #5c5c58;
+    --green: #12924f;
+    --yellow: #c78d00;
+    --red: #dd2a1d;
+    --you: #3a2fd8;
+    --pink: #cf4b78;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+  .report-print {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  .report-print article {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  .report-print section[id^="r-"]:not(#r-summary) {
+    break-before: page;
+  }
+  .report-print figure,
+  .report-print table,
+  .report-print .pane,
+  .report-print .lcd {
+    break-inside: avoid;
+  }
+  .report-print h2,
+  .report-print h3 {
+    break-after: avoid;
+  }
+  .report-print a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 8px;
+    color: #8e8e89;
+    word-break: break-all;
+  }
 }

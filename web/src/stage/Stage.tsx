@@ -120,7 +120,7 @@ export function Stage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex shrink-0 items-center gap-1 px-2 pb-1.5 text-[10.5px]">
+      <div className="flex shrink-0 items-center gap-1 px-2 pb-1.5 text-label">
         {LAYERS.map((l) => (
           <button
             key={l.id}
@@ -133,7 +133,7 @@ export function Stage() {
             {l.label}
           </button>
         ))}
-        <span className="sans ml-2 truncate text-[11.5px] text-muted-foreground">{shown === 'none' ? 'waiting for the agents' : LAYERS.find((l) => l.id === shown)?.q}</span>
+        <span className="sans ml-2 truncate text-body text-muted-foreground">{shown === 'none' ? 'waiting for the agents' : LAYERS.find((l) => l.id === shown)?.q}</span>
         {shown === 'smoke' && study && (
           <span className="ml-auto flex items-center gap-1">
             {study.frames.map((c) => (
@@ -183,7 +183,7 @@ export function Stage() {
           acknowledgeRemotionLicense
         />
         {z && (
-          <div className="absolute bottom-2 left-2 w-[250px] rounded-sm border border-line-2 bg-bg/90 p-2 text-[11px]">
+          <div className="absolute bottom-2 left-2 w-[250px] rounded-sm border border-line-2 bg-bg/90 p-2 text-body">
             <div className="flex items-center gap-2">
               <span className="lowercase text-ink">{z.zone}</span>
               {status[z.zone] && <span style={{ color: status[z.zone] === 'pass' ? 'var(--ok)' : status[z.zone] === 'retest' ? 'var(--warn)' : 'var(--bad)' }}>{status[z.zone]}</span>}
@@ -206,7 +206,7 @@ export function Stage() {
           </div>
         )}
         {shown === 'whatif' && (
-          <div className="absolute right-2 top-2 rounded-sm border border-line-2 bg-bg/90 p-2 text-[10.5px]">
+          <div className="absolute right-2 top-2 rounded-sm border border-line-2 bg-bg/90 p-2 text-label">
             <div className="label mb-1">same cabin, four atmospheres</div>
             {runs.map((r) => (
               <button key={r.variant.id} type="button" onClick={() => setVariant(r.variant.id)} className={cn('flex w-full gap-3 text-left', variant === r.variant.id ? 'text-ink' : 'text-muted-foreground hover:text-ink')}>
@@ -219,7 +219,7 @@ export function Stage() {
         )}
       </div>
 
-      <div className={cn('flex shrink-0 items-center gap-2 px-2 pt-1.5 text-[10.5px]', !fire && 'opacity-40')}>
+      <div className={cn('flex shrink-0 items-center gap-2 px-2 pt-1.5 text-label', !fire && 'opacity-40')}>
         <button type="button" disabled={!fire} onClick={() => (playing ? player.current?.pause() : (frame >= duration - 1 && player.current?.seekTo(0), player.current?.play()))} className="text-ink hover:text-ug">
           {playing ? <Pause size={13} /> : <Play size={13} />}
         </button>

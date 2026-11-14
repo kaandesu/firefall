@@ -47,23 +47,23 @@ export function BrightnessChart({ f, ev, upTo, h = 70, cursor, w = 300 }: { f: F
   const pts = x.filter((p) => p.t >= t0 && p.t <= upTo).map((p) => `${X(p.t).toFixed(1)},${Y(p.r).toFixed(1)}`)
   return (
     <svg viewBox={`0 0 ${W} ${h + 12}`} className="w-full" preserveAspectRatio="none">
-      <line x1={0} x2={W} y1={Y(1)} y2={Y(1)} stroke="#263242" strokeDasharray="2 3" />
-      <polyline points={pts.join(' ')} fill="none" stroke="#5aa9ff" strokeWidth={1.4} />
+      <line x1={0} x2={W} y1={Y(1)} y2={Y(1)} stroke="#2f2f2f" strokeDasharray="2 3" />
+      <polyline points={pts.join(' ')} fill="none" stroke="#6d8bff" strokeWidth={1.4} />
       {ev
         .filter((e) => e.t <= upTo)
         .map((e, i) => (
           <g key={e.id}>
-            <line x1={X(e.t)} x2={X(e.t)} y1={0} y2={h} stroke="#ffb547" strokeWidth={0.8} strokeDasharray="2 2" />
-            <text x={X(e.t) + 2} y={8 + (i % 3) * 8} fill="#ffb547" fontSize={7}>
+            <line x1={X(e.t)} x2={X(e.t)} y1={0} y2={h} stroke="#ffc21a" strokeWidth={0.8} strokeDasharray="2 2" />
+            <text x={X(e.t) + 2} y={8 + (i % 3) * 8} fill="#ffc21a" fontSize={7}>
               {e.label}
             </text>
           </g>
         ))}
-      {cursor !== undefined && <line x1={X(cursor)} x2={X(cursor)} y1={0} y2={h} stroke="#e6edf3" strokeWidth={0.8} />}
-      <text x={0} y={h + 10} fill="#4a5665" fontSize={7}>
+      {cursor !== undefined && <line x1={X(cursor)} x2={X(cursor)} y1={0} y2={h} stroke="#f1f1ef" strokeWidth={0.8} />}
+      <text x={0} y={h + 10} fill="#6b6b66" fontSize={7}>
         T+{t0} s
       </text>
-      <text x={W} y={h + 10} fill="#4a5665" fontSize={7} textAnchor="end">
+      <text x={W} y={h + 10} fill="#6b6b66" fontSize={7} textAnchor="end">
         T+{t1} s · brightness / background (log)
       </text>
     </svg>
@@ -89,13 +89,13 @@ function AcmeTile({ job }: { job: Job }) {
     <div className="flex h-full min-h-0 gap-2">
       <div className="relative shrink-0">
         <FrameCanvas src={frame.src} className="h-full max-h-[150px] w-auto rounded-sm border border-line" />
-        <span className="absolute left-1 top-1 bg-bg/80 px-1 text-[9px] text-ug">
+        <span className="absolute left-1 top-1 bg-bg/80 px-1 text-label text-ug">
           INTNS f{frame.frame} · T+{frame.t_s.toFixed(1)} s
         </span>
       </div>
       <div className="flex min-w-0 flex-1 flex-col justify-between">
         <BrightnessChart f={f} ev={ev} upTo={t} />
-        <div className="space-y-0.5 text-[9.5px]">
+        <div className="space-y-0.5 text-label">
           {seen.slice(-3).map((e) => (
             <div key={e.id} className="truncate">
               <span className="text-warn">T+{e.t.toFixed(1)} s</span> <span className="text-ink">{e.label}</span> <span className="text-faint">{e.note}</span>
@@ -113,7 +113,7 @@ function AcmeTile({ job }: { job: Job }) {
 function Three({ cam, children, live }: { cam: [number, number, number]; children: React.ReactNode; live: boolean }) {
   return (
     <Canvas camera={{ position: cam, fov: 45 }} dpr={[1, 1.5]} frameloop={live ? 'always' : 'demand'} gl={{ antialias: false, powerPreference: 'low-power' }}>
-      <color attach="background" args={['#070a0f']} />
+      <color attach="background" args={['#080808']} />
       <ambientLight intensity={0.35} />
       <directionalLight position={[3, 5, 4]} intensity={0.8} />
       {children}
@@ -191,7 +191,7 @@ function SweepTile({ job }: { job: Job }) {
     if (!c || !mat) return
     const W = c.canvas.width
     const H = c.canvas.height
-    c.fillStyle = '#070a0f'
+    c.fillStyle = '#080808'
     c.fillRect(0, 0, W, H)
     const filled = Math.floor(job.progress * NX * NY)
     const vmax = spreadRate(OMAX, 20, g, psi, mat) || 1
@@ -201,11 +201,11 @@ function SweepTile({ job }: { job: Job }) {
       const flow = ((i + 0.5) / NX) * FMAX
       const o2 = OMIN + ((j + 0.5) / NY) * (OMAX - OMIN)
       const v = spreadRate(o2, flow, g, psi, mat) / vmax
-      c.fillStyle = v <= 0 ? '#0f1a26' : `hsl(${28 - 20 * v}, 95%, ${18 + 45 * Math.min(1, v)}%)`
+      c.fillStyle = v <= 0 ? '#141414' : `hsl(${18 - 38 * Math.min(1, v)}, 95%, ${18 + 48 * Math.min(1, v)}%)`
       c.fillRect((i / NX) * W, H - ((j + 1) / NY) * H, W / NX + 0.5, H / NY + 0.5)
     }
     // the fitted limit curve
-    c.strokeStyle = '#5aa9ff'
+    c.strokeStyle = '#6d8bff'
     c.lineWidth = 1.5
     c.beginPath()
     for (let i = 0; i <= 60; i++) {
@@ -230,10 +230,10 @@ function SweepTile({ job }: { job: Job }) {
     <div className="flex h-full min-h-0 gap-2">
       <div className="relative min-w-0 flex-1">
         <canvas ref={ref} width={300} height={200} className="h-full w-full rounded-sm border border-line" />
-        <span className="absolute bottom-1 right-1 text-[8.5px] text-faint">flow 0–60 cm/s →</span>
-        <span className="absolute left-1 top-1 text-[8.5px] text-faint">O₂ 10–100 % ↑</span>
+        <span className="absolute bottom-1 right-1 text-label text-faint">flow 0–60 cm/s →</span>
+        <span className="absolute left-1 top-1 text-label text-faint">O₂ 10–100 % ↑</span>
       </div>
-      <div className="w-[96px] shrink-0 space-y-1 text-[9.5px] text-muted-foreground">
+      <div className="w-[96px] shrink-0 space-y-1 text-label text-muted-foreground">
         <div className="text-ink">{mat?.label}</div>
         <div>
           cells <span className="text-ink">{Math.floor(job.progress * NX * NY)}</span>/{NX * NY}
@@ -288,7 +288,7 @@ export function SectionCanvas({ study, field, sensors = 'both', className, scale
     const px = (x: number) => ((x + w / 2) / cell) * S
     const py = (y: number) => (ny - y / cell) * S
     for (const s of study.sources) {
-      c.fillStyle = s.listed ? '#ff6b3d' : '#ff6b3d88'
+      c.fillStyle = s.listed ? '#ff5a1f' : '#ff5a1f88'
       c.beginPath()
       c.arc(px(s.at[0]), py(s.at[1]), 3, 0, Math.PI * 2)
       c.fill()
@@ -303,8 +303,8 @@ export function SectionCanvas({ study, field, sensors = 'both', className, scale
         c.fillText(s.id, px(s.x) + 6, py(s.y) + 3)
       }
     }
-    if (sensors === 'designed' || sensors === 'both') draw(study.designed, '#9aa3ae')
-    if (sensors === 'proposed' || sensors === 'both') draw(study.proposed, '#3fd07a')
+    if (sensors === 'designed' || sensors === 'both') draw(study.designed, '#b0b0aa')
+    if (sensors === 'proposed' || sensors === 'both') draw(study.proposed, '#3fd17f')
   }, [study, field, sensors, S])
   return <canvas ref={ref} width={study.nx * S} height={study.ny * S} className={className} />
 }
@@ -318,12 +318,12 @@ function SmokeTile({ job, study, progress }: { job: Job; study?: SmokeStudy; pro
         const i = Math.min(c.frames.length - 1, Math.round(t / c.every))
         return (
           <div key={c.gLabel} className="flex min-h-0 flex-col">
-            <div className="flex items-center gap-1 text-[9.5px]">
+            <div className="flex items-center gap-1 text-label">
               <span className="text-ink">{c.gLabel}</span>
               <span className="text-faint">T+{Math.round(t)} s</span>
             </div>
             <SectionCanvas study={study} field={c.frames[i]} sensors="designed" className="min-h-0 w-full flex-1 rounded-sm border border-line object-contain" />
-            <div className="flex flex-wrap gap-x-2 text-[9px]">
+            <div className="flex flex-wrap gap-x-2 text-label">
               {Object.entries(c.alarms).map(([id, a]) => (
                 <span key={id} className={a !== null && a <= t ? 'text-bad' : 'text-faint'}>
                   {id} {a === null ? 'no alarm' : a <= t ? `ALARM ${a.toFixed(0)} s` : '…'}
@@ -349,7 +349,7 @@ function SensorTile({ job, study, progress }: { job: Job; study?: SmokeStudy; pr
   return (
     <div className="flex h-full min-h-0 gap-2 overflow-hidden">
       <SectionCanvas study={study} field={field} sensors={job.done ? 'both' : 'designed'} className="h-full min-h-0 w-auto max-w-[58%] rounded-sm border border-line object-contain" />
-      <div className="min-w-[96px] flex-1 space-y-1 overflow-hidden text-[9.5px] text-muted-foreground">
+      <div className="min-w-[96px] flex-1 space-y-1 overflow-hidden text-label text-muted-foreground">
         <div className="text-ink">worst-case first alarm</div>
         <div>
           designed <span className="text-bad">{fmt(study.worstDesigned)}</span>
@@ -376,7 +376,7 @@ function ChamberTile({ job }: { job: Job }) {
   const n = BURN.length
   return (
     <div className="flex h-full min-h-0 flex-col gap-1.5">
-      <div className="text-[9.5px] text-muted-foreground">NASA-STD-6001 Test 1 · upward burn · 30 cm samples · pass if &lt; 15 cm</div>
+      <div className="text-label text-muted-foreground">NASA-STD-6001 Test 1 · upward burn · 30 cm samples · pass if &lt; 15 cm</div>
       <div className="flex min-h-0 flex-1 items-end gap-3 px-2">
         {BURN.map((b, i) => {
           const start = i / n
@@ -385,10 +385,10 @@ function ChamberTile({ job }: { job: Job }) {
           return (
             <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
               <div className="relative h-full w-5 rounded-sm border border-line-2 bg-surface-2">
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#3a1a0c] to-[#ff7a3d]" style={{ height: `${len * 100}%` }} />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#3a1a0c] to-[#ff6a33]" style={{ height: `${len * 100}%` }} />
                 <div className="absolute inset-x-0 border-t border-dashed border-warn" style={{ bottom: '50%' }} />
               </div>
-              <span className={`text-[9px] ${p >= 1 ? (b > 0.5 ? 'text-bad' : 'text-ok') : 'text-faint'}`}>{p >= 1 ? `${Math.round(b * 30)} cm` : p > 0 ? 'burning' : `#${i + 1}`}</span>
+              <span className={`text-label ${p >= 1 ? (b > 0.5 ? 'text-bad' : 'text-ok') : 'text-faint'}`}>{p >= 1 ? `${Math.round(b * 30)} cm` : p > 0 ? 'burning' : `#${i + 1}`}</span>
             </div>
           )
         })}
@@ -400,12 +400,12 @@ function ChamberTile({ job }: { job: Job }) {
 // ── shared ───────────────────────────────────────────────────────────────────────────
 
 function Wait({ text }: { text: string }) {
-  return <div className="flex h-full items-center justify-center text-[10.5px] text-faint">{text}</div>
+  return <div className="flex h-full items-center justify-center text-label text-faint">{text}</div>
 }
 
 function Readout({ items }: { items: [string, string][] }) {
   return (
-    <div className="pointer-events-none absolute left-1.5 top-1 flex flex-wrap gap-x-2 text-[9px]">
+    <div className="pointer-events-none absolute left-1.5 top-1 flex flex-wrap gap-x-2 text-label">
       {items.map(([k, v]) => (
         <span key={k} className="bg-bg/70 px-0.5 text-muted-foreground">
           {k} {v && <span className="text-ink">{v}</span>}

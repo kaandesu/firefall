@@ -2,6 +2,7 @@
 // the fire runs) and who decided what. A table of contents on the left, the chat on the right that can pull any of it
 // up. Replaces the old one-card verdict.
 import { Thumbnail } from '@remotion/player'
+import { DEADLINE, GRID, LIMIT, RUN_COLOR, TICK } from '@/components/chart'
 import { ArrowLeft, Download, MessageSquare, Pin, Printer } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AgentTag, CiteChip, StatusPill } from '@/components/bits'
@@ -106,7 +107,7 @@ export function ReportScreen() {
       const s = SECTIONS.find((x) => x.id === p.id)
       if (!s) return null
       return (
-        <button type="button" onClick={() => go(`r-${s.id}`)} className="flex w-full items-center gap-2 rounded-sm border border-ug/30 bg-ug/5 px-2 py-1 text-left text-[11px] text-ug hover:border-ug/70">
+        <button type="button" onClick={() => go(`r-${s.id}`)} className="flex w-full items-center gap-2 rounded-sm border border-ug/30 bg-ug/5 px-2 py-1 text-left text-body text-ug hover:border-ug/70">
           <span className="text-faint">§{numberOf(s.id)}</span>
           {s.title}
           <span className="ml-auto">jump →</span>
@@ -117,7 +118,7 @@ export function ReportScreen() {
       const row = model.matrix.find((x) => x.zone === p.id || x.id === p.id || x.material === p.id)
       if (!row) return null
       return (
-        <button type="button" onClick={() => go(`row-${row.id}`)} className="w-full rounded-sm border border-line-2 bg-surface-2 px-2 py-1.5 text-left text-[11px] hover:border-ug/60">
+        <button type="button" onClick={() => go(`row-${row.id}`)} className="w-full rounded-sm border border-line-2 bg-surface-2 px-2 py-1.5 text-left text-body hover:border-ug/60">
           <div className="flex items-center gap-2">
             <span className="text-ink">{row.item}</span>
             <span className="text-faint">{row.material}</span>
@@ -149,7 +150,7 @@ export function ReportScreen() {
   return (
     <div className="flex min-h-0 flex-1">
       {/* table of contents */}
-      <nav className="scroll-thin hidden w-[210px] shrink-0 overflow-y-auto border-r border-line px-3 py-6 text-[11.5px] lg:block print:hidden">
+      <nav className="scroll-thin hidden w-[210px] shrink-0 overflow-y-auto border-r border-line px-3 py-6 text-body lg:block print:hidden">
         <div className="label mb-2">on this page</div>
         {SECTIONS.map((s) => (
           <button key={s.id} type="button" onClick={() => go(`r-${s.id}`)} className={cn('flex w-full items-baseline gap-2 rounded-sm px-1.5 py-1 text-left', active === s.id ? 'bg-surface-2 text-ink' : 'text-muted-foreground hover:text-ink')}>
@@ -177,12 +178,12 @@ export function ReportScreen() {
       </nav>
 
       {/* the article */}
-      <div ref={scroller} className="scroll-thin min-w-0 flex-1 overflow-y-auto">
+      <div ref={scroller} className="report-print scroll-thin min-w-0 flex-1 overflow-y-auto">
         <article className="mx-auto max-w-[860px] space-y-7 px-8 pb-24 pt-8">
           <header id="r-summary-head" className="space-y-3">
             <div className="label text-flame">fire hazard review · design stage</div>
-            <h1 className="sans text-[28px] font-semibold leading-tight text-ink">{r.verdict?.headline ?? `${pkg.vehicle}: review`}</h1>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-muted-foreground">
+            <h1 className="sans text-headline font-medium leading-tight text-ink">{r.verdict?.headline ?? `${pkg.vehicle}: review`}</h1>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-body text-muted-foreground">
               <span className="text-ink">{pkg.vehicle}</span>
               <span>{pkg.atmosphere.label}</span>
               <span>{pkg.gravity.label}</span>
@@ -198,11 +199,11 @@ export function ReportScreen() {
           <section id="r-summary" className={cn('scroll-mt-6 rounded-sm border border-line-2 bg-surface-2 p-5', flash === 'r-summary' && 'border-ug/60')}>
             <div className="flex items-center">
               <div className="label text-ug">the review in 30 seconds</div>
-              <button type="button" onClick={() => ask('summary')} className="ml-auto flex items-center gap-1 text-[10.5px] text-muted-foreground hover:text-ink print:hidden">
+              <button type="button" onClick={() => ask('summary')} className="ml-auto flex items-center gap-1 text-label text-muted-foreground hover:text-ink print:hidden">
                 <MessageSquare size={10} /> Ask
               </button>
             </div>
-            <ul className="sans mt-3 space-y-2 text-[14px] leading-snug text-ink">
+            <ul className="sans mt-3 space-y-2 text-emph leading-snug text-ink">
               {r.tldr.map((l) => (
                 <li key={l} className="flex gap-2.5">
                   <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-flame" />
@@ -222,9 +223,9 @@ export function ReportScreen() {
             <div className="grid grid-cols-[1.25fr_1fr] gap-4">
               <div className="overflow-hidden rounded-sm border border-line bg-viewport">
                 {asBuilt && <Thumbnail component={StageComp} inputProps={{ model: cabin, run: asBuilt, layer: 'materials', status, hatchTime: pkg.hatch?.openTime ?? 90, orbit: false }} compositionWidth={640} compositionHeight={380} frameToDisplay={0} durationInFrames={FPS * 2} fps={FPS} style={{ width: '100%' }} />}
-                <div className="border-t border-line px-2 py-1 text-[10px] text-faint">cabin.model.json · coloured by matrix status · red = burns</div>
+                <div className="border-t border-line px-2 py-1 text-label text-faint">cabin.model.json · coloured by matrix status · red = burns</div>
               </div>
-              <div className="space-y-2 text-[12px]">
+              <div className="space-y-2 text-body">
                 <KV k="atmosphere" v={pkg.atmosphere.label} />
                 <KV k="gravity" v={pkg.gravity.label} />
                 <KV k="ventilation" v={`${pkg.ventFlow} cm/s`} />
@@ -232,7 +233,7 @@ export function ReportScreen() {
                 <KV k="hatch" v={`${pkg.hatch?.type ?? '—'} · ${pkg.hatch?.openTime ?? '—'} s`} />
                 <KV k="hull" v={`${pkg.hull?.burstPsia ?? '—'} psia burst`} />
                 <KV k="detectors" v={(pkg.sensors ?? []).map((s) => `${s.id} ${s.type} · ${s.zone}`).join(' / ') || 'none'} />
-                <div className="pt-1 text-[10.5px] text-faint">from cabin.yaml · materials.csv · cabin.model.json</div>
+                <div className="pt-1 text-label text-faint">from cabin.yaml · materials.csv · cabin.model.json</div>
               </div>
             </div>
           </ReportSection>
@@ -241,7 +242,7 @@ export function ReportScreen() {
             <Callout kind="finding">
               {r.fails.length} of {model.matrix.length} parts sustain flame at {pkg.atmosphere.label}. Every polymer that passes NASA-STD-6001 Test 1 in air is pushed past its limiting O₂ by the cabin atmosphere.
             </Callout>
-            <table className="w-full text-[11.5px]">
+            <table className="w-full text-body">
               <thead className="text-left text-faint">
                 <tr className="border-b border-line">
                   <th className="py-1 font-normal">part</th>
@@ -257,7 +258,7 @@ export function ReportScreen() {
                   <tr key={row.id} id={`row-${row.id}`} className={cn('border-b border-line/60 align-top', flash === `row-${row.id}` && 'bg-ug/10')}>
                     <td className="sans py-1.5 text-ink">
                       {row.item}
-                      <div className="text-[10.5px] text-faint">{row.action}</div>
+                      <div className="text-label text-faint">{row.action}</div>
                     </td>
                     <td className="text-muted-foreground">{row.material}</td>
                     <td className="text-muted-foreground">{row.zone ?? row.location}</td>
@@ -278,7 +279,7 @@ export function ReportScreen() {
             <Callout kind="caveat">Real data, processed here: the ACME camera series and sensor log are the NASA files, and the events below are found by code. Saffire, BASS-II and FLEX stay catalogue fits.</Callout>
             {frames && (
               <div className="rounded-sm border border-line bg-viewport p-3">
-                <div className="mb-2 flex items-baseline gap-2 text-[11px]">
+                <div className="mb-2 flex items-baseline gap-2 text-body">
                   <span className="text-ink">ACME CFI-G · test 21256C2 · intensified camera</span>
                   <span className="text-faint">{frames.f.series.length} samples · {frames.f.burst.length} frames · PSI-159</span>
                 </div>
@@ -290,7 +291,7 @@ export function ReportScreen() {
                       return (
                         <figure key={e.id} className="space-y-1">
                           {b && <FrameCanvas src={b.src} className="w-full rounded-sm border border-line" />}
-                          <figcaption className="text-[10px] leading-tight">
+                          <figcaption className="text-label leading-tight">
                             <span className="text-k-ask">{e.label}</span> <span className="text-faint">T+{e.t.toFixed(1)} s</span>
                             <div className="text-faint">{e.note}</div>
                           </figcaption>
@@ -302,7 +303,7 @@ export function ReportScreen() {
                   <BrightnessChart f={frames.f} ev={ev} upTo={72} h={150} w={740} />
                 </div>
                 {acme?.sensors && (
-                  <div className="mt-2 grid grid-cols-5 gap-1.5 text-[10.5px]">
+                  <div className="mt-2 grid grid-cols-5 gap-1.5 text-label">
                     <Mini n={`${acme.sensors.fuelOn?.toFixed(1)} s`} l="fuel on (19175A4)" />
                     <Mini n={`${acme.sensors.ignition?.toFixed(1)} s`} l="ignition · ion current" />
                     <Mini n={`${acme.sensors.burn?.toFixed(1)} s`} l="burn time" />
@@ -319,13 +320,13 @@ export function ReportScreen() {
                   <EvidenceCard key={e.id} e={e} m={match(e, target)} pinned={pins.includes(e.id)} onPin={() => togglePin(e.id)} />
                 ))}
               </div>
-              <div className="mt-1.5 text-[10.5px] text-faint">Pin rows from the Evidence explorer and they land here. Nothing in the archive is above {pct(Math.max(0, ...evidence.filter((e) => e.o2at === 'ambient').map((e) => e.o2)))} ambient O₂.</div>
+              <div className="mt-1.5 text-label text-faint">Pin rows from the Evidence explorer and they land here. Nothing in the archive is above {pct(Math.max(0, ...evidence.filter((e) => e.o2at === 'ambient').map((e) => e.o2)))} ambient O₂.</div>
             </div>
             <div>
               <div className="label mb-1.5">studies that fit this cabin best</div>
               <div className="space-y-1">
                 {r.fit.map((f) => (
-                  <div key={f.study.id} className="flex items-center gap-2 text-[11.5px]">
+                  <div key={f.study.id} className="flex items-center gap-2 text-body">
                     <span className="w-[200px] truncate text-ink">{f.study.name}</span>
                     {f.study.psi && <CiteChip id={f.study.psi} />}
                     <div className="h-1 flex-1 rounded bg-surface-3">
@@ -360,7 +361,7 @@ export function ReportScreen() {
                   {(['designed', 'proposed'] as const).map((l) => (
                     <figure key={l} className="rounded-sm border border-line bg-viewport p-2">
                       <SectionCanvas study={study} field={arrivalField(study)} sensors={l} className="w-full rounded-sm" scale={4} />
-                      <figcaption className="mt-1 text-[10.5px]">
+                      <figcaption className="mt-1 text-label">
                         <span className={l === 'proposed' ? 'text-ok' : 'text-ink'}>{l}</span>
                         <span className="text-faint"> · worst-case first alarm </span>
                         <span className={l === 'proposed' ? 'text-ok' : 'text-bad'}>{alarm(l === 'proposed' ? study.worstProposed : study.worstDesigned)}</span>
@@ -369,7 +370,7 @@ export function ReportScreen() {
                     </figure>
                   ))}
                 </div>
-                <div className="text-[10.5px] text-faint">Cabin cross-section at z = 0 from cabin.model.json. Colour: in how many of the {study.cases.length} cases ({study.sources.length} sources × µg / Moon / 1 g) smoke reaches each cell within {study.seconds} s. Green = all, red = few. A good detector sits in green.</div>
+                <div className="text-label text-faint">Cabin cross-section at z = 0 from cabin.model.json. Colour: in how many of the {study.cases.length} cases ({study.sources.length} sources × µg / Moon / 1 g) smoke reaches each cell within {study.seconds} s. Green = all, red = few. A good detector sits in green.</div>
                 <AlarmGrid study={study} />
                 <JobsTable jobs={model.jobs.filter((j) => j.scene === 'smoke-cfd' || j.scene === 'sensor-opt')} />
               </>
@@ -380,13 +381,13 @@ export function ReportScreen() {
 
           <ReportSection flash={flash} onAsk={ask} id="suppression" by={['suppress']}>
             <Callout kind="finding">{r.brief.suppression[0]}</Callout>
-            <div className="sans text-[13px] leading-relaxed text-muted-foreground">{r.brief.suppression[1]} A portable extinguisher cannot make this cabin safe: the fix is removing oxygen or fuel, not fighting the fire.</div>
+            <div className="sans text-emph leading-relaxed text-muted-foreground">{r.brief.suppression[1]} A portable extinguisher cannot make this cabin safe: the fix is removing oxygen or fuel, not fighting the fire.</div>
           </ReportSection>
 
           <ReportSection flash={flash} onAsk={ask} id="lab" by={['wstf']}>
             {r.chamber ? (
               <div className="grid grid-cols-[1fr_1.2fr] gap-3">
-                <div className="space-y-1 text-[12px]">
+                <div className="space-y-1 text-body">
                   <KV k="test" v={r.chamber.title} />
                   <KV k="where" v={`${r.chamber.node} · ${ORGS.wstf.name}`} />
                   {Object.entries(r.chamber.stats).map(([k, v]) => (
@@ -403,7 +404,7 @@ export function ReportScreen() {
           <ReportSection flash={flash} onAsk={ask} id="decisions" by={['flight', 'skeptic']}>
             <div className="space-y-2">
               {r.human.map((c) => (
-                <div key={c.id} className="flex items-baseline gap-2 text-[12px]">
+                <div key={c.id} className="flex items-baseline gap-2 text-body">
                   <span className="w-16 shrink-0 text-faint tnum">T+{Math.max(0, Math.round((c.at - (model.run?.at ?? c.at)) / 1000))} s</span>
                   <span className="w-24 shrink-0 text-ink">{c.from === 'you' ? 'You (lead engineer)' : c.from === 'lab' ? 'WSTF technician' : c.from}</span>
                   <span className="sans text-muted-foreground">{c.text}</span>
@@ -414,14 +415,14 @@ export function ReportScreen() {
               <div key={p.id} className="rounded-sm border border-line-2 p-3">
                 <div className="flex items-baseline gap-2">
                   <span className="text-faint">{p.id}</span>
-                  <span className="sans text-[14px] font-medium text-ink">{p.title}</span>
-                  <span className="ml-auto text-[11px]" style={{ color: p.status === 'accepted' ? 'var(--ok)' : p.status === 'rejected' ? 'var(--bad)' : 'var(--warn)' }}>
+                  <span className="sans text-emph font-medium text-ink">{p.title}</span>
+                  <span className="ml-auto text-body" style={{ color: p.status === 'accepted' ? 'var(--ok)' : p.status === 'rejected' ? 'var(--bad)' : 'var(--warn)' }}>
                     {p.status}
                     {p.decidedBy ? ` · ${p.decidedBy}` : ''}
                   </span>
                 </div>
-                <div className="sans mt-1 text-[12.5px] text-muted-foreground">{p.change}</div>
-                <div className="mt-2 flex flex-wrap gap-x-4 text-[11px]">
+                <div className="sans mt-1 text-emph text-muted-foreground">{p.change}</div>
+                <div className="mt-2 flex flex-wrap gap-x-4 text-body">
                   {p.impact.map((i) => (
                     <span key={i.label}>
                       <span className="text-faint">{i.label}</span> <span className="text-bad">{i.before}</span> → <span className="text-ok">{i.after}</span>
@@ -430,7 +431,7 @@ export function ReportScreen() {
                 </div>
                 <div className="mt-2 space-y-1">
                   {p.reviews.map((rv, i) => (
-                    <div key={i} className="flex items-baseline gap-2 text-[11.5px]">
+                    <div key={i} className="flex items-baseline gap-2 text-body">
                       <span style={{ color: agentColor(rv.by) }}>{agentName(rv.by)}</span>
                       <span className={rv.stance === 'endorse' ? 'text-ok' : rv.stance === 'object' ? 'text-bad' : 'text-faint'}>{rv.stance}s</span>
                       <span className="sans text-muted-foreground">{rv.text}</span>
@@ -446,7 +447,7 @@ export function ReportScreen() {
               {runs
                 .filter((x) => x.variant.id !== 'as-built')
                 .map((x) => (
-                  <div key={x.variant.id} className="rounded-sm border border-line bg-surface-2 px-2.5 py-2 text-[11.5px]">
+                  <div key={x.variant.id} className="rounded-sm border border-line bg-surface-2 px-2.5 py-2 text-body">
                     <div className="text-ink">{x.variant.label}</div>
                     <div className="mt-0.5 text-faint">
                       {Object.values(x.ignite).filter((v) => v !== null).length}/{x.zones.length} zones burn · rupture {x.rupture === undefined ? <span className="text-ok">none</span> : <span className="text-bad">T+{x.rupture.toFixed(0)} s</span>}
@@ -459,7 +460,7 @@ export function ReportScreen() {
           <ReportSection flash={flash} onAsk={ask} id="open" by={['scribe']}>
             <ul className="space-y-1.5">
               {r.brief.open.map((l) => (
-                <li key={l} className="sans flex gap-2 text-[13px] text-ink">
+                <li key={l} className="sans flex gap-2 text-emph text-ink">
                   <span className="text-warn">○</span>
                   {l}
                 </li>
@@ -478,7 +479,7 @@ export function ReportScreen() {
               {r.orgsUsed.map((o) => {
                 const org = ORGS[o!]
                 return (
-                  <div key={o} className="rounded-sm border border-line bg-surface-2 px-2.5 py-2 text-[11px]">
+                  <div key={o} className="rounded-sm border border-line bg-surface-2 px-2.5 py-2 text-body">
                     <div className="flex items-center gap-1.5">
                       <span className="h-2.5 w-[3px] rounded" style={{ background: org.color }} />
                       <span className="text-ink">{org.name}</span>
@@ -501,13 +502,15 @@ export function ReportScreen() {
               {r.cites.map((c) => (
                 <CiteChip key={c.id} id={c.id} note={c.note} />
               ))}
-              <span className="rounded-sm border border-line-2 px-1.5 py-px text-[10.5px] text-muted-foreground">ACME 21256C2 · 19175A4 · Flame Design test log (data files)</span>
+              <span className="rounded-sm border border-line-2 px-1.5 py-px text-label text-muted-foreground">ACME 21256C2 · 19175A4 · Flame Design test log (data files)</span>
             </div>
           </ReportSection>
         </article>
       </div>
 
-      <ReportChat context={r.context} section={active} seed={seed} onSeedUsed={() => setSeed(undefined)} renderPull={renderPull} script={(question) => scripted(r, input, question)} />
+      <div className="no-print contents">
+        <ReportChat context={r.context} section={active} seed={seed} onSeedUsed={() => setSeed(undefined)} renderPull={renderPull} script={(question) => scripted(r, input, question)} />
+      </div>
     </div>
   )
 }
@@ -519,11 +522,11 @@ function ReportSection({ id, by, children, flash, onAsk }: { id: SectionId; by?:
   return (
     <section id={`r-${id}`} className={cn('scroll-mt-6 border-t border-line pt-7 transition-colors', flash === `r-${id}` && 'bg-ug/[0.04]')}>
       <div className="flex items-baseline gap-3">
-        <span className="text-[12px] text-faint tnum">§{numberOf(id)}</span>
-        <h2 className="sans text-[19px] font-semibold text-ink">{s.title}</h2>
+        <span className="text-body text-faint tnum">§{numberOf(id)}</span>
+        <h2 className="sans text-title font-medium text-ink">{s.title}</h2>
         <span className="ml-auto flex items-center gap-1.5">
           {by?.map((h) => <AgentTag key={h} handle={h} />)}
-          <button type="button" onClick={() => onAsk(id)} className="flex items-center gap-1 rounded-sm border border-line-2 px-1.5 py-0.5 text-[10.5px] text-muted-foreground hover:border-ug/60 hover:text-ink print:hidden">
+          <button type="button" onClick={() => onAsk(id)} className="flex items-center gap-1 rounded-sm border border-line-2 px-1.5 py-0.5 text-label text-muted-foreground hover:border-ug/60 hover:text-ink print:hidden">
             <MessageSquare size={10} /> Ask
           </button>
         </span>
@@ -542,18 +545,18 @@ const arrivalField = (study: SmokeStudy) => (k: number): [number, number, number
 function Big({ n, label, color }: { n: string; label: string; color: string }) {
   return (
     <div className="lcd px-3 py-2.5">
-      <div className="lcd-font tnum text-[26px] leading-none" style={{ color }}>
+      <div className="lcd-font tnum text-headline leading-none" style={{ color }}>
         {n}
       </div>
-      <div className="mt-1 text-[10.5px] text-[var(--muted)]">{label}</div>
+      <div className="mt-1 text-label text-[var(--muted)]">{label}</div>
     </div>
   )
 }
 function Mini({ n, l }: { n: string; l: string }) {
   return (
     <div className="rounded-sm border border-line bg-surface-2 px-2 py-1.5">
-      <div className="text-[14px] text-ink tnum">{n}</div>
-      <div className="text-[10px] text-faint">{l}</div>
+      <div className="text-emph text-ink tnum">{n}</div>
+      <div className="text-label text-faint">{l}</div>
     </div>
   )
 }
@@ -574,7 +577,7 @@ function Callout({ kind, children }: { kind: keyof typeof CALLOUT; children: Rea
       <div className="label" style={{ color: c }}>
         {l}
       </div>
-      <div className="sans mt-0.5 text-[13px] leading-snug text-ink">{children}</div>
+      <div className="sans mt-0.5 text-emph leading-snug text-ink">{children}</div>
     </div>
   )
 }
@@ -588,7 +591,7 @@ function MarginBar({ lim, cabin }: { lim: number; cabin: number }) {
         <div className="absolute inset-y-0 left-0 rounded" style={{ width: X(lim), background: burns ? 'color-mix(in srgb, var(--bad) 35%, transparent)' : 'color-mix(in srgb, var(--ok) 35%, transparent)' }} />
         <div className="absolute -top-0.5 h-2.5 w-[2px] bg-ink" style={{ left: X(cabin) }} />
       </div>
-      <div className="mt-0.5 flex justify-between text-[9.5px] text-faint">
+      <div className="mt-0.5 flex justify-between text-label text-faint">
         <span>limit {pct(lim)}</span>
         <span className={burns ? 'text-bad' : 'text-ok'}>cabin {pct(cabin)}</span>
       </div>
@@ -598,7 +601,7 @@ function MarginBar({ lim, cabin }: { lim: number; cabin: number }) {
 
 function EvidenceCard({ e, m, pinned, onPin }: { e: EvidenceRow; m: number; pinned: boolean; onPin: () => void }) {
   return (
-    <div className="rounded-sm border border-line-2 bg-surface-2 px-2 py-1.5 text-[11px]">
+    <div className="rounded-sm border border-line-2 bg-surface-2 px-2 py-1.5 text-body">
       <div className="flex items-center gap-2">
         <span className="text-ink">{e.id}</span>
         <span className="text-faint">{e.src}</span>
@@ -616,7 +619,7 @@ function EvidenceCard({ e, m, pinned, onPin }: { e: EvidenceRow; m: number; pinn
         <span className={e.ign ? 'text-flame' : 'text-faint'}>{e.ign ? 'ignited' : 'no ignition'}</span>
         <span className="ml-auto text-ug">match {m < 0.01 ? '< 0.01' : m.toFixed(2)}</span>
       </div>
-      <div className="text-[10px] text-faint">{e.ref}</div>
+      <div className="text-label text-faint">{e.ref}</div>
     </div>
   )
 }
@@ -625,7 +628,7 @@ function Figure({ caption, onOpen, children }: { caption: string; onOpen: () => 
   return (
     <div className="rounded-sm border border-line-2 bg-viewport p-2">
       {children}
-      <button type="button" onClick={onOpen} className="mt-1 flex w-full items-center text-[10px] text-faint hover:text-ink">
+      <button type="button" onClick={onOpen} className="mt-1 flex w-full items-center text-label text-faint hover:text-ink">
         {caption}
         <span className="ml-auto text-ug">open in report →</span>
       </button>
@@ -633,8 +636,7 @@ function Figure({ caption, onOpen, children }: { caption: string; onOpen: () => 
   )
 }
 
-const RUN_COLOR: Record<string, string> = { 'as-built': 'var(--red)', proposal: 'var(--green)', '60-40': 'var(--orange)', ug: 'var(--navy)', base: 'var(--tan)' }
-function PressureChart({ runs, hatch, h }: { runs: FireRun[]; hatch: number; h: number }) {
+export function PressureChart({ runs, hatch, h }: { runs: FireRun[]; hatch: number; h: number }) {
   if (!runs.length) return null
   const W = 600
   const tMax = Math.max(hatch + 10, ...runs.map((r) => r.pressure.at(-1)?.t ?? 0))
@@ -644,12 +646,15 @@ function PressureChart({ runs, hatch, h }: { runs: FireRun[]; hatch: number; h: 
   const burst = runs[0].burstPsia
   return (
     <svg viewBox={`0 0 ${W} ${h + 16}`} className="w-full">
-      <line x1={0} x2={W} y1={Y(burst)} y2={Y(burst)} stroke="var(--red)" strokeDasharray="4 3" strokeWidth={0.8} />
-      <text x={4} y={Y(burst) - 3} fill="var(--red)" fontSize={9}>
+      {[0.25, 0.5, 0.75].map((f) => (
+        <line key={f} x1={0} x2={W} y1={h * f} y2={h * f} {...GRID} />
+      ))}
+      <line x1={0} x2={W} y1={Y(burst)} y2={Y(burst)} {...LIMIT} />
+      <text x={4} y={Y(burst) - 3} {...TICK} fill="var(--pink)">
         hull burst {burst} psia
       </text>
-      <line x1={X(hatch)} x2={X(hatch)} y1={0} y2={h} stroke="var(--orange)" strokeDasharray="3 3" strokeWidth={0.8} />
-      <text x={X(hatch) - 4} y={10} fill="var(--orange)" fontSize={9} textAnchor="end">
+      <line x1={X(hatch)} x2={X(hatch)} y1={0} y2={h} {...DEADLINE} />
+      <text x={X(hatch) - 4} y={10} {...TICK} fill="var(--muted)" textAnchor="end">
         hatch open {hatch} s
       </text>
       {runs.map((r) => (
@@ -658,15 +663,15 @@ function PressureChart({ runs, hatch, h }: { runs: FireRun[]; hatch: number; h: 
           {r.rupture !== undefined && <circle cx={X(r.rupture)} cy={Y(burst)} r={3} fill={RUN_COLOR[r.variant.id] ?? 'var(--muted)'} />}
         </g>
       ))}
-      <text x={0} y={h + 12} fill="var(--faint)" fontSize={9}>
+      <text x={0} y={h + 12} {...TICK}>
         T+0 (ignition)
       </text>
-      <text x={W} y={h + 12} fill="var(--faint)" fontSize={9} textAnchor="end">
+      <text x={W} y={h + 12} {...TICK} textAnchor="end">
         T+{tMax.toFixed(0)} s · psia
       </text>
       <g transform={`translate(${W - 4}, ${h - 4})`}>
         {runs.map((r, i) => (
-          <text key={r.variant.id} x={0} y={-i * 11} fill={RUN_COLOR[r.variant.id] ?? 'var(--muted)'} fontSize={8.5} textAnchor="end">
+          <text key={r.variant.id} x={0} y={-i * 11} {...TICK} fill={RUN_COLOR[r.variant.id] ?? 'var(--muted)'} textAnchor="end">
             {r.variant.short}
           </text>
         ))}
@@ -679,7 +684,7 @@ function AlarmGrid({ study, compact }: { study: SmokeStudy; compact?: boolean })
   const gs = [...new Set(study.cases.map((c) => c.gLabel))]
   const cell = (t: number | null) => (t === null ? 'text-bad' : t > 30 ? 'text-warn' : 'text-ok')
   return (
-    <table className={cn('w-full', compact ? 'text-[10.5px]' : 'text-[11.5px]')}>
+    <table className={cn('w-full', compact ? 'text-label' : 'text-body')}>
       <thead className="text-left text-faint">
         <tr className="border-b border-line">
           <th className="py-1 font-normal">ignition source</th>
@@ -718,7 +723,7 @@ function JobsTable({ jobs }: { jobs: ReturnType<typeof useMission.getState>['mod
   return (
     <div>
       <div className="label mb-1">jobs behind this section</div>
-      <div className="space-y-0.5 text-[11px]">
+      <div className="space-y-0.5 text-body">
         {jobs.map((j) => (
           <div key={j.id} className="flex items-baseline gap-2">
             <span className="w-[260px] truncate text-ink">{j.title}</span>

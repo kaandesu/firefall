@@ -1,12 +1,14 @@
 // EVIDENCE: every test point the review can stand on (143 ACME Flame Design chamber points + 39 CFI-G test days),
 // scored against this cabin. Filter, sort, open a row, pin it: pinned rows land in the report's evidence section.
 import { Pin, Search } from 'lucide-react'
+import { GRID, TICK } from '@/components/chart'
 import { useEffect, useMemo, useState } from 'react'
 import { loadTestpoints } from '@/data/acme'
 import { buildEvidence, match, type EvidenceRow } from '@/data/evidence'
 import { PSI_KPA, targetOf, type Target } from '@/data/library'
 import { useMission } from '@/live/store'
 import { cn } from '@/lib/utils'
+import { Gauge, Reading } from '@/components/Logo'
 
 let cache: Promise<EvidenceRow[]> | undefined
 export function useEvidenceRows() {
@@ -50,12 +52,29 @@ export function EvidenceScreen() {
   return (
     <div className="flex min-h-0 flex-1">
       <div className="flex min-w-0 flex-1 flex-col px-6 py-5">
-        <div className="label text-ug">evidence explorer</div>
-        <h1 className="sans mt-1 text-[22px] font-semibold text-ink">{rows.length} test points behind the verdict</h1>
-        <div className="mt-1 text-[11.5px] text-muted-foreground">
-          Real ACME Flame Design chamber log (PSI-10) and CFI-G test days (PSI-159). Match = how close the test atmosphere is to this cabin ({pct(target.o2)} O₂ · {(target.kpa / PSI_KPA).toFixed(1)} psia). The highest ambient O₂ ever tested here is <span className="text-warn">{pct(maxO2)}</span>: the cabin sits outside the evidence.
+        <div className="flex items-start gap-5">
+          <div className="min-w-0 flex-1">
+            <div className="label">evidence explorer</div>
+            <h1 className="sans mt-1 text-headline font-normal tracking-[-0.03em] text-ink">{rows.length} test points behind the verdict</h1>
+          </div>
+          {rows.length > 0 && (
+            <div className="flex shrink-0 items-center gap-3" title="Needle: this cabin's O₂. Pink tick: the highest ambient O₂ any test here reached. Pink scale: O₂ nobody has tested.">
+              <Gauge value={target.o2} mark={maxO2} size={52} />
+              <div className="flex flex-col gap-1 text-label text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  <Reading v={Math.round(target.o2 * 100)} u="% O₂" size={14} /> this cabin
+                </span>
+                <span className="flex items-center gap-2">
+                  <Reading v={Math.round(maxO2 * 100)} u="% O₂" color="var(--pink)" size={14} /> highest tested
+                </span>
+              </div>
+            </div>
+          )}
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
+        <div className="mt-1 text-body text-muted-foreground">
+          Real ACME Flame Design chamber log (PSI-10) and CFI-G test days (PSI-159). Match = how close the test atmosphere is to this cabin ({pct(target.o2)} O₂ · {(target.kpa / PSI_KPA).toFixed(1)} psia). The highest ambient O₂ ever tested here is <span className="text-pink">{pct(maxO2)}</span>: the cabin sits outside the evidence.
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-body">
           {(['all', 'Flame Design', 'CFI-G'] as const).map((v) => (
             <Chip key={v} on={src === v} onClick={() => setSrc(v)}>
               {v}
@@ -84,7 +103,7 @@ export function EvidenceScreen() {
         </div>
         <div className="mt-3 grid min-h-0 flex-1 grid-cols-[1fr_340px] gap-4">
           <div className="scroll-thin min-h-0 overflow-y-auto">
-            <table className="w-full text-[11.5px]">
+            <table className="w-full text-body">
               <thead className="sticky top-0 bg-background text-left text-faint">
                 <tr className="border-b border-line">
                   <th className="py-1 font-normal">test</th>
@@ -139,12 +158,12 @@ export function EvidenceScreen() {
           <div className="scroll-thin min-h-0 space-y-3 overflow-y-auto">
             <div className="rounded-sm border border-line bg-viewport p-2">
               <TestpointScatter rows={list.map((x) => x.e)} target={target} selected={sel} onPick={setSel} h={240} />
-              <div className="mt-1 text-[10px] text-faint">x: O₂ · y: pressure (log) · orange ignited · grey none · white cross = this cabin</div>
+              <div className="mt-1 text-label text-faint">x: O₂ · y: pressure (log) · orange ignited · grey none · white cross = this cabin</div>
             </div>
             {s ? (
-              <div className="space-y-1.5 rounded-sm border border-line-2 bg-surface-2 p-3 text-[11.5px]">
+              <div className="space-y-1.5 rounded-sm border border-line-2 bg-surface-2 p-3 text-body">
                 <div className="flex items-center gap-2">
-                  <span className="text-[14px] text-ink">{s.id}</span>
+                  <span className="text-emph text-ink">{s.id}</span>
                   <span className="text-faint">{s.src}</span>
                   <button type="button" onClick={() => togglePin(s.id)} className={cn('ml-auto flex items-center gap-1 rounded-sm border px-1.5 py-0.5', pins.includes(s.id) ? 'border-k-ask/60 text-k-ask' : 'border-line-2 text-muted-foreground hover:text-ink')}>
                     <Pin size={10} /> {pins.includes(s.id) ? 'pinned to report' : 'pin to report'}
@@ -174,9 +193,9 @@ export function EvidenceScreen() {
                 </div>
               </div>
             ) : (
-              <div className="text-[11.5px] text-faint">Pick a row or a point.</div>
+              <div className="text-body text-faint">Pick a row or a point.</div>
             )}
-            <div className="text-[11px] text-muted-foreground">
+            <div className="text-body text-muted-foreground">
               {pins.length} pinned · they appear in the report under §3
             </div>
           </div>
@@ -188,7 +207,7 @@ export function EvidenceScreen() {
 
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} className={cn('rounded-sm border px-2 py-0.5', on ? 'border-ug/60 bg-ug/10 text-ink' : 'border-line-2 text-muted-foreground hover:text-ink')}>
+    <button type="button" onClick={onClick} className={cn('key h-7 rounded-full px-3 normal-case', !on && 'text-muted-foreground')} data-down={on}>
       {children}
     </button>
   )
@@ -207,16 +226,16 @@ export function TestpointScatter({ rows, target, selected, onPick, h = 200 }: { 
     <svg viewBox={`0 0 ${W} ${h}`} className="w-full">
       {[0, 0.21, 0.4, 0.6, 0.85, 1].map((o) => (
         <g key={o}>
-          <line x1={X(o)} x2={X(o)} y1={6} y2={h - pad} stroke="var(--line)" />
-          <text x={X(o)} y={h - 8} fill="var(--faint)" fontSize={8} textAnchor="middle">
+          <line x1={X(o)} x2={X(o)} y1={6} y2={h - pad} {...GRID} />
+          <text x={X(o)} y={h - 8} {...TICK} textAnchor="middle">
             {Math.round(o * 100)}%
           </text>
         </g>
       ))}
       {[5, 10, 14.7, 30, 44].map((p) => (
         <g key={p}>
-          <line x1={pad} x2={W - 6} y1={Y(p)} y2={Y(p)} stroke="var(--line)" />
-          <text x={pad - 3} y={Y(p) + 3} fill="var(--faint)" fontSize={8} textAnchor="end">
+          <line x1={pad} x2={W - 6} y1={Y(p)} y2={Y(p)} {...GRID} />
+          <text x={pad - 3} y={Y(p) + 3} {...TICK} textAnchor="end">
             {p}
           </text>
         </g>

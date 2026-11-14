@@ -60,7 +60,7 @@ type State = {
   /** MCP servers added per agent (demo handshake). */
   mcp: Record<string, { name: string; url: string; tools: string[] }[]>
   /** Which top-level view is open beside the review. */
-  view: 'review' | 'library' | 'evidence' | 'compute'
+  view: 'review' | 'library' | 'evidence' | 'compute' | 'decisions' | 'compare' | 'present'
   /** Evidence rows pinned for the report. */
   pins: string[]
   planOpen: boolean

@@ -138,7 +138,7 @@ export function ReportChat({ context, section, seed, onSeedUsed, renderPull, scr
 
   return (
     <aside className="flex h-full w-[400px] shrink-0 flex-col border-l border-line bg-surface print:hidden">
-      <header className="flex items-center gap-2 border-b border-line px-3 py-2 text-[11px]">
+      <header className="flex items-center gap-2 border-b border-line px-3 py-2 text-body">
         <MessageSquare size={12} className="text-ug" />
         <span className=" text-ink">ask the report</span>
         <span className="ml-auto text-faint">{demo ? 'scripted answers' : server?.live ? `OpenAI · ${server.model}` : 'checking…'}</span>
@@ -151,7 +151,7 @@ export function ReportChat({ context, section, seed, onSeedUsed, renderPull, scr
           demo
         </button>
       </header>
-      <div className="flex items-center gap-1.5 border-b border-line px-3 py-1.5 text-[10.5px] text-muted-foreground">
+      <div className="flex items-center gap-1.5 border-b border-line px-3 py-1.5 text-label text-muted-foreground">
         <span className="text-faint">talking about</span>
         <span className="text-ink">
           {numberOf(section) ? `§${numberOf(section)} ` : ''}
@@ -161,25 +161,25 @@ export function ReportChat({ context, section, seed, onSeedUsed, renderPull, scr
 
       <div className="scroll-thin min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3">
         {!msgs.length && (
-          <div className="sans space-y-2 text-[12.5px] leading-snug text-muted-foreground">
+          <div className="sans space-y-2 text-emph leading-snug text-muted-foreground">
             <p>Ask anything about this review. Answers come only from the report: its numbers, the runs, the real ACME data and who decided what.</p>
             <p className="text-faint">Answers can pull things up: a chart, a matrix row, a test point, a section.</p>
           </div>
         )}
         {msgs.map((m, i) =>
           m.role === 'user' ? (
-            <div key={i} className="sans ml-8 rounded-sm border border-line-2 bg-surface-2 px-2.5 py-1.5 text-[12.5px] text-ink">
+            <div key={i} className="sans ml-8 rounded-sm border border-line-2 bg-surface-2 px-2.5 py-1.5 text-emph text-ink">
               {m.content}
             </div>
           ) : (
             <div key={i} className="space-y-2">
-              <div className="flex items-center gap-1.5 text-[9.5px] text-faint">
+              <div className="flex items-center gap-1.5 text-label text-faint">
                 <Sparkles size={10} className={m.via === 'live' ? 'text-ug' : 'text-k-ask'} />
                 {m.via === 'live' ? server?.model : 'demo'}
               </div>
               {split(m.content).map((p, k) =>
                 typeof p === 'string' ? (
-                  <div key={k} className="report-md sans text-[12.5px] leading-relaxed text-ink">
+                  <div key={k} className="report-md sans text-emph leading-relaxed text-ink">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{p}</ReactMarkdown>
                   </div>
                 ) : (
@@ -187,7 +187,7 @@ export function ReportChat({ context, section, seed, onSeedUsed, renderPull, scr
                 ),
               )}
               {busy && i === msgs.length - 1 && <span className="inline-block h-3 w-1.5 animate-pulse bg-ug" />}
-              {m.error && <div className="text-[10.5px] text-warn">{m.error}</div>}
+              {m.error && <div className="text-label text-warn">{m.error}</div>}
             </div>
           ),
         )}
@@ -196,7 +196,7 @@ export function ReportChat({ context, section, seed, onSeedUsed, renderPull, scr
 
       <div className="flex flex-wrap gap-1 border-t border-line px-3 pt-2">
         {chips.map((c) => (
-          <button key={c} type="button" disabled={busy} onClick={() => void send(c)} className="rounded-sm border border-line-2 px-1.5 py-0.5 text-[10.5px] text-muted-foreground hover:border-ug/60 hover:text-ink disabled:opacity-40">
+          <button key={c} type="button" disabled={busy} onClick={() => void send(c)} className="rounded-sm border border-line-2 px-1.5 py-0.5 text-label text-muted-foreground hover:border-ug/60 hover:text-ink disabled:opacity-40">
             {c}
           </button>
         ))}
@@ -219,14 +219,14 @@ export function ReportChat({ context, section, seed, onSeedUsed, renderPull, scr
           }}
           rows={2}
           placeholder={numberOf(section) ? `Ask about §${numberOf(section)} or anything in the report…` : 'Ask anything in the report…'}
-          className="sans min-h-[44px] flex-1 resize-none rounded-sm border border-line-2 bg-surface-2 px-2 py-1.5 text-[12.5px] text-ink outline-none placeholder:text-faint focus:border-ug/60"
+          className="sans min-h-[44px] flex-1 resize-none rounded-sm border border-line-2 bg-surface-2 px-2 py-1.5 text-emph text-ink outline-none placeholder:text-faint focus:border-ug/60"
         />
         {busy ? (
           <button type="button" onClick={() => stop.current?.()} className="rounded-sm border border-line-2 p-2 text-muted-foreground hover:text-ink" title="stop">
             <Square size={12} />
           </button>
         ) : (
-          <button type="submit" disabled={!text.trim()} className="key key-orange size-[34px] rounded-full p-0" title="ask">
+          <button type="submit" disabled={!text.trim()} className="key key-you size-8 rounded-full p-0" title="ask">
             <ArrowUp size={12} />
           </button>
         )}

@@ -38,8 +38,8 @@ export function IntroScreen() {
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center overflow-hidden bg-viewport">
       <Thumbnail component={IntroComp} inputProps={{ model: cabin, pkg }} durationInFrames={total} fps={INTRO_FPS} compositionWidth={1600} compositionHeight={940} frameToDisplay={Math.min(frame, total - 1)} style={{ width: '100%', height: '100%' }} />
-      <button type="button" onClick={skip} className="absolute right-5 top-4 flex items-center gap-1.5 rounded-sm border border-line-2 bg-surface/80 px-2.5 py-1 text-[11.5px] text-muted-foreground hover:text-ink">
-        <SkipForward size={12} /> skip to the plan <span className="text-faint">esc</span>
+      <button type="button" onClick={skip} className="absolute right-5 top-4 flex items-center gap-1.5 rounded-sm border border-line-2 bg-surface/80 px-2.5 py-1 text-body text-muted-foreground hover:text-ink">
+        <SkipForward size={12} /> skip to the plan <span className="kbd">esc</span>
       </button>
     </div>
   )

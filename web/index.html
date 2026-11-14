@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="field">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,8 +8,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Doto:wght@700;900&display=swap" rel="stylesheet" />
     <script>
-      // finish before first paint: field (light) or xy (black)
-      try { var t = localStorage.getItem('ff-theme'); if (t === 'xy' || t === 'field') document.documentElement.dataset.theme = t } catch (e) {}
+      // light or dark mode, set before first paint
+      try { var t = localStorage.getItem('ff-theme'); if (t === 'xy') t = 'dark'; if (t === 'field') t = 'light'; if (t === 'dark' || t === 'light') document.documentElement.dataset.theme = t } catch (e) {}
     </script>
     <title>firefall · fire safety review</title>
   </head>

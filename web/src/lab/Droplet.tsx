@@ -22,8 +22,8 @@ export function DropletScene({ o2, co2, d0, showCool, onState }: { o2: number; c
   useEffect(() => {
     st.current.t = 0
   }, [o2, co2, d0])
-  const hotU = useMemo(() => ({ uColor: { value: new THREE.Color('#4d7dff') }, uAlpha: { value: 1 } }), [])
-  const coolU = useMemo(() => ({ uColor: { value: new THREE.Color('#9b6bff') }, uAlpha: { value: 0 } }), [])
+  const hotU = useMemo(() => ({ uColor: { value: new THREE.Color('#3a4cff') }, uAlpha: { value: 1 } }), [])
+  const coolU = useMemo(() => ({ uColor: { value: new THREE.Color('#c07ad8') }, uAlpha: { value: 0 } }), [])
   const last = useRef(0)
   useFrame(({ clock }, dt) => {
     const s = st.current
@@ -41,7 +41,7 @@ export function DropletScene({ o2, co2, d0, showCool, onState }: { o2: number; c
     if (hot.current) {
       hot.current.scale.setScalar(Math.max(0.001, shellR))
       hotU.uAlpha.value += ((phase === 'hot' ? 1 : 0) - hotU.uAlpha.value) * Math.min(1, dt * 6)
-      hotU.uColor.value.set(o2 > 0.3 ? '#7aa2ff' : '#4d7dff')
+      hotU.uColor.value.set(o2 > 0.3 ? '#8f84ff' : '#3a4cff')
     }
     if (cool.current) {
       cool.current.scale.setScalar(Math.max(0.001, shellR * 0.8))
@@ -57,11 +57,11 @@ export function DropletScene({ o2, co2, d0, showCool, onState }: { o2: number; c
       {/* tether fibres */}
       <mesh rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.006, 0.006, 6, 6]} />
-        <meshBasicMaterial color="#3a4655" />
+        <meshBasicMaterial color="#3d3d3d" />
       </mesh>
       <mesh ref={drop}>
         <sphereGeometry args={[1, 48, 48]} />
-        <meshPhysicalMaterial color="#c8d6e6" roughness={0.05} transmission={0.6} thickness={0.5} metalness={0} />
+        <meshPhysicalMaterial color="#dcdcd8" roughness={0.05} transmission={0.6} thickness={0.5} metalness={0} />
       </mesh>
       <mesh ref={hot}>
         <sphereGeometry args={[1, 64, 64]} />

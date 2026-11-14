@@ -2,6 +2,7 @@
 // and a live view of every job the agents start: real ACME frames being processed, flame and smoke runs, sweeps,
 // the physical test the technician runs. Jobs run on the owner's hardware; only results go back over Lagrange.
 import { Cpu, FlaskConical, Maximize2, Minimize2 } from 'lucide-react'
+import { OrbNote } from '@/components/Logo'
 import { useMemo, useState } from 'react'
 import { AGENT, NODES, ORGS, agentColor, agentName } from '@/demo/crew'
 import { JobScene, THREE_SCENES } from '@/lab/tiles'
@@ -42,7 +43,7 @@ export function LabView() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {/* plan as chips */}
-      <div className="flex shrink-0 items-center gap-1 overflow-x-auto px-2 pb-1 text-[9.5px] scroll-thin">
+      <div className="flex shrink-0 items-center gap-1 overflow-x-auto px-2 pb-1 text-label scroll-thin">
         {plan?.subtasks.map((s) => (
           <span key={s.id} title={`${s.title} · @${s.agent}`} className="flex shrink-0 items-center gap-1 rounded-sm border px-1.5 py-[1px]" style={{ borderColor: STATUS_COLOR[s.status] ?? 'var(--line-2)', color: s.status === 'pending' ? 'var(--faint)' : 'var(--ink)' }}>
             <span style={{ color: STATUS_COLOR[s.status] }}>{s.status === 'running' ? '●' : s.status === 'done' ? '✓' : s.status === 'skipped' ? '–' : '○'}</span>
@@ -62,7 +63,7 @@ export function LabView() {
           const org = ORGS[n.org]
           const active = jobs.some((j) => j.node === n.id && !j.done)
           return (
-            <div key={n.id} className={cn('flex min-w-[118px] shrink-0 flex-col gap-0.5 rounded-sm border bg-surface-2 px-1.5 py-1 text-[9px]', active ? 'border-k-task/60' : 'border-line')} title={`${n.host} · ${n.scheduler}`}>
+            <div key={n.id} className={cn('flex min-w-[118px] shrink-0 flex-col gap-0.5 rounded-sm border bg-surface-2 px-1.5 py-1 text-label', active ? 'border-k-task/60' : 'border-line')} title={`${n.host} · ${n.scheduler}`}>
               <div className="flex items-center gap-1">
                 <span className="h-2 w-[3px] rounded" style={{ background: org.color }} />
                 {n.chamber ? <FlaskConical size={9} className="text-faint" /> : <Cpu size={9} className="text-faint" />}
@@ -91,7 +92,7 @@ export function LabView() {
 
       <div className="flex min-h-0 flex-1 gap-2 px-2">
         {/* queue */}
-        <div className="scroll-thin w-[190px] shrink-0 overflow-y-auto border-r border-line pr-1.5 text-[9.5px]">
+        <div className="scroll-thin w-[190px] shrink-0 overflow-y-auto border-r border-line pr-1.5 text-label">
           <div className="label mb-1">queue · {running.length} running</div>
           {!jobs.length && <div className="text-faint">No jobs yet. Agents submit them to their own org's cluster once the plan is approved.</div>}
           {[...jobs].reverse().map((j) => (
@@ -112,14 +113,14 @@ export function LabView() {
 
         {/* live tiles */}
         <div className={cn('grid min-h-0 flex-1 gap-1.5 pb-1', shown.length <= 1 ? 'grid-cols-1' : size === 'normal' ? 'grid-cols-3' : 'grid-cols-3 grid-rows-2')}>
-          {!shown.length && <div className="col-span-full flex items-center justify-center text-[11px] text-faint">Simulations and data jobs appear here as the agents start them.</div>}
+          {!shown.length && <OrbNote className="col-span-full">Simulations and data jobs appear here as the agents start them.</OrbNote>}
           {shown.map((j) => {
             const three = j.scene ? THREE_SCENES.has(j.scene) : false
             const mount = !three || threeLeft-- > 0
             const big = focus === j.id && shown.length > 1
             return (
               <div key={j.id} className={cn('flex min-h-0 min-w-0 flex-col rounded-sm border bg-viewport', j.done ? 'border-line' : 'border-k-task/50', big && 'col-span-2 row-span-2')}>
-                <div className="flex shrink-0 items-center gap-1.5 border-b border-line px-1.5 py-0.5 text-[9.5px]">
+                <div className="flex shrink-0 items-center gap-1.5 border-b border-line px-1.5 py-0.5 text-label">
                   <span className={cn('size-1.5 shrink-0 rounded-full', j.done ? 'bg-ok' : 'animate-pulse bg-k-task')} />
                   <span className="truncate text-ink">{j.title}</span>
                   <span className="ml-auto shrink-0" style={{ color: agentColor(j.agent) }}>
@@ -131,9 +132,9 @@ export function LabView() {
                   </button>
                 </div>
                 <div className="relative min-h-0 flex-1 overflow-hidden p-1">
-                  {mount ? <JobScene job={j} study={study} studyProgress={progress} live={!j.done || big} /> : <div className="flex h-full items-center justify-center text-[10px] text-faint">{j.title} · click to view</div>}
+                  {mount ? <JobScene job={j} study={study} studyProgress={progress} live={!j.done || big} /> : <div className="flex h-full items-center justify-center text-label text-faint">{j.title} · click to view</div>}
                 </div>
-                <div className="flex shrink-0 items-center gap-2 border-t border-line px-1.5 py-0.5 text-[9px] text-faint">
+                <div className="flex shrink-0 items-center gap-2 border-t border-line px-1.5 py-0.5 text-label text-faint">
                   <div className="h-0.5 w-12 overflow-hidden rounded bg-surface-3">
                     <div className={cn('h-full', j.done ? 'bg-ok' : 'bg-k-task')} style={{ width: `${j.progress * 100}%` }} />
                   </div>

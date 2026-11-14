@@ -10,6 +10,9 @@ import { ComputeScreen } from '@/screens/ComputeScreen'
 import { EvidenceScreen } from '@/screens/EvidenceScreen'
 import { LibraryScreen } from '@/screens/LibraryScreen'
 import { ReportScreen } from '@/screens/ReportScreen'
+import { DecisionsScreen } from '@/screens/DecisionsScreen'
+import { CompareScreen } from '@/screens/CompareScreen'
+import { PresentScreen } from '@/screens/PresentScreen'
 
 export default function App() {
   const phase = useMission((s) => s.phase)
@@ -33,6 +36,9 @@ export default function App() {
         {view === 'library' && <LibraryScreen />}
         {view === 'evidence' && <EvidenceScreen />}
         {view === 'compute' && <ComputeScreen />}
+        {view === 'decisions' && <DecisionsScreen />}
+        {view === 'compare' && <CompareScreen />}
+        {view === 'present' && <PresentScreen />}
         {view === 'review' && (
           <>
             {phase === 'setup' && <SetupScreen />}

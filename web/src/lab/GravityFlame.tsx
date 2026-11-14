@@ -100,7 +100,7 @@ export function GravityFlameScene({ g, o2, flow }: { g: number; o2: number; flow
       <Flame g={g} o2={o2} flow={flow} />
       <Flame g={0} o2={o2} flow={0} gain={0.35} position={[-2.7, -0.2, -1.2]} scale={0.6} />
       <Flame g={1} o2={o2} flow={0} gain={0.35} position={[2.7, -0.2, -1.2]} scale={0.6} />
-      <gridHelper args={[12, 24, '#1b2430', '#10161e']} position={[0, -1.1, 0]} />
+      <gridHelper args={[12, 24, '#232323', '#111111']} position={[0, -1.1, 0]} />
     </>
   )
 }

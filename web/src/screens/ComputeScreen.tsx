@@ -55,8 +55,8 @@ export function ComputeScreen() {
   return (
     <div className="scroll-thin flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-5">
       <div className="label text-ug">compute & tools · on-prem</div>
-      <h1 className="sans mt-1 text-[22px] font-semibold text-ink">Each org brings its own machines and tools</h1>
-      <div className="mt-1 max-w-[900px] text-[11.5px] text-muted-foreground">
+      <h1 className="sans mt-1 text-headline font-medium text-ink">Each org brings its own machines and tools</h1>
+      <div className="mt-1 max-w-[900px] text-body text-muted-foreground">
         Agents run where their org's data lives. Jobs go to that org's scheduler; only messages and results cross Lagrange. Add a GPU farm or an MCP server and it is available to the agents on the next job.
       </div>
 
@@ -68,16 +68,16 @@ export function ComputeScreen() {
             <div key={o} className="flex flex-col gap-2 rounded-sm border border-line bg-surface-2 p-3">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-[3px] rounded" style={{ background: org.color }} />
-                <span className="sans text-[13.5px] font-medium text-ink">{org.name}</span>
+                <span className="sans text-emph font-medium text-ink">{org.name}</span>
               </div>
-              <div className="text-[10.5px] text-faint">
+              <div className="text-label text-faint">
                 {org.hosting} · {org.provider}
               </div>
               <div className="space-y-1.5">
                 {mine.map((n) => {
                   const used = busy.get(n.id) ?? 0
                   return (
-                    <div key={n.id} className={cn('rounded-sm border bg-surface px-2 py-1.5 text-[10.5px]', n.added ? 'border-ok/50' : 'border-line')}>
+                    <div key={n.id} className={cn('rounded-sm border bg-surface px-2 py-1.5 text-label', n.added ? 'border-ok/50' : 'border-line')}>
                       <div className="flex items-center gap-1.5">
                         {n.chamber ? <FlaskConical size={11} className="text-faint" /> : <Server size={11} className="text-faint" />}
                         <span className="text-ink">{n.id}</span>
@@ -107,7 +107,7 @@ export function ComputeScreen() {
                   )
                 })}
               </div>
-              <div className="mt-auto flex items-start gap-1.5 border-t border-line pt-2 text-[10px] text-muted-foreground">
+              <div className="mt-auto flex items-start gap-1.5 border-t border-line pt-2 text-label text-muted-foreground">
                 <Lock size={10} className="mt-px shrink-0 text-ok" />
                 <span>
                   in-house · never leaves: <span className="text-ink">{org.private.join(', ')}</span>
@@ -120,10 +120,10 @@ export function ComputeScreen() {
 
       <div className="mt-5 grid grid-cols-[1fr_1.4fr] gap-4">
         <div className="rounded-sm border border-line-2 p-3">
-          <div className="flex items-center gap-2 text-[12px] text-ink">
+          <div className="flex items-center gap-2 text-body text-ink">
             <Cpu size={12} className="text-ug" /> Add a server or GPU farm
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+          <div className="mt-3 grid grid-cols-2 gap-2 text-body">
             <Field label="organisation">
               <select value={form.org} onChange={(e) => setForm({ ...form, org: e.target.value as OrgId })} className="input">
                 {(Object.keys(ORGS) as OrgId[]).map((o) => (
@@ -150,19 +150,19 @@ export function ComputeScreen() {
               <input value={form.gpu} onChange={(e) => setForm({ ...form, gpu: e.target.value })} className="input" />
             </Field>
           </div>
-          <button type="button" onClick={submitNode} className="key mt-3 h-[30px] px-3 text-[11.5px]">
+          <button type="button" onClick={submitNode} className="key mt-3 h-8 px-3 text-body">
             <Plus size={11} /> add server
           </button>
-          <div className="mt-2 text-[10.5px] text-faint">The org's agents see it as a new target for `submit_job`; it shows up in the Lab panel's cluster strip.</div>
+          <div className="mt-2 text-label text-faint">The org's agents see it as a new target for `submit_job`; it shows up in the Lab panel's cluster strip.</div>
         </div>
 
         <div className="rounded-sm border border-line-2 p-3">
-          <div className="flex items-center gap-2 text-[12px] text-ink">
+          <div className="flex items-center gap-2 text-body text-ink">
             <Plug size={12} className="text-ug" /> MCP servers per agent
           </div>
           <div className="scroll-thin mt-2 max-h-[260px] space-y-1 overflow-y-auto">
             {CREW.map((a) => (
-              <div key={a.handle} className="flex items-start gap-2 text-[11px]">
+              <div key={a.handle} className="flex items-start gap-2 text-body">
                 <Avatar handle={a.handle} size={18} />
                 <span className="w-24 shrink-0 pt-0.5 text-ink">{a.name}</span>
                 <span className="w-12 shrink-0 pt-0.5 text-faint">{ORGS[a.org].id}</span>
@@ -181,7 +181,7 @@ export function ComputeScreen() {
               </div>
             ))}
           </div>
-          <div className="mt-3 grid grid-cols-[1fr_1fr_2fr_auto] items-end gap-2 border-t border-line pt-3 text-[11px]">
+          <div className="mt-3 grid grid-cols-[1fr_1fr_2fr_auto] items-end gap-2 border-t border-line pt-3 text-body">
             <Field label="agent">
               <select value={mform.agent} onChange={(e) => setMform({ ...mform, agent: e.target.value })} className="input">
                 {CREW.map((a) => (
@@ -197,11 +197,11 @@ export function ComputeScreen() {
             <Field label="URL (inside the org network)">
               <input value={mform.url} onChange={(e) => setMform({ ...mform, url: e.target.value })} className="input" />
             </Field>
-            <button type="button" disabled={!!shake} onClick={submitMcp} className="key h-[28px] px-3 text-[11.5px]">
+            <button type="button" disabled={!!shake} onClick={submitMcp} className="key h-7 px-3 text-body">
               <Plus size={11} /> connect
             </button>
           </div>
-          <div className="mt-1.5 h-4 text-[10.5px] text-k-task">{shake}</div>
+          <div className="mt-1.5 h-4 text-label text-k-task">{shake}</div>
         </div>
       </div>
     </div>

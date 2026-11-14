@@ -3,16 +3,17 @@ import { ChevronRight } from 'lucide-react'
 import { CiteChip, StatusPill } from '@/components/bits'
 import { useMission } from '@/live/store'
 import { cn } from '@/lib/utils'
+import { OrbNote, Reading, heat } from '@/components/Logo'
 
 export function FindingsView() {
   const rows = useMission((s) => s.model.matrix)
   const open = useMission((s) => s.openRow)
   const toggle = useMission((s) => s.toggleRow)
   const setHover = useMission((s) => s.setHoverZone)
-  if (!rows.length) return <div className="px-3 py-2 text-[11px] text-faint">the materials matrix lands here when @prevent finishes.</div>
+  if (!rows.length) return <OrbNote>the materials matrix lands here when @prevent finishes.</OrbNote>
   return (
     <div className="scroll-thin h-full overflow-y-auto px-1" onMouseLeave={() => setHover(undefined)}>
-      <div className="grid grid-cols-[14px_1.6fr_1.2fr_0.8fr_70px_90px] gap-2 px-1.5 pb-1 text-[9.5px] lowercase text-faint">
+      <div className="grid grid-cols-[22px_1.6fr_1.2fr_0.8fr_70px_90px] gap-2 px-1.5 pb-1 text-label lowercase text-faint">
         <span />
         <span>part</span>
         <span>material</span>
@@ -25,19 +26,21 @@ export function FindingsView() {
         const isOpen = open === r.id
         return (
           <div key={r.id} className={cn('rounded-sm', isOpen && 'bg-surface-2')} onMouseEnter={() => setHover(r.zone)}>
-            <button type="button" onClick={() => toggle(r.id)} className="grid w-full grid-cols-[14px_1.6fr_1.2fr_0.8fr_70px_90px] items-center gap-2 px-1.5 py-0.5 text-left text-[11px] hover:bg-surface-2">
-              <ChevronRight size={10} className={cn('text-faint transition', isOpen && 'rotate-90')} />
+            <button type="button" onClick={() => toggle(r.id)} className="grid w-full grid-cols-[22px_1.6fr_1.2fr_0.8fr_70px_90px] items-center gap-2 px-1.5 py-0.5 text-left text-body hover:bg-surface-2">
+              <span className="flex items-center gap-1">
+                <span className="h-3 w-[3px] rounded-full" style={{ background: heat(margin) }} />
+                <ChevronRight size={10} className={cn('text-faint transition', isOpen && 'rotate-90')} />
+              </span>
               <span className="truncate text-ink">{r.item}</span>
               <span className="truncate text-muted-foreground">{r.material}</span>
               <span className="truncate text-faint">{r.zone}</span>
               <StatusPill status={r.status} />
-              <span className="text-right tnum" style={{ color: margin < 0 ? 'var(--bad)' : 'var(--ok)' }}>
-                {margin >= 0 ? '+' : ''}
-                {(margin * 100).toFixed(0)} pts
+              <span className="flex justify-end">
+                <Reading v={`${margin >= 0 ? '+' : ''}${(margin * 100).toFixed(0)}`} u="pts" color={heat(margin)} size={12} title={`limit ${(r.limitO2 * 100).toFixed(0)} % O₂ vs cabin ${(r.targetO2 * 100).toFixed(0)} %`} />
               </span>
             </button>
             {isOpen && (
-              <div className="space-y-1.5 px-7 pb-2 text-[11px]">
+              <div className="space-y-1.5 px-7 pb-2 text-body">
                 <div className="sans text-ink">{r.action}</div>
                 <div className="text-faint">
                   limit O₂ ≈ {(r.limitO2 * 100).toFixed(0)} % vs cabin {(r.targetO2 * 100).toFixed(0)} % · 1 g screening (21 %): {r.test1} · qty {r.qty}

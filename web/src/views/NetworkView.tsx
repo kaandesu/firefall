@@ -12,6 +12,7 @@ import type { AgentState, Model } from '@/live/model'
 import { NETWORK, useMission } from '@/live/store'
 import type { CommKind } from '@/live/types'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/Logo'
 import { useSyncedNodes } from './useSyncedNodes'
 
 export const NODE_W = 156
@@ -126,17 +127,17 @@ function AgentNode({ data }: NodeProps<AgentNodeT>) {
       <span className="absolute inset-y-2 left-[3px] w-[3px] rounded-full" style={{ background: orgOf(handle)?.color }} />
       <Avatar handle={handle} size={26} />
       <div className="min-w-0 flex-1 leading-tight">
-        <div className="truncate text-[11.5px] font-medium" style={{ color: human ? 'var(--ink)' : color }}>
+        <div className="truncate text-body font-medium" style={{ color: human ? 'var(--ink)' : color }}>
           {agentName(handle)}
         </div>
-        <div className="truncate text-[9.5px] text-muted-foreground">{asked ? (handle === HUMAN ? 'waiting on you' : 'on a task') : doing || (human ? 'lead engineer' : STATE_LABEL[state])}</div>
+        <div className="truncate text-label text-muted-foreground">{asked ? (handle === HUMAN ? 'waiting on you' : 'on a task') : doing || (human ? 'lead engineer' : STATE_LABEL[state])}</div>
       </div>
       {data.model && (
-        <span className="absolute -top-2 right-2 rounded-full border border-line bg-surface px-1.5 text-[8.5px] lowercase" style={{ color: MODEL_COLOR[data.model] }}>
+        <span className="absolute -top-2 right-2 rounded-full border border-line bg-surface px-1.5 text-label lowercase" style={{ color: MODEL_COLOR[data.model] }}>
           {data.model}
         </span>
       )}
-      <span className="absolute -top-2 left-2 rounded-full border border-line bg-surface px-1.5 text-[8.5px]" style={{ color: orgOf(handle)?.color }}>
+      <span className="absolute -top-2 left-2 rounded-full border border-line bg-surface px-1.5 text-label" style={{ color: orgOf(handle)?.color }}>
         {orgOf(handle)?.id}
         <span className="text-faint"> @{handle}</span>
       </span>
@@ -159,7 +160,7 @@ function HubNode({ data }: NodeProps<HubNodeT>) {
       <Handle type="target" position={Position.Top} style={center} />
       {data.busy > 0 && <span className="absolute inset-[-5px] animate-ping rounded-full border border-gold/30" />}
       <Network size={16} />
-      <span className="mt-0.5 text-[8.5px]">lagrange</span>
+      <span className="mt-0.5 text-label">lagrange</span>
     </div>
   )
 }
@@ -292,26 +293,26 @@ function Callout({ at }: { at?: { x: number; y: number } }) {
           transform: 'translateX(-50%)',
         }}
       >
-        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="relative rounded border border-warn/70 bg-[color-mix(in_oklab,var(--warn)_12%,var(--bg))] p-2.5 text-[11px] shadow-2xl">
-          <div className="mb-1 flex items-center gap-1.5 text-[9.5px] lowercase text-warn">
-            <span className="size-1.5 animate-pulse rounded-full bg-warn" /> @{w.from} asks you
+        <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="you-card relative rounded-[12px] p-3 text-body">
+          <div className="mb-1 flex items-center gap-1.5 text-label lowercase text-you">
+            <Logo size={14} busy /> @{w.from} asks you
           </div>
-          <div className="sans text-[12px] leading-snug text-ink">{w.question}</div>
+          <div className="sans text-body leading-snug text-ink">{w.question}</div>
           {w.positions?.map((p) => (
-            <div key={p.by} className="mt-1.5 border-l-2 pl-2 text-[10.5px] leading-snug" style={{ borderColor: agentColor(p.by) }}>
+            <div key={p.by} className="mt-1.5 border-l-2 pl-2 text-label leading-snug" style={{ borderColor: agentColor(p.by) }}>
               <span style={{ color: agentColor(p.by) }}>{agentName(p.by)}</span>
               <span className="sans text-muted-foreground"> · {p.text}</span>
             </div>
           ))}
           <div className="mt-2 flex flex-wrap gap-1.5">
             {w.options.map((o, i) => (
-              <button key={o} type="button" onClick={() => answer(o)} className={cn('rounded-sm border px-2 py-0.5 text-[11px]', i === 0 ? 'border-warn bg-warn text-bg hover:brightness-110' : 'border-line-2 text-ink hover:border-warn')}>
-                {i === 0 && <span className="mr-1 opacity-70">a</span>}
+              <button key={o} type="button" onClick={() => answer(o)} className={cn('key h-7 gap-1.5 px-2.5 text-body normal-case', i === 0 && 'key-you')}>
+                {i === 0 && <span className="kbd">a</span>}
                 {o}
               </button>
             ))}
           </div>
-          <span style={{ left: `calc(50% + ${nodeX - left}px)` }} className="absolute bottom-full -mb-[5px] size-2.5 -translate-x-1/2 rotate-45 border-l border-t border-warn/70 bg-[color-mix(in_oklab,var(--warn)_12%,var(--bg))]" />
+          <span style={{ left: `calc(50% + ${nodeX - left}px)` }} className="absolute bottom-full -mb-[5px] size-2.5 -translate-x-1/2 rotate-45 border-l border-t border-[color-mix(in_oklab,var(--you)_55%,transparent)] bg-[color-mix(in_oklab,var(--you)_7%,var(--surface))]" />
         </motion.div>
       </div>
     </AnimatePresence>
@@ -424,7 +425,7 @@ export function NetworkView() {
         <AutoFit shape={shape} box={box} />
         <Callout at={asked ? pos[asked] : undefined} />
       </ReactFlow>
-      <div className="pointer-events-none absolute bottom-1.5 left-2 flex gap-3 text-[10px] text-faint">
+      <div className="pointer-events-none absolute bottom-1.5 left-2 flex gap-3 text-label text-faint">
         <span>
           <b className="font-normal text-k-task">{working}</b> working
         </span>
@@ -432,7 +433,7 @@ export function NetworkView() {
           <b className="font-normal text-ink">{inFlight}</b> tasks in flight
         </span>
       </div>
-      <div className="pointer-events-none absolute bottom-1.5 right-2 flex gap-2 text-[9.5px] text-faint">
+      <div className="pointer-events-none absolute bottom-1.5 right-2 flex gap-2 text-label text-faint">
         {Object.values(ORGS).map((o) => (
           <span key={o.id} className="flex items-center gap-1" title={`${o.name} · ${o.provider} · ${o.hosting}`}>
             <span className="h-2 w-[3px] rounded" style={{ background: o.color }} />

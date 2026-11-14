@@ -43,7 +43,7 @@ void main(){
 }
 `
 
-const BASE: Record<string, string> = { cotton: '#c9c1ad', nomex: '#d8c27a', pmma: '#9fc7d8', kapton: '#d88a2a', teflon: '#e8e8e8', silicone: '#d06a6a' }
+const BASE: Record<string, string> = { cotton: '#c9c1ad', nomex: '#d8c27a', pmma: '#c4c4c0', kapton: '#e07a2a', teflon: '#e8e8e8', silicone: '#d4507c' }
 
 export function FlameSpreadScene({ o2, psi, g, flow, material, onState }: { o2: number; psi: number; g: number; flow: number; material: string; onState?: (s: { front: number; rate: number; burning: boolean }) => void }) {
   const mat = MATERIALS[material] ?? MATERIALS.cotton
@@ -101,11 +101,11 @@ export function FlameSpreadScene({ o2, psi, g, flow, material, onState }: { o2: 
       {/* duct */}
       <mesh position={[0, 0.5, 0]}>
         <boxGeometry args={[LEN + 0.6, 1.1, WID + 0.5]} />
-        <meshBasicMaterial color="#56d4ef" transparent opacity={0.04} side={THREE.BackSide} />
+        <meshBasicMaterial color="#8f84ff" transparent opacity={0.04} side={THREE.BackSide} />
       </mesh>
       <lineSegments position={[0, 0.5, 0]}>
         <edgesGeometry args={[new THREE.BoxGeometry(LEN + 0.6, 1.1, WID + 0.5)]} />
-        <lineBasicMaterial color="#24364a" />
+        <lineBasicMaterial color="#2c2c2c" />
       </lineSegments>
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[LEN, WID, 1, 1]} />

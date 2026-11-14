@@ -152,13 +152,13 @@ export function SmokeModuleScene({ g, flow, material, onReadout, running = true 
     <group>
       <lineSegments>
         <edgesGeometry args={[shell]} />
-        <lineBasicMaterial color="#2a3a4d" />
+        <lineBasicMaterial color="#363636" />
       </lineSegments>
       <mesh>
         <boxGeometry args={[L * 2, H * 2, W * 2]} />
-        <meshBasicMaterial color="#0c141d" transparent opacity={0.25} side={THREE.BackSide} />
+        <meshBasicMaterial color="#0d0d0d" transparent opacity={0.25} side={THREE.BackSide} />
       </mesh>
-      <gridHelper args={[L * 2, 16, '#1b2430', '#111820']} position={[0, -H + 0.001, 0]} scale={[1, 1, W / L]} />
+      <gridHelper args={[L * 2, 16, '#232323', '#121212']} position={[0, -H + 0.001, 0]} scale={[1, 1, W / L]} />
       {/* source */}
       <mesh position={SOURCE}>
         <boxGeometry args={[0.35, 0.25, 0.5]} />
@@ -167,14 +167,14 @@ export function SmokeModuleScene({ g, flow, material, onReadout, running = true 
       {/* crew station + return vent */}
       <mesh position={CREW}>
         <capsuleGeometry args={[0.14, 0.45, 6, 12]} />
-        <meshStandardMaterial color="#e6edf3" emissive="#5aa9ff" emissiveIntensity={0.2} />
+        <meshStandardMaterial color="#f1f1ef" emissive="#6d8bff" emissiveIntensity={0.2} />
       </mesh>
       <mesh position={[-L + 0.02, 0.55, 0]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[0.9, 0.5]} />
-        <meshBasicMaterial color="#56d4ef" transparent opacity={flow > 0 ? 0.35 : 0.08} side={THREE.DoubleSide} />
+        <meshBasicMaterial color="#8f84ff" transparent opacity={flow > 0 ? 0.35 : 0.08} side={THREE.DoubleSide} />
       </mesh>
       {flow > 0 &&
-        [-0.4, 0.4].map((z) => <Line key={z} points={[[1.2, 0.6, z], [-1.6, 0.6, z]]} color="#56d4ef" transparent opacity={0.35} lineWidth={1} dashed dashSize={0.12} gapSize={0.1} />)}
+        [-0.4, 0.4].map((z) => <Line key={z} points={[[1.2, 0.6, z], [-1.6, 0.6, z]]} color="#8f84ff" transparent opacity={0.35} lineWidth={1} dashed dashSize={0.12} gapSize={0.1} />)}
       <points frustumCulled={false}>
         <bufferGeometry ref={geo}>
           <bufferAttribute attach="attributes-position" args={[sim.pos, 3]} />
@@ -197,7 +197,7 @@ function DetectorMesh({ d, level }: { d: Detector; level: () => number }) {
   useFrame(({ clock }) => {
     const v = level()
     const alarm = v > 0.35
-    c.set(alarm ? '#ff6b6b' : v > 0.12 ? '#ffb547' : '#7ee787')
+    c.set(alarm ? '#ff8fb1' : v > 0.12 ? '#ffc21a' : '#3fd17f')
     if (m.current) {
       m.current.color.copy(c)
       m.current.emissive.copy(c)
@@ -209,7 +209,7 @@ function DetectorMesh({ d, level }: { d: Detector; level: () => number }) {
     <group position={d.pos}>
       <mesh>
         <cylinderGeometry args={[0.11, 0.11, 0.05, 20]} />
-        <meshStandardMaterial ref={m} color="#7ee787" />
+        <meshStandardMaterial ref={m} color="#3fd17f" />
       </mesh>
     </group>
   )

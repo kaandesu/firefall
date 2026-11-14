@@ -2,13 +2,14 @@
 // edges are dependencies. Before approval each node can be switched off; nothing runs until you approve.
 import dagre from '@dagrejs/dagre'
 import { Handle, MarkerType, Position, ReactFlow, useReactFlow, type Edge, type Node, type NodeProps } from '@xyflow/react'
-import { Check, FileText, Loader2, Lock } from 'lucide-react'
+import { Check, FileText, Lock } from 'lucide-react'
 import { useEffect, useMemo, useRef } from 'react'
 import { Avatar } from '@/components/bits'
 import { MODEL_COLOR, agentColor, agentName } from '@/demo/crew'
 import { useMission } from '@/live/store'
 import type { Plan, Subtask } from '@/live/types'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/Logo'
 import { useSyncedNodes } from './useSyncedNodes'
 
 const W = 236
@@ -50,7 +51,7 @@ function SubNode({ data }: NodeProps<SubNodeT>) {
       <Handle type="target" position={Position.Left} />
       <Handle type="source" position={Position.Right} />
       {sub.status === 'running' && <span className="work-halo" />}
-      <div className="flex items-center gap-1.5 text-[10px]">
+      <div className="flex items-center gap-1.5 text-label">
         <span className="text-faint">{sub.id}</span>
         <Avatar handle={sub.agent} size={15} />
         <span style={{ color }}>{agentName(sub.agent)}</span>
@@ -58,13 +59,13 @@ function SubNode({ data }: NodeProps<SubNodeT>) {
           {sub.model}
         </span>
         <span className="ml-auto flex items-center gap-1" style={{ color: st.c }}>
-          {sub.status === 'running' && <Loader2 size={10} className="animate-spin" />}
+          {sub.status === 'running' && <Logo size={12} busy />}
           {sub.status === 'done' && <Check size={10} />}
           {st.t}
         </span>
       </div>
-      <div className={cn('sans line-clamp-2 text-[12.5px] font-medium leading-snug', off && 'line-through')}>{sub.title}</div>
-      <div className="mt-auto flex items-center gap-1 overflow-hidden text-[9.5px] text-muted-foreground">
+      <div className={cn('sans line-clamp-2 text-emph font-medium leading-snug', off && 'line-through')}>{sub.title}</div>
+      <div className="mt-auto flex items-center gap-1 overflow-hidden text-label text-muted-foreground">
         {(sub.reads ?? []).map((r) => (
           <span key={r} className="flex shrink-0 items-center gap-0.5 rounded-sm border border-line-2 px-1">
             <FileText size={8} />
@@ -78,7 +79,7 @@ function SubNode({ data }: NodeProps<SubNodeT>) {
           type="button"
           onClick={onToggle}
           disabled={sub.required}
-          className={cn('nodrag absolute -top-2 right-2 flex items-center gap-1 rounded-full border bg-surface px-1.5 text-[9px] lowercase', off ? 'border-line-2 text-faint' : 'border-ok/50 text-ok', sub.required && 'cursor-not-allowed')}
+          className={cn('nodrag absolute -top-2 right-2 flex items-center gap-1 rounded-full border bg-surface px-1.5 text-label lowercase', off ? 'border-line-2 text-faint' : 'border-ok/50 text-ok', sub.required && 'cursor-not-allowed')}
           title={sub.required ? 'The lead needs this step' : off ? 'Switched off: click to run it' : 'Click to switch this step off'}
         >
           {sub.required ? <Lock size={8} /> : <span className={cn('size-1.5 rounded-full', off ? 'bg-faint' : 'bg-ok')} />}

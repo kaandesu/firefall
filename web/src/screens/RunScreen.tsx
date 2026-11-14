@@ -1,5 +1,6 @@
 // 3 RUN: Halo layout. Network, stage and agent on top, the lab and findings in the middle, comms as a strip.
 import { useEffect, useRef, useState } from 'react'
+import { Logo } from '@/components/Logo'
 import { PanelLayout, type PaneDef } from '@/components/shell/Panels'
 import { AGENT } from '@/demo/crew'
 import { PANELS, useMission, type PanelId } from '@/live/store'
@@ -77,12 +78,12 @@ function Help() {
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-bg/70" onClick={() => setHelp(false)}>
       <div className="pane w-[420px] p-4 pt-5">
-        <header className="pane-head text-[11px]">
+        <header className="pane-head text-body">
           <span className=" text-ink">keys</span>
         </header>
         {keys.map(([k, d]) => (
-          <div key={k} className="flex gap-3 py-0.5 text-[12px]">
-            <span className="w-[110px] text-k-ask">{k}</span>
+          <div key={k} className="flex gap-3 py-0.5 text-body">
+            <span className="w-[110px]"><span className="kbd !opacity-100 text-ink">{k}</span></span>
             <span className="text-muted-foreground">{d}</span>
           </div>
         ))}
@@ -154,27 +155,39 @@ export function RunScreen() {
     <div className="relative flex min-h-0 flex-1 flex-col">
       <PanelLayout panes={panes} />
       <form
-        className="flex h-8 shrink-0 items-center gap-2 border-t border-line px-3 text-[11.5px]"
+        className="flex h-8 shrink-0 items-center gap-2 border-t border-line px-3 text-body"
         onSubmit={(e) => {
           e.preventDefault()
           ask(q)
           setQ('')
         }}
       >
-        <span className="text-k-ask">›</span>
+        <span className="text-you">›</span>
         <input ref={askRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="ask the lead…" className="sans min-w-0 flex-1 bg-transparent outline-none placeholder:text-faint" />
-        {waiting && <span className="text-warn">@{waiting.from} is waiting on you · a</span>}
-        <span className="text-faint">
-          {PANELS.length > 0 && '1-6 panel  +/- size  h/l agent  a answer  p plan  ? keys'}
-        </span>
+        <span className="kbd text-faint">/</span>
+        {waiting && (
+          <span className="flex items-center gap-1.5 text-you">
+            <Logo size={14} busy /> @{waiting.from} is waiting on you <span className="kbd">a</span>
+          </span>
+        )}
+        {PANELS.length > 0 && (
+          <span className="flex items-center gap-2.5 text-label text-faint">
+            {[['1–6', 'panel'], ['+ −', 'size'], ['h l', 'agent'], ['a', 'answer'], ['p', 'plan'], ['?', 'keys']].map(([k, l]) => (
+              <span key={k} className="flex items-center gap-1">
+                <span className="kbd">{k}</span>
+                {l}
+              </span>
+            ))}
+          </span>
+        )}
       </form>
       <Help />
       {planOpen && plan && (
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-bg/70" onClick={() => setPlanOpen(false)}>
           <div className="pane h-[70%] w-[78%] p-3 pt-5" onClick={(e) => e.stopPropagation()}>
-            <header className="pane-head text-[11px]">
+            <header className="pane-head text-body">
               <span className=" text-ink">plan</span>
-              <span className="ml-auto text-faint">p / esc to close</span>
+              <span className="ml-auto flex items-center gap-1 text-faint"><span className="kbd">p</span><span className="kbd">esc</span> to close</span>
             </header>
             <PlanGraph plan={plan} />
           </div>

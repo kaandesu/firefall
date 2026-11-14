@@ -11,14 +11,14 @@ function OrgCard({ o }: { o: OrgDef }) {
   const people = PEOPLE.filter((p) => p.org === o.id)
   return (
     <div className="pane gap-2.5 p-3.5">
-      <header className="pane-head text-[11px]">
+      <header className="pane-head text-body">
         <span className="font-medium" style={{ color: o.color }}>
           {o.id}
         </span>
         <span className="ml-auto text-faint">{o.kind}</span>
       </header>
-      <div className="sans text-[14px] font-medium leading-tight text-ink">{o.name}</div>
-      <div className="space-y-0.5 text-[10.5px] text-muted-foreground">
+      <div className="sans text-emph font-medium leading-tight text-ink">{o.name}</div>
+      <div className="space-y-0.5 text-label text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <Server size={10} className="text-faint" /> {o.hosting}
         </div>
@@ -26,23 +26,23 @@ function OrgCard({ o }: { o: OrgDef }) {
           <Cpu size={10} className="text-faint" /> {o.compute}
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="size-2.5 text-center text-[9px] text-faint">◆</span> {o.provider}
+          <span className="size-2.5 text-center text-label text-faint">◆</span> {o.provider}
         </div>
       </div>
       <div className="space-y-1.5">
         {agents.map((a) => (
           <div key={a.handle} className="rounded-sm border border-line bg-surface-2 px-2 py-1.5">
-            <div className="flex items-center gap-1.5 text-[11.5px]">
+            <div className="flex items-center gap-1.5 text-body">
               <Avatar handle={a.handle} size={18} />
               <span style={{ color: a.color }}>{a.name}</span>
               <span className="text-faint">@{a.handle}</span>
-              <span className="ml-auto text-[9px] lowercase" style={{ color: MODEL_COLOR[a.model] }}>
+              <span className="ml-auto text-label lowercase" style={{ color: MODEL_COLOR[a.model] }}>
                 {a.model}
               </span>
             </div>
             <div className="mt-1 flex flex-wrap gap-1">
               {a.mcp.map((m) => (
-                <span key={m} className="rounded-sm border border-line-2 px-1 text-[9px] text-muted-foreground" title="MCP server only this agent can use">
+                <span key={m} className="rounded-sm border border-line-2 px-1 text-label text-muted-foreground" title="MCP server only this agent can use">
                   mcp · {m}
                 </span>
               ))}
@@ -50,11 +50,11 @@ function OrgCard({ o }: { o: OrgDef }) {
           </div>
         ))}
         {people.map((p) => (
-          <div key={p.handle} className="flex items-center gap-1.5 rounded-sm border border-dashed border-line-2 px-2 py-1 text-[11px]">
+          <div key={p.handle} className="flex items-center gap-1.5 rounded-sm border border-dashed border-line-2 px-2 py-1 text-body">
             <Avatar handle={p.handle} size={18} />
             <span className="text-ink">{p.name}</span>
             <span className="text-faint">· {p.role}</span>
-            <span className="ml-auto text-[9px] lowercase text-faint">person</span>
+            <span className="ml-auto text-label lowercase text-faint">person</span>
           </div>
         ))}
       </div>
@@ -64,14 +64,14 @@ function OrgCard({ o }: { o: OrgDef }) {
             <Database size={9} /> datasets held here
           </div>
           {o.datasets.map((d) => (
-            <div key={d.name} className="flex gap-2 text-[10.5px]">
+            <div key={d.name} className="flex gap-2 text-label">
               <span className="truncate text-ink">{d.name}</span>
               <span className="ml-auto shrink-0 text-faint">{d.size}</span>
             </div>
           ))}
         </div>
       )}
-      <div className="mt-auto space-y-1 border-t border-line pt-2 text-[10px]">
+      <div className="mt-auto space-y-1 border-t border-line pt-2 text-label">
         <div className="flex flex-wrap items-center gap-1">
           <Eye size={10} className="text-ok" />
           {o.exposes.map((x) => (
@@ -104,12 +104,12 @@ export function SetupScreen() {
         <div className="flex items-end gap-4">
           <div>
             <div className="label">the review network</div>
-            <h1 className="sans mt-1.5 text-[34px] font-normal leading-[1.05] tracking-[-0.035em]">Four organizations. One review. Nobody hands over their data.</h1>
-            <p className="sans mt-1 max-w-[820px] text-[13px] text-muted-foreground">
+            <h1 className="sans mt-1.5 text-display font-normal leading-[1.05] tracking-[-0.035em]">Four organizations. One review. Nobody hands over their data.</h1>
+            <p className="sans mt-1 max-w-[820px] text-emph text-muted-foreground">
               Each organization runs its own agents on its own hardware, with its own model and tools. On Lagrange they expose an agent, not a database: other agents ask it questions and get answers back, and the raw data, procedures and models stay where they are. People sit on the same network and step in when a decision is theirs.
             </p>
           </div>
-          <button type="button" onClick={() => setPhase('intake')} className="key key-orange ml-auto h-[36px] shrink-0 px-5 text-[12.5px] font-medium">
+          <button type="button" onClick={() => setPhase('intake')} className="key key-you ml-auto h-10 shrink-0 px-5 text-emph font-medium">
             continue to intake ▸
           </button>
         </div>
@@ -122,14 +122,14 @@ export function SetupScreen() {
 
         <div className="grid grid-cols-[1.3fr_1fr] gap-4">
           <div className="pane gap-2 p-3 pt-4">
-            <header className="pane-head text-[11px]">
+            <header className="pane-head text-body">
               <span className=" text-gold">lagrange</span>
               <span className="text-faint">the network between them</span>
             </header>
-            <div className="sans text-[12.5px] leading-snug text-muted-foreground">
+            <div className="sans text-emph leading-snug text-muted-foreground">
               Every agent is an A2A address. Lagrange routes tasks and messages between organizations, holds tasks while an agent waits on a person, and keeps the whole exchange as the audit trail a safety panel asks for.
             </div>
-            <div className="grid grid-cols-3 gap-2 text-[10.5px]">
+            <div className="grid grid-cols-3 gap-2 text-label">
               {[
                 ['routing', 'A2A tasks + messages, mTLS per org'],
                 ['people', 'tasks wait for a person, answered in place'],
@@ -143,21 +143,21 @@ export function SetupScreen() {
             </div>
           </div>
           <div className="pane gap-2 p-3 pt-4">
-            <header className="pane-head text-[11px]">
+            <header className="pane-head text-body">
               <span className=" text-ink">connect an agent</span>
               <span className="text-faint">another org joins by its agent card</span>
             </header>
             <div className="flex gap-2">
-              <input value={url} onChange={(e) => setUrl(e.target.value)} className="min-w-0 flex-1 rounded-sm border border-line-2 bg-bg px-2 py-1 text-[11px] outline-none focus:border-ug" />
-              <button type="button" onClick={() => connect(url)} className="key shrink-0 px-3 text-[11.5px]">
+              <input value={url} onChange={(e) => setUrl(e.target.value)} className="min-w-0 flex-1 rounded-sm border border-line-2 bg-bg px-2 py-1 text-body outline-none focus:border-ug" />
+              <button type="button" onClick={() => connect(url)} className="key shrink-0 px-3 text-body">
                 <Plug size={11} /> connect
               </button>
             </div>
             {connected.length === 0 ? (
-              <div className="text-[10.5px] text-faint">Paste an A2A agent card URL. The agent keeps running on its owner’s side; only its card and its answers cross the network.</div>
+              <div className="text-label text-faint">Paste an A2A agent card URL. The agent keeps running on its owner’s side; only its card and its answers cross the network.</div>
             ) : (
               connected.map((c) => (
-                <div key={c} className="rounded-sm border border-line bg-surface-2 p-2 text-[10.5px]">
+                <div key={c} className="rounded-sm border border-line bg-surface-2 p-2 text-label">
                   <div className="flex items-center gap-2">
                     <span className="size-1.5 rounded-full bg-ok" />
                     <span className="text-ink">Detector vendor agent</span>

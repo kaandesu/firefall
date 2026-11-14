@@ -36,16 +36,16 @@ export function Pane({ def, size, vertical = false }: { def: PaneDef; size: Size
         title={`${def.id} ${def.title} · click or + to open`}
       >
         {vertical ? (
-          <span className="flex items-center gap-2 whitespace-nowrap text-[11.5px] [writing-mode:vertical-rl]">
-            <span className={cn('tnum font-medium', focus ? 'text-orange' : 'text-faint')}>{def.id}</span>
+          <span className="flex items-center gap-2 whitespace-nowrap text-body [writing-mode:vertical-rl]">
+            <span className={cn('tnum font-medium', focus ? 'text-you' : 'text-faint')}>{def.id}</span>
             <span className="lowercase text-ink">{def.title}</span>
           </span>
         ) : (
           <>
-            <span className={cn('tnum text-[12px] font-medium', focus ? 'text-orange' : 'text-faint')}>{def.id}</span>
-            <span className="text-[11.5px] lowercase text-ink">{def.title}</span>
-            <span className="min-w-0 truncate text-[11px] text-muted-foreground">{def.summary}</span>
-            <span className="ml-auto text-faint group-hover:text-orange">+</span>
+            <span className={cn('tnum text-body font-medium', focus ? 'text-you' : 'text-faint')}>{def.id}</span>
+            <span className="text-body lowercase text-ink">{def.title}</span>
+            <span className="min-w-0 truncate text-body text-muted-foreground">{def.summary}</span>
+            <span className="ml-auto text-faint group-hover:text-you">+</span>
           </>
         )}
       </button>
@@ -54,12 +54,12 @@ export function Pane({ def, size, vertical = false }: { def: PaneDef; size: Size
 
   return (
     <section data-focus={focus} className="pane flex-1" onMouseDown={() => !focus && focusPanel(def.id)}>
-      <header className="pane-head shrink-0 px-3 pt-2.5 text-[11.5px]">
+      <header className="pane-head shrink-0 px-3 pt-2.5 text-body">
         <span className="flex items-center gap-2">
           <span
             className={cn(
-              'tnum flex size-[20px] items-center justify-center rounded-full text-[11px] font-medium',
-              focus ? 'bg-orange text-white' : 'bg-surface-3 text-muted-foreground',
+              'tnum flex size-[20px] items-center justify-center rounded-full text-body font-medium',
+              focus ? 'bg-you text-white' : 'bg-surface-3 text-muted-foreground',
             )}
           >
             {def.id}
@@ -68,11 +68,12 @@ export function Pane({ def, size, vertical = false }: { def: PaneDef; size: Size
         </span>
         <span className="ml-auto flex items-center gap-2 text-faint">
           {def.right}
-          <span className="flex items-center gap-1">
+          {/* size controls only on the focused module; the rest stay clean (number keys and + / − still work) */}
+          <span className={cn('flex items-center gap-1', !focus && 'hidden')}>
             <button type="button" onClick={() => grow(-1, def.id)} disabled={i === 0} className="key size-[20px] rounded-full p-0" title="shrink (−)">
               <Minus size={10} />
             </button>
-            <span className="w-[44px] text-center text-[10px] lowercase">{size}</span>
+            <span className="w-[44px] text-center text-label lowercase">{size}</span>
             <button type="button" onClick={() => grow(1, def.id)} disabled={i === LADDER.length - 1} className="key size-[20px] rounded-full p-0" title="grow (+)">
               <Plus size={10} />
             </button>

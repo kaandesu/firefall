@@ -36,7 +36,7 @@ function Shell({ p, tint }: { p: Primitive; tint: string }) {
 export function Cabin({
   model,
   look,
-  shellTint = '#5aa9ff',
+  shellTint = '#9a9a95',
   highlight,
   onPick,
 }: {
@@ -69,7 +69,7 @@ export function Cabin({
             <Geometry p={p} />
             <meshStandardMaterial
               color={l.color}
-              emissive={hi ? '#5aa9ff' : (l.emissive ?? '#000000')}
+              emissive={hi ? '#6d8bff' : (l.emissive ?? '#000000')}
               emissiveIntensity={hi ? 0.55 : (l.glow ?? 0)}
               transparent={l.opacity !== undefined && l.opacity < 1}
               opacity={l.opacity ?? 1}

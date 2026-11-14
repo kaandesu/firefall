@@ -3,8 +3,8 @@ import { Pause, Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useMission, type Phase } from '@/live/store'
 import { cn } from '@/lib/utils'
-import { useFinish } from '@/lib/theme'
-import { Logo } from '@/components/Logo'
+import { useMode } from '@/lib/theme'
+import { Gauge, Logo } from '@/components/Logo'
 
 const STEPS: { id: Phase; label: string }[] = [
   { id: 'setup', label: 'network' },
@@ -47,20 +47,20 @@ export function TopBar() {
   const subs = plan?.subtasks.filter((s) => s.status !== 'skipped') ?? []
   const nDone = subs.filter((s) => s.status === 'done').length
   const clock = useClock(startedAt, phase === 'run' && !done)
-  const [finish, setFinish] = useFinish()
+  const [mode, setMode] = useMode()
   const idx = STEPS.findIndex((s) => s.id === phase)
   const online = phase === 'intake' || phase === 'setup' ? 0 : 9
   const working = Object.values(agents).filter((a) => a.state === 'working' || a.state === 'asking').length
   const state = done ? 'done' : waiting ? 'waiting on you' : status.playing ? 'running' : phase === 'intake' ? 'idle' : 'paused'
 
   return (
-    <header className="flex h-[52px] shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-b border-line px-3 text-[12px]">
+    <header className="no-print flex h-[52px] shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-b border-line px-3 text-body">
       <button type="button" onClick={reset} className="flex items-center gap-2" title="back to intake">
         <Logo size={26} />
-        <span className="text-[17px] font-medium tracking-[-0.03em] text-ink">firefall</span>
+        <span className="text-title font-medium tracking-[-0.03em] text-ink">firefall</span>
         <span
           className={cn('led', (waiting || (status.playing && !done)) && 'animate-pulse')}
-          style={{ ['--led' as string]: done ? 'var(--green)' : waiting ? 'var(--orange)' : status.playing ? 'var(--orange)' : 'var(--faint)' }}
+          style={{ ['--led' as string]: done ? 'var(--green)' : waiting ? 'var(--pink)' : status.playing ? 'var(--you)' : 'var(--faint)' }}
         />
       </button>
       <span className="hidden text-muted-foreground 2xl:inline">apollo-cm012</span>
@@ -80,9 +80,9 @@ export function TopBar() {
                 if (s.id === 'setup' || s.id === 'intake') setPhase(s.id)
                 else showVerdict(s.id === 'done')
               }}
-              className={cn('key h-[30px] gap-1.5 rounded-[9px] px-2 text-[11.5px] disabled:cursor-default disabled:opacity-100', i > idx && 'text-faint')}
+              className={cn('key h-8 gap-1.5 rounded-[9px] px-2 text-body disabled:cursor-default disabled:opacity-100', i > idx && 'text-faint')}
             >
-              <span className={cn('tnum text-[13px] font-medium', i === idx ? 'text-orange' : i < idx ? 'text-ink' : 'text-faint')}>{i}</span>
+              <span className={cn('tnum text-emph font-medium', i === idx ? 'text-you' : i < idx ? 'text-ink' : 'text-faint')}>{i}</span>
               <span className={i === idx ? 'text-ink' : i < idx ? 'text-muted-foreground' : 'text-faint'}>{s.label}</span>
             </button>
           )
@@ -90,22 +90,27 @@ export function TopBar() {
       </nav>
 
       {/* view selector: a slide switch */}
-      <nav className="slide text-[11.5px]">
-        {(['review', 'library', 'evidence', 'compute'] as const).map((v) => (
+      <nav className="slide text-body">
+        {(['review', 'decisions', 'compare', 'library', 'evidence', 'compute'] as const).map((v) => (
           <button key={v} type="button" data-on={view === v} onClick={() => setView(v)}>
             {v}
           </button>
         ))}
       </nav>
 
-      {view !== 'review' && waiting && (
-        <button type="button" onClick={() => setView('review')} className="key key-orange h-[28px] animate-pulse px-2.5 text-[11.5px]">
+      <button type="button" data-down={view === 'present'} onClick={() => setView(view === 'present' ? 'review' : 'present')} className="key h-7 px-3 text-body" title="sized for a projector · esc to leave">
+        present
+      </button>
+
+      {view !== 'review' && view !== 'decisions' && view !== 'present' && waiting && (
+        <button type="button" onClick={() => setView('review')} className="key key-you h-7 animate-pulse px-2.5 text-body">
           decision waiting →
         </button>
       )}
       {phase !== 'intake' && (
         <span className="flex items-center gap-2">
-          <span className={cn(waiting ? 'text-warn' : done ? 'text-ok' : 'text-ink')}>{state}</span>
+          {plan && <Gauge value={subs.length ? nDone / subs.length : 0} size={28} busy={status.playing && !done} title={`plan ${nDone} of ${subs.length} steps done`} />}
+          <span className={cn(waiting ? 'text-you' : done ? 'text-ok' : 'text-ink')}>{state}</span>
           {plan && (
             <span className="tnum text-muted-foreground">
               {nDone}/{subs.length}
@@ -120,12 +125,13 @@ export function TopBar() {
             <button
               type="button"
               onClick={() => (status.playing ? pause() : play())}
-              className={cn('key size-[30px] rounded-full p-0', status.playing && 'key-dark')}
+              className={cn('key size-8 rounded-full p-0', status.playing && 'key-dark')}
               title="pause / resume the demo (space)"
             >
-              {status.playing ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" className="text-orange" />}
+              {status.playing ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" className="text-you" />}
             </button>
-            <span className="slide text-[11px]">
+            <span className="kbd text-faint">space</span>
+            <span className="slide text-body">
               {[1, 2, 4].map((x) => (
                 <button key={x} type="button" data-on={speed === x} onClick={() => setSpeed(x)} className="tnum !px-2">
                   {x}×
@@ -145,13 +151,13 @@ export function TopBar() {
           </span>
         )}
         <span className="lcd flex h-[30px] items-center px-2.5">
-          <span className="lcd-font tnum text-[19px] leading-none text-screen-ink">{clock}</span>
+          <span className="lcd-font tnum text-title leading-none text-screen-ink">{clock}</span>
         </span>
         <span className="text-faint">demo</span>
         <span className="flex flex-col items-center gap-0.5">
-          <span className="slide text-[10.5px]">
-            {(['field', 'xy'] as const).map((f) => (
-              <button key={f} type="button" data-on={finish === f} onClick={() => setFinish(f)} className="!px-2 !py-px">
+          <span className="slide text-label">
+            {(['light', 'dark'] as const).map((f) => (
+              <button key={f} type="button" data-on={mode === f} onClick={() => setMode(f)} className="!px-2 !py-px">
                 {f}
               </button>
             ))}
