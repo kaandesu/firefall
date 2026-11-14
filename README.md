@@ -241,6 +241,16 @@ Deep links: `?example=1` loads the Apollo case, `&start=1` starts the review str
 Keys on the run screen: `1`–`6` focus a panel, `+`/`-` resize it, `h`/`l` switch agent, `a` answers with the
 default option, and `?` lists the rest.
 
+## Deploy the demo
+
+The demo needs no backend: the scripted replay, the shipped FDS run and the report chat in scripted mode are all
+static files. The root `Dockerfile` builds `web/` and serves it with nginx (`deploy/nginx.conf`, port 80).
+
+- **Coolify:** New resource → your Git repo → Build Pack **Dockerfile** (base directory `/`), port **80**, add a domain.
+- **By hand:** `docker build -t firefall-demo . && docker run -p 8080:80 firefall-demo`
+
+Share `https://<domain>/?example=1&start=1` to drop people straight into the Apollo review.
+
 ## Status
 
 - [x] Network setup: four orgs with providers, compute, MCP servers, exposed and private lists; connect an agent by card

@@ -224,6 +224,7 @@ export function FdsScene({
   fire,
   time,
   alarmed,
+  compact = false,
 }: {
   input: FdsInput
   mode: 'input' | 'output'
@@ -232,10 +233,12 @@ export function FdsScene({
   fire?: Smoke3D
   time: number
   alarmed: Set<string>
+  /** Small Lab tile: lower resolution, slow turntable, no grid. */
+  compact?: boolean
 }) {
   const out = mode === 'output'
   return (
-    <Canvas camera={{ position: [5.0, 3.3, -5.9], fov: 40 }} dpr={[1, 2]} gl={{ antialias: true }}>
+    <Canvas camera={{ position: compact ? [4.4, 2.9, -5.2] : [5.0, 3.3, -5.9], fov: 40 }} dpr={compact ? [1, 1.5] : [1, 2]} gl={{ antialias: true }}>
       <color attach="background" args={['#030508']} />
       <ambientLight intensity={0.55} />
       <directionalLight position={[3, 6, -4]} intensity={1.4} />
@@ -248,8 +251,8 @@ export function FdsScene({
         {out && smoke && <Smoke3DPlanes input={input} s3d={smoke} time={time} kind="soot" />}
         {out && fire && <Smoke3DPlanes input={input} s3d={fire} time={time} kind="fire" />}
       </group>
-      <gridHelper args={[6, 12, '#1b2430', '#10161e']} position={[0, -0.01, 0]} />
-      <OrbitControls target={[0, 1.2, 0]} enableDamping={false} minDistance={2.5} maxDistance={12} />
+      {!compact && <gridHelper args={[6, 12, '#1b2430', '#10161e']} position={[0, -0.01, 0]} />}
+      <OrbitControls target={[0, 1.2, 0]} enableDamping={false} minDistance={2.5} maxDistance={12} autoRotate={compact} autoRotateSpeed={0.6} />
     </Canvas>
   )
 }

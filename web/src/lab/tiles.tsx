@@ -436,11 +436,11 @@ export function JobScene({ job, study, studyProgress, live }: { job: Job; study?
     case 'chamber-test':
       return <ChamberTile job={job} />
     case 'fds':
-      return <FdsTile job={job} />
+      return <FdsTile job={job} live={live} />
     default:
       return <Wait text={job.title} />
   }
 }
 
 /** Scenes that need a WebGL context. */
-export const THREE_SCENES = new Set(['spread-duct', 'gravity-flame', 'droplet'])
+export const THREE_SCENES = new Set(['spread-duct', 'gravity-flame', 'droplet', 'fds'])
