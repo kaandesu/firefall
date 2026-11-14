@@ -52,7 +52,7 @@ export function AgentView() {
         <div className="min-w-0 flex-1 leading-tight">
           <div className="flex items-center gap-1.5 text-[12px]" style={{ color: def.color }}>
             {def.name}
-            <span className="text-[9.5px] uppercase tracking-wider" style={{ color: MODEL_COLOR[def.model] }}>
+            <span className="text-[9.5px] lowercase" style={{ color: MODEL_COLOR[def.model] }}>
               {def.model}
             </span>
           </div>

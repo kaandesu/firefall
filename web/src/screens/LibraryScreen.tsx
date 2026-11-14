@@ -270,8 +270,8 @@ function Channel({ name, t, v, marks }: { name: string; t: number[]; v: number[]
     <div className="flex items-center gap-2">
       <span className="w-[120px] shrink-0 truncate text-[10px] text-muted-foreground">{name}</span>
       <svg viewBox={`0 0 ${W} ${H}`} className="h-[18px] flex-1" preserveAspectRatio="none">
-        {marks.map((m, i) => m !== undefined && <line key={i} x1={X(m)} x2={X(m)} y1={0} y2={H} stroke="#ffb547" strokeWidth={0.6} strokeDasharray="2 2" />)}
-        <polyline points={pts} fill="none" stroke="#56d4ef" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+        {marks.map((m, i) => m !== undefined && <line key={i} x1={X(m)} x2={X(m)} y1={0} y2={H} stroke="var(--orange)" strokeWidth={0.6} strokeDasharray="2 2" />)}
+        <polyline points={pts} fill="none" stroke="var(--navy)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
       </svg>
       <span className="w-14 shrink-0 text-right text-[9.5px] text-faint tnum">{hi.toPrecision(3)}</span>
     </div>

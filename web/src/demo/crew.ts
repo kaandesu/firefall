@@ -28,7 +28,7 @@ export const ORGS: Record<OrgId, OrgDef> = {
     id: 'prime',
     name: 'Vehicle team',
     kind: 'prime contractor · you',
-    color: '#ff7a3d',
+    color: 'var(--org-prime)',
     hosting: 'on-prem',
     compute: 'hpc-01 · Slurm · 8× H100',
     provider: 'Claude via internal gateway',
@@ -39,7 +39,7 @@ export const ORGS: Record<OrgId, OrgDef> = {
     id: 'psi',
     name: 'NASA PSI archive',
     kind: 'data provider',
-    color: '#5aa9ff',
+    color: 'var(--org-psi)',
     hosting: 'NASA GRC data centre',
     compute: 'grc-gpu · Kubernetes · 32× A100',
     provider: 'self-hosted Llama 3.3 70B',
@@ -57,7 +57,7 @@ export const ORGS: Record<OrgId, OrgDef> = {
     id: 'wstf',
     name: 'NASA White Sands Test Facility',
     kind: 'test lab',
-    color: '#2dd4bf',
+    color: 'var(--org-wstf)',
     hosting: 'WSTF network',
     compute: 'lab workstation cluster',
     provider: 'GPT-4.1 via agency cloud',
@@ -68,7 +68,7 @@ export const ORGS: Record<OrgId, OrgDef> = {
     id: 'sma',
     name: 'Independent S&MA',
     kind: 'safety & mission assurance',
-    color: '#c9a2ff',
+    color: 'var(--org-sma)',
     hosting: 'agency cloud (FedRAMP High)',
     compute: 'managed',
     provider: 'Claude via Bedrock (GovCloud)',
@@ -136,7 +136,7 @@ export const CREW: AgentDef[] = [
     dept: 'Fire safety review',
     role: 'Coordinates the review',
     blurb: 'Turns your request into a plan, hands work to departments, mediates when they disagree and asks you when a decision is yours.',
-    color: '#ff7a3d',
+    color: 'var(--orange)',
     icon: 'lead',
     model: 'opus',
     org: 'prime',
@@ -154,7 +154,7 @@ export const CREW: AgentDef[] = [
     dept: 'NASA PSI archive',
     role: 'Owns the combustion datasets',
     blurb: 'Holds the raw PSI data next to it, turns frames and channels into test points, and answers questions about them so nobody else has to download 38 GB.',
-    color: '#5aa9ff',
+    color: 'var(--navy)',
     icon: 'research',
     model: 'llama',
     org: 'psi',
@@ -172,7 +172,7 @@ export const CREW: AgentDef[] = [
     dept: 'Materials & flammability',
     role: 'Will it burn here?',
     blurb: 'Checks every material on the list against the target atmosphere and gravity, and proposes substitutions.',
-    color: '#ff6b9a',
+    color: 'var(--plum)',
     icon: 'materials',
     model: 'sonnet',
     org: 'prime',
@@ -189,7 +189,7 @@ export const CREW: AgentDef[] = [
     dept: 'Fire detection',
     role: 'Will we see it?',
     blurb: 'Smoke particle sizes, how smoke moves in low gravity, detector type and placement. SAME, SAME-R, DAFT.',
-    color: '#1b84a8',
+    color: 'var(--steel)',
     icon: 'detection',
     model: 'sonnet',
     org: 'prime',
@@ -206,7 +206,7 @@ export const CREW: AgentDef[] = [
     dept: 'Fire suppression',
     role: 'Can we put it out?',
     blurb: 'Extinguishing limits and agents (CO₂, water mist), hidden cool flames. FLEX, FLEX-2, CFI.',
-    color: '#2f8f57',
+    color: 'var(--green)',
     icon: 'suppression',
     model: 'sonnet',
     org: 'prime',
@@ -222,7 +222,7 @@ export const CREW: AgentDef[] = [
     dept: 'Analysis & simulation',
     role: 'Shows what happens',
     blurb: 'Builds the cabin from the model, runs spread and pressure on the in-house cluster and returns metrics.',
-    color: '#7aa2ff',
+    color: 'var(--yellow)',
     icon: 'sim',
     model: 'haiku',
     org: 'prime',
@@ -239,7 +239,7 @@ export const CREW: AgentDef[] = [
     dept: 'White Sands Test Facility',
     role: 'Test history and scheduling',
     blurb: 'Answers from the lab’s own records and books chamber time. Raw records and procedures stay at the lab.',
-    color: '#2dd4bf',
+    color: 'var(--graphite)',
     icon: 'lab',
     model: 'gpt',
     org: 'wstf',
@@ -256,7 +256,7 @@ export const CREW: AgentDef[] = [
     dept: 'Independent S&MA',
     role: 'Independent check',
     blurb: 'Checks every claim against its source and flags anything outside the tested range. Can object to a proposal.',
-    color: '#c9a2ff',
+    color: 'var(--tan)',
     icon: 'safety',
     model: 'opus',
     org: 'sma',
@@ -272,7 +272,7 @@ export const CREW: AgentDef[] = [
     dept: 'Documentation',
     role: 'Writes the hazard report',
     blurb: 'Assembles the materials matrix, the accepted changes and the hazard report with citations.',
-    color: '#9aa3ae',
+    color: 'var(--muted)',
     icon: 'report',
     model: 'sonnet',
     org: 'prime',
@@ -285,7 +285,7 @@ export const AGENT: Record<string, AgentDef> = Object.fromEntries(CREW.map((a) =
 
 export const PEOPLE: PersonDef[] = [
   { handle: HUMAN, name: 'You', role: 'Lead engineer', org: 'prime', color: 'var(--ink)', with: 'flight' },
-  { handle: LAB, name: 'WSTF technician', role: 'Runs the chamber tests', org: 'wstf', color: '#2dd4bf', with: 'wstf' },
+  { handle: LAB, name: 'WSTF technician', role: 'Runs the chamber tests', org: 'wstf', color: 'var(--graphite)', with: 'wstf' },
 ]
 
 const PERSON: Record<string, PersonDef> = Object.fromEntries(PEOPLE.map((p) => [p.handle, p]))
@@ -297,7 +297,7 @@ export const orgOf = (h?: string): OrgDef | undefined => {
   return o ? ORGS[o] : undefined
 }
 
-export const agentColor = (h?: string) => (h === HUB ? '#ffcf6b' : (AGENT[h ?? '']?.color ?? PERSON[h ?? '']?.color ?? '#6b7280'))
+export const agentColor = (h?: string) => (h === HUB ? 'var(--yellow)' : (AGENT[h ?? '']?.color ?? PERSON[h ?? '']?.color ?? 'var(--faint)'))
 export const agentName = (h?: string) => (h === HUB ? 'Lagrange' : (AGENT[h ?? '']?.name ?? PERSON[h ?? '']?.name ?? h ?? '?'))
 
-export const MODEL_COLOR: Record<string, string> = { haiku: 'var(--k-reply)', sonnet: 'var(--k-task)', opus: 'var(--k-review)', llama: 'var(--ug)', gpt: '#2dd4bf', human: 'var(--muted)' }
+export const MODEL_COLOR: Record<string, string> = { haiku: 'var(--k-reply)', sonnet: 'var(--k-task)', opus: 'var(--k-review)', llama: 'var(--ug)', gpt: 'var(--graphite)', human: 'var(--muted)' }

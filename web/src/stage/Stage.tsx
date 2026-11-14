@@ -185,7 +185,7 @@ export function Stage() {
         {z && (
           <div className="absolute bottom-2 left-2 w-[250px] rounded-sm border border-line-2 bg-bg/90 p-2 text-[11px]">
             <div className="flex items-center gap-2">
-              <span className="uppercase tracking-wider text-ink">{z.zone}</span>
+              <span className="lowercase text-ink">{z.zone}</span>
               {status[z.zone] && <span style={{ color: status[z.zone] === 'pass' ? 'var(--ok)' : status[z.zone] === 'retest' ? 'var(--warn)' : 'var(--bad)' }}>{status[z.zone]}</span>}
               <button type="button" className="ml-auto text-faint hover:text-ink" onClick={() => setPicked(undefined)}>
                 ×

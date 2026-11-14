@@ -131,7 +131,7 @@ export function CiteChip({ id, note, className }: { id: string; note?: string; c
         <button
           type="button"
           onClick={(e) => e.stopPropagation()}
-          className={cn('inline-flex items-center gap-1 rounded-sm border border-ug/30 bg-ug/5 px-1.5 py-px text-[10.5px] text-ug transition hover:border-ug/70 hover:bg-ug/10', !inv && 'text-muted-foreground', className)}
+          className={cn('inline-flex items-center gap-1 rounded-full border border-line-2 bg-surface-2 px-2 py-px text-[10.5px] text-navy shadow-[inset_0_1px_0_var(--hi)] transition hover:border-orange', !inv && 'text-muted-foreground', className)}
         >
           <span>{id}</span>
           <span className="text-muted-foreground">{label(id)}</span>

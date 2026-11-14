@@ -10,9 +10,9 @@ import { MATERIALS } from '@/sims/models'
 import { Cabin } from '@/stage/Cabin'
 
 const SLOTS: { id: Slot; title: string; hint: string; accept: string }[] = [
-  { id: 'cabin', title: 'CABIN SPEC', hint: 'O₂, pressure, gravity, volume, vents, crew, ignition sources, hatch', accept: '.yaml,.yml' },
-  { id: 'materials', title: 'MATERIALS LIST', hint: 'part, material, rating, zone, quantity, distance to ignition', accept: '.csv' },
-  { id: 'model', title: 'CABIN MODEL', hint: 'primitives, each a named zone', accept: '.json' },
+  { id: 'cabin', title: 'cabin spec', hint: 'O₂, pressure, gravity, volume, vents, crew, ignition sources, hatch', accept: '.yaml,.yml' },
+  { id: 'materials', title: 'materials list', hint: 'part, material, rating, zone, quantity, distance to ignition', accept: '.csv' },
+  { id: 'model', title: 'cabin model', hint: 'primitives, each a named zone', accept: '.json' },
 ]
 
 function Spin({ model }: { model: CabinModel }) {
@@ -69,7 +69,7 @@ function SlotCard({ slot }: { slot: (typeof SLOTS)[number] }) {
       }}
     >
       <header className="pane-head text-[11px]">
-        <span className="tracking-[0.14em] text-ink">{slot.title}</span>
+        <span className=" text-ink">{slot.title}</span>
         <span className="ml-auto text-faint">{st?.name ?? EXAMPLE_FILES[slot.id]}</span>
       </header>
       <input ref={input} type="file" accept={slot.accept} className="hidden" onChange={(e) => void read(e.target.files?.[0])} />
@@ -171,7 +171,7 @@ export function IntakeScreen() {
             <h1 className="sans mt-1 text-[26px] font-semibold leading-tight">Hand over the cabin. The agents review it.</h1>
             <p className="sans mt-1 text-[13px] text-muted-foreground">Three files and one question. The lead plans the review, you approve it, the departments run it over Lagrange.</p>
           </div>
-          <button type="button" onClick={() => void loadExample()} className="ml-auto shrink-0 rounded-sm border border-k-ask/60 px-3 py-1.5 text-[12px] text-k-ask hover:bg-k-ask/10">
+          <button type="button" onClick={() => void loadExample()} className="key ml-auto h-[34px] shrink-0 px-4 text-[12px]">
             load example: Apollo CM-012
           </button>
         </div>
@@ -183,7 +183,7 @@ export function IntakeScreen() {
         <div className="pane flex-row items-center gap-3 px-3 py-2.5">
           <span className="text-k-ask">›</span>
           <input value={request} onChange={(e) => setRequest(e.target.value)} className="sans min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-faint" placeholder="what should the review answer?" onKeyDown={(e) => e.key === 'Enter' && ready && start()} />
-          <button type="button" disabled={!ready} onClick={start} className="shrink-0 rounded-sm bg-flame px-4 py-1.5 text-[12px] font-medium text-bg transition hover:brightness-110 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-faint">
+          <button type="button" disabled={!ready} onClick={start} className="key key-orange h-[34px] shrink-0 px-5 text-[12.5px] font-medium disabled:!bg-none disabled:!bg-surface-3 disabled:!text-faint disabled:!border-line">
             plan the review ▸
           </button>
         </div>

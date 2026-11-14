@@ -78,7 +78,7 @@ function Help() {
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-bg/70" onClick={() => setHelp(false)}>
       <div className="pane w-[420px] p-4 pt-5">
         <header className="pane-head text-[11px]">
-          <span className="tracking-[0.14em] text-ink">KEYS</span>
+          <span className=" text-ink">keys</span>
         </header>
         {keys.map(([k, d]) => (
           <div key={k} className="flex gap-3 py-0.5 text-[12px]">
@@ -117,12 +117,12 @@ export function RunScreen() {
   const running = subs.find((s) => s.status === 'running')
   const burn = matrix.filter((r) => r.status !== 'pass').length
   const panes: Record<PanelId, PaneDef> = {
-    1: { id: 1, title: 'NETWORK', right: <span>via lagrange</span>, summary: `${Object.values(agents).filter((a) => a.state === 'working').length} working`, body: <NetworkView /> },
-    2: { id: 2, title: 'STAGE · CM-012', right: <span>{layer}</span>, summary: layer, body: <Stage /> },
+    1: { id: 1, title: 'network', right: <span>via lagrange</span>, summary: `${Object.values(agents).filter((a) => a.state === 'working').length} working`, body: <NetworkView /> },
+    2: { id: 2, title: 'stage · cm-012', right: <span>{layer}</span>, summary: layer, body: <Stage /> },
     3: { id: 3, title: `AGENT @${selected}`, right: <span>{AGENT[selected]?.name}</span>, summary: agents[selected]?.doing, body: <AgentView /> },
     4: {
       id: 4,
-      title: 'LAB',
+      title: 'lab',
       summary: `${jobs.filter((j) => !j.done).length} running · ${jobs.length} jobs${running ? ` · ${running.id} ${running.title}` : ''}`,
       right: (
         <span>
@@ -133,7 +133,7 @@ export function RunScreen() {
     },
     5: {
       id: 5,
-      title: 'FINDINGS',
+      title: 'findings',
       summary: [matrix.length ? `${burn}/${matrix.length} burn` : 'waiting for @prevent', proposals.length ? `${proposals.length} proposal · ${proposals[0].status}` : ''].filter(Boolean).join(' · '),
       right: (
         <span className="flex gap-2">
@@ -147,7 +147,7 @@ export function RunScreen() {
       ),
       body: ftab === 'matrix' ? <FindingsView /> : <ProposalsView />,
     },
-    6: { id: 6, title: 'COMMS', right: <span>agent ⇄ agent · {comms.length}</span>, summary: comms.length ? comms[comms.length - 1].text : 'quiet', body: <CommsView /> },
+    6: { id: 6, title: 'comms', right: <span>agent ⇄ agent · {comms.length}</span>, summary: comms.length ? comms[comms.length - 1].text : 'quiet', body: <CommsView /> },
   }
 
   return (
@@ -173,7 +173,7 @@ export function RunScreen() {
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-bg/70" onClick={() => setPlanOpen(false)}>
           <div className="pane h-[70%] w-[78%] p-3 pt-5" onClick={(e) => e.stopPropagation()}>
             <header className="pane-head text-[11px]">
-              <span className="tracking-[0.14em] text-ink">PLAN</span>
+              <span className=" text-ink">plan</span>
               <span className="ml-auto text-faint">p / esc to close</span>
             </header>
             <PlanGraph plan={plan} />

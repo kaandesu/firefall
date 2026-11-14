@@ -30,22 +30,22 @@ export function Pane({ def, size, vertical = false }: { def: PaneDef; size: Size
         onClick={() => grow(1, def.id)}
         data-focus={focus}
         className={cn(
-          'pane group shrink-0 overflow-hidden text-left transition hover:border-ug/60',
-          vertical ? 'w-[30px] items-center justify-start py-2' : 'h-[28px] flex-row items-center gap-2 px-2.5',
+          'key group shrink-0 overflow-hidden text-left',
+          vertical ? 'w-[34px] flex-col items-center justify-start rounded-[12px] py-2.5' : 'h-[32px] flex-row items-center justify-start gap-2 rounded-[10px] px-2.5',
         )}
         title={`${def.id} ${def.title} · click or + to open`}
       >
         {vertical ? (
-          <span className="flex items-center gap-2 whitespace-nowrap text-[11px] [writing-mode:vertical-rl]">
-            <span className={focus ? 'text-k-ask' : 'text-faint'}>{def.id}</span>
-            <span className="tracking-[0.14em] text-ink">{def.title}</span>
+          <span className="flex items-center gap-2 whitespace-nowrap text-[11.5px] [writing-mode:vertical-rl]">
+            <span className={cn('tnum font-medium', focus ? 'text-orange' : 'text-faint')}>{def.id}</span>
+            <span className="lowercase text-ink">{def.title}</span>
           </span>
         ) : (
           <>
-            <span className={cn('text-[11px]', focus ? 'text-k-ask' : 'text-faint')}>{def.id}</span>
-            <span className="text-[11px] tracking-[0.14em] text-ink">{def.title}</span>
+            <span className={cn('tnum text-[12px] font-medium', focus ? 'text-orange' : 'text-faint')}>{def.id}</span>
+            <span className="text-[11.5px] lowercase text-ink">{def.title}</span>
             <span className="min-w-0 truncate text-[11px] text-muted-foreground">{def.summary}</span>
-            <span className="ml-auto text-faint group-hover:text-ug">▸</span>
+            <span className="ml-auto text-faint group-hover:text-orange">+</span>
           </>
         )}
       </button>
@@ -54,25 +54,32 @@ export function Pane({ def, size, vertical = false }: { def: PaneDef; size: Size
 
   return (
     <section data-focus={focus} className="pane flex-1" onMouseDown={() => !focus && focusPanel(def.id)}>
-      <header className="pane-head text-[11px]">
-        <span className="flex items-center gap-1.5">
-          <span className={focus ? 'text-k-ask' : 'text-faint'}>{def.id}</span>
-          <span className="tracking-[0.14em] text-ink">{def.title}</span>
+      <header className="pane-head shrink-0 px-3 pt-2.5 text-[11.5px]">
+        <span className="flex items-center gap-2">
+          <span
+            className={cn(
+              'tnum flex size-[20px] items-center justify-center rounded-full text-[11px] font-medium',
+              focus ? 'bg-orange text-white' : 'bg-surface-3 text-muted-foreground',
+            )}
+          >
+            {def.id}
+          </span>
+          <span className="font-medium text-ink">{def.title}</span>
         </span>
         <span className="ml-auto flex items-center gap-2 text-faint">
           {def.right}
-          <span className="flex items-center">
-            <button type="button" onClick={() => grow(-1, def.id)} disabled={i === 0} className="px-0.5 hover:text-ink disabled:opacity-30" title="shrink (−)">
-              <Minus size={11} />
+          <span className="flex items-center gap-1">
+            <button type="button" onClick={() => grow(-1, def.id)} disabled={i === 0} className="key size-[20px] rounded-full p-0" title="shrink (−)">
+              <Minus size={10} />
             </button>
-            <span className="w-[42px] text-center text-[9.5px] uppercase tracking-wider">{size}</span>
-            <button type="button" onClick={() => grow(1, def.id)} disabled={i === LADDER.length - 1} className="px-0.5 hover:text-ink disabled:opacity-30" title="grow (+)">
-              <Plus size={11} />
+            <span className="w-[44px] text-center text-[10px] lowercase">{size}</span>
+            <button type="button" onClick={() => grow(1, def.id)} disabled={i === LADDER.length - 1} className="key size-[20px] rounded-full p-0" title="grow (+)">
+              <Plus size={10} />
             </button>
           </span>
         </span>
       </header>
-      <div className="relative min-h-0 flex-1 overflow-hidden pt-2.5">{def.body}</div>
+      <div className="relative min-h-0 flex-1 overflow-hidden pt-1.5">{def.body}</div>
     </section>
   )
 }
@@ -85,7 +92,7 @@ export function PanelLayout({ panes }: { panes: Record<PanelId, PaneDef> }) {
   const full = (Object.keys(sizes).map(Number) as PanelId[]).find((id) => sizes[id] === 'full')
   if (full) {
     return (
-      <div className="flex min-h-0 flex-1 p-2 pt-3">
+      <div className="flex min-h-0 flex-1 p-2.5">
         <Pane def={panes[full]} size="full" />
       </div>
     )
@@ -101,8 +108,8 @@ export function PanelLayout({ panes }: { panes: Record<PanelId, PaneDef> }) {
   const commsH = comms === 'column' ? '46%' : '17%'
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 p-2 pt-3">
-      <div className="flex min-h-0 flex-1 gap-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-2.5 p-2.5">
+      <div className="flex min-h-0 flex-1 gap-2.5">
         {([1, 2, 3] as PanelId[]).map((id) =>
           sizes[id] === 'bar' ? (
             <Pane key={id} def={panes[id]} size="bar" vertical />
@@ -113,7 +120,7 @@ export function PanelLayout({ panes }: { panes: Record<PanelId, PaneDef> }) {
           ),
         )}
       </div>
-      <div className={cn('flex shrink-0 gap-2', midOpen ? 'items-stretch' : 'items-center')} style={midOpen ? { height: midH } : undefined}>
+      <div className={cn('flex shrink-0 gap-2.5', midOpen ? 'items-stretch' : 'items-center')} style={midOpen ? { height: midH } : undefined}>
         {([4, 5] as PanelId[]).map((id) =>
           eff(id) === 'bar' ? (
             <div key={id} className={cn('flex min-w-0', midOpen ? 'w-[230px] shrink-0 self-start' : 'flex-1')}>

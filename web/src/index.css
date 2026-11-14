@@ -1,58 +1,133 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
-/* FIREFALL v3: Halo terminal style. Space-black, box-frame panels, mono type.
-   Colour carries meaning only: message kind (task cyan, ask amber, reply green, review violet, fail red, hub gold),
-   material status (pass green, retest amber, fail red) and department identity. */
-:root {
+/* FIREFALL · FF-1 hardware look.
+   Existing UI elements are restyled as hardware parts: the page is the chassis, panels are modules,
+   buttons are keycaps, status dots are LEDs and the clock is a black display. Labels are lowercase and printed next to the
+   control they name. Two finishes:
+     field  light aluminium body, white keys, black print   (data-theme="field", default)
+     xy     black anodised body, graphite keys, white print  (data-theme="xy")
+   Colour still carries meaning only. The palette is four knob colours (orange, navy, tan, graphite) plus the signal
+   colours a device uses on its LEDs and screen: green, yellow, red. */
+
+@custom-variant dark (&:where([data-theme="xy"], [data-theme="xy"] *));
+
+:root,
+:root[data-theme="field"] {
+  color-scheme: light;
+  /* chassis + modules */
+  --bg: #d9d9d6;
+  --surface: #e6e6e3;
+  --surface-2: #f2f2f0;
+  --surface-3: #cfcfcb;
+  --line: #c6c6c2;
+  --line-2: #b2b2ad;
+  --ink: #121212;
+  --muted: #5d5d59;
+  --faint: #8e8e89;
+  /* physical light */
+  --hi: rgba(255, 255, 255, 0.85);
+  --lo: rgba(0, 0, 0, 0.1);
+  --shadow: rgba(40, 40, 36, 0.35);
+  --key-top: #fbfbfa;
+  --key-bot: #e9e9e6;
+  --key-edge: #bdbdb8;
+  /* the black display */
+  --viewport: #0d0d0d;
+  --screen-ink: #ececea;
+
+  /* TE knob + signal colours, tuned to print legibly on the light body */
+  --orange: #ff5a1f;
+  --orange-ink: #e2470d;
+  --navy: #2443b5;
+  --tan: #8c6440;
+  --graphite: #5c5c58;
+  --green: #12924f;
+  --yellow: #c78d00;
+  --red: #dd2a1d;
+  --steel: #4e6f93;
+  --plum: #8a3c6a;
+}
+
+:root[data-theme="xy"] {
   color-scheme: dark;
-  --bg: #05070a;
-  --surface: #0a0e13;
-  --surface-2: #0f141b;
-  --surface-3: #151c25;
-  --line: #1b2430;
-  --line-2: #263242;
-  --ink: #e6edf3;
-  --muted: #7d8a99;
-  --faint: #4a5665;
+  --bg: #121212;
+  --surface: #1b1b1b;
+  --surface-2: #252525;
+  --surface-3: #2e2e2e;
+  --line: #2a2a2a;
+  --line-2: #3a3a3a;
+  --ink: #f1f1ef;
+  --muted: #a2a29d;
+  --faint: #6b6b66;
+  --hi: rgba(255, 255, 255, 0.07);
+  --lo: rgba(0, 0, 0, 0.6);
+  --shadow: rgba(0, 0, 0, 0.75);
+  --key-top: #2c2c2c;
+  --key-bot: #1f1f1f;
+  --key-edge: #0a0a0a;
+  --viewport: #050505;
+  --screen-ink: #f2f2f0;
 
-  --ug: #5aa9ff; /* microgravity blue: focus, science */
-  --flame: #ff7a3d; /* hazard */
-  --gold: #ffcf6b; /* lagrange hub */
-  --k-task: #56d4ef;
-  --k-ask: #ffb547;
-  --k-reply: #7ee787;
-  --k-review: #c9a2ff;
-  --k-fail: #ff6b6b;
-  --k-hub: #ffcf6b;
-  --ok: #7ee787;
-  --warn: #ffb547;
-  --bad: #ff6b6b;
-  --viewport: #030508;
+  --orange: #ff5a1f;
+  --orange-ink: #ff6a33;
+  --navy: #6d8bff;
+  --tan: #c99e72;
+  --graphite: #b8b8b2;
+  --green: #3fd17f;
+  --yellow: #ffc21a;
+  --red: #ff4b3e;
+  --steel: #8fb0d4;
+  --plum: #e07bb6;
+}
 
-  --radius: 0.25rem;
+:root,
+.bg-viewport,
+.lcd {
+  /* semantic tokens: every screen speaks these (re-resolved inside a display, see .bg-viewport) */
+  --ug: var(--navy); /* microgravity / science / focus */
+  --flame: var(--orange); /* hazard + primary action */
+  --gold: var(--yellow); /* lagrange hub */
+  --k-task: var(--navy);
+  --k-ask: var(--orange-ink);
+  --k-reply: var(--green);
+  --k-review: var(--tan);
+  --k-fail: var(--red);
+  --k-hub: var(--yellow);
+  --ok: var(--green);
+  --warn: var(--orange-ink);
+  --bad: var(--red);
+
+  /* org = one of the four knob colours, like the OP-1's four encoders */
+  --org-prime: var(--orange);
+  --org-psi: var(--navy);
+  --org-wstf: var(--graphite);
+  --org-sma: var(--tan);
+
+  --radius: 0.625rem;
   --background: var(--bg);
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
   --popover: var(--surface-2);
   --popover-foreground: var(--ink);
-  --primary: var(--ug);
-  --primary-foreground: #04101e;
+  --primary: var(--orange);
+  --primary-foreground: #ffffff;
   --secondary: var(--surface-3);
   --secondary-foreground: var(--ink);
   --muted-foreground: var(--muted);
   --accent: var(--surface-3);
   --accent-foreground: var(--ink);
-  --destructive: var(--k-fail);
+  --destructive: var(--red);
   --border: var(--line);
   --input: var(--line-2);
-  --ring: var(--ug);
+  --ring: var(--orange);
 }
 
 @theme inline {
-  --font-sans: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-lcd: "Doto", "JetBrains Mono", monospace;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -73,6 +148,11 @@
   --color-warn: var(--warn);
   --color-bad: var(--bad);
   --color-viewport: var(--viewport);
+  --color-screen-ink: var(--screen-ink);
+  --color-orange: var(--orange);
+  --color-navy: var(--navy);
+  --color-tan: var(--tan);
+  --color-graphite: var(--graphite);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -92,10 +172,10 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 1px);
-  --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 2px);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 }
 
 @layer base {
@@ -109,28 +189,44 @@
   }
   body {
     @apply bg-bg text-ink antialiased;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: 13px;
+    font-feature-settings: "ss01", "cv11";
+    letter-spacing: -0.005em;
+    /* a faint machined sheen across the chassis */
     background:
-      radial-gradient(1200px 600px at 70% -10%, color-mix(in oklab, var(--ug) 6%, transparent), transparent 60%),
-      radial-gradient(900px 500px at -10% 110%, color-mix(in oklab, var(--flame) 5%, transparent), transparent 60%),
+      linear-gradient(180deg, color-mix(in oklab, var(--hi) 60%, transparent), transparent 220px),
       var(--bg);
     overflow: hidden;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
   ::selection {
-    background: color-mix(in oklab, var(--ug) 35%, transparent);
+    background: color-mix(in oklab, var(--orange) 35%, transparent);
   }
   button {
     cursor: pointer;
+  }
+  /* rounded corners everywhere: nothing on the device has a sharp edge */
+  .rounded-sm {
+    border-radius: 6px;
+  }
+  .rounded {
+    border-radius: 8px;
   }
 }
 
 @layer utilities {
   .mono {
     font-family: var(--font-mono);
+    letter-spacing: -0.02em;
   }
   .sans {
     font-family: var(--font-sans);
+  }
+  .lcd-font {
+    font-family: var(--font-lcd);
+    font-weight: 700;
+    letter-spacing: 0.02em;
   }
   .tnum {
     font-variant-numeric: tabular-nums;
@@ -139,51 +235,166 @@
     scrollbar-width: thin;
     scrollbar-color: var(--line-2) transparent;
   }
+  /* printed legend next to a control: small, lowercase, quiet */
   .label {
-    @apply text-[10.5px] uppercase tracking-[0.12em] text-faint;
+    @apply text-[11px] lowercase tracking-normal text-muted-foreground;
   }
+  /* dot rows, like the ··· between the TX-6 knobs and faders */
   .grid-bg {
-    background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--line) 55%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--line) 55%, transparent) 1px, transparent 1px);
-    background-size: 28px 28px;
+    background-image: radial-gradient(circle, color-mix(in oklab, var(--ink) 16%, transparent) 1px, transparent 1.4px);
+    background-size: 18px 18px;
+    background-position: 9px 9px;
   }
 }
 
 @layer components {
-/* ── box-frame panel: the title sits on the top border, like Halo's ┌ 1 PLAN ───┐ ── */
-.pane {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-  border: 1px solid var(--line-2);
-  border-radius: 3px;
-  background: color-mix(in oklab, var(--surface) 82%, transparent);
-}
-.pane[data-focus="true"] {
-  border-color: color-mix(in oklab, var(--ug) 70%, var(--line-2));
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--ug) 18%, transparent), 0 0 28px -10px color-mix(in oklab, var(--ug) 55%, transparent);
-}
-.pane-head {
-  position: absolute;
-  top: -0.62em;
-  left: 8px;
-  right: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  line-height: 1.2;
-  pointer-events: none;
-  z-index: 5;
-}
-.pane-head > * {
-  pointer-events: auto;
-  background: var(--bg);
-  padding: 0 5px;
-}
+  /* ── module: a panel screwed onto the chassis ── */
+  .pane {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow:
+      inset 0 1px 0 var(--hi),
+      0 1px 0 var(--lo),
+      0 10px 22px -16px var(--shadow);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .pane[data-focus="true"] {
+    border-color: color-mix(in oklab, var(--orange) 55%, var(--line));
+    box-shadow:
+      inset 0 1px 0 var(--hi),
+      0 0 0 1px color-mix(in oklab, var(--orange) 25%, transparent),
+      0 12px 26px -16px var(--shadow);
+  }
+  /* the module's printed legend row */
+  .pane-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.2;
+    z-index: 5;
+    text-transform: lowercase;
+    color: var(--muted);
+  }
 
+  /* ── keycap ── */
+  .key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid var(--key-edge);
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--key-top), var(--key-bot));
+    color: var(--ink);
+    text-transform: lowercase;
+    box-shadow:
+      inset 0 1px 0 var(--hi),
+      0 1px 0 var(--key-edge),
+      0 3px 5px -3px var(--shadow);
+    transition: transform 0.06s ease, box-shadow 0.06s ease, filter 0.15s ease;
+  }
+  .key:hover:not(:disabled) {
+    filter: brightness(1.03);
+  }
+  .key:active:not(:disabled),
+  .key[data-down="true"] {
+    transform: translateY(1px);
+    box-shadow:
+      inset 0 1px 2px var(--lo),
+      0 0 0 var(--key-edge);
+  }
+  .key:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+  /* the orange key: the one thing you should press */
+  .key-orange {
+    border-color: color-mix(in oklab, var(--orange) 70%, black);
+    background: linear-gradient(180deg, color-mix(in oklab, var(--orange) 88%, white), var(--orange));
+    color: #fff;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 1px 0 color-mix(in oklab, var(--orange) 60%, black),
+      0 4px 8px -4px color-mix(in oklab, var(--orange) 70%, black);
+  }
+  .key-dark {
+    border-color: #000;
+    background: linear-gradient(180deg, #2a2a2a, #161616);
+    color: #f2f2f0;
+  }
+
+  /* ── LED ── */
+  .led {
+    flex-shrink: 0;
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    background: var(--led, var(--faint));
+    box-shadow: 0 0 0 1px color-mix(in oklab, var(--led, var(--faint)) 40%, black), 0 0 8px -1px var(--led, transparent);
+  }
+
+  /* ── the black display (OP-1 screen / TX-6 LCD) ── */
+  .lcd {
+    border-radius: 6px;
+    background: var(--viewport);
+    color: var(--screen-ink);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+      inset 0 2px 6px rgba(0, 0, 0, 0.8),
+      0 0 0 3px color-mix(in oklab, var(--bg) 60%, #000),
+      0 1px 0 3px var(--hi);
+  }
+
+  /* Inside a display the print is always light, whatever the finish: the screen re-scopes the tokens so charts and
+     text drawn with var(--ink) / var(--line) stay legible on black. */
+  .bg-viewport,
+  .lcd {
+    --ink: #f1f1ef;
+    --muted: #a6a6a0;
+    --faint: #73736d;
+    --line: #262626;
+    --line-2: #363636;
+    --surface: #141414;
+    --surface-2: #1c1c1c;
+    --surface-3: #262626;
+    --navy: #6d8bff;
+    --tan: #c99e72;
+    --graphite: #b8b8b2;
+    --green: #3fd17f;
+    --yellow: #ffc21a;
+    --red: #ff4b3e;
+    --orange-ink: #ff6a33;
+    color: var(--ink);
+  }
+
+  /* ── slide switch (oplab "MIDI · TRIG · PO") ── */
+  .slide {
+    display: inline-flex;
+    padding: 2px;
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--bg) 70%, #000 6%);
+    box-shadow: inset 0 1px 3px var(--lo), 0 1px 0 var(--hi);
+  }
+  .slide > button {
+    border-radius: 9999px;
+    padding: 2px 10px;
+    color: var(--muted);
+    text-transform: lowercase;
+    transition: color 0.15s ease;
+  }
+  .slide > button[data-on="true"] {
+    color: var(--ink);
+    background: linear-gradient(180deg, var(--key-top), var(--key-bot));
+    box-shadow: inset 0 1px 0 var(--hi), 0 1px 2px var(--shadow);
+  }
 }
 
 /* ── network graph ── */
@@ -197,7 +408,7 @@
   --xy-controls-button-border-color: var(--line);
 }
 .react-flow__node {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 .react-flow__handle {
   opacity: 0;
@@ -215,9 +426,9 @@
 .work-halo {
   position: absolute;
   inset: -3px;
-  border-radius: 6px;
+  border-radius: 12px;
   padding: 1.5px;
-  background: conic-gradient(from var(--halo-angle), transparent 0 65%, color-mix(in oklab, var(--k-task) 45%, transparent) 82%, var(--k-task) 96%, transparent 100%);
+  background: conic-gradient(from var(--halo-angle), transparent 0 65%, color-mix(in oklab, var(--orange) 45%, transparent) 82%, var(--orange) 96%, transparent 100%);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -277,12 +488,56 @@
 .report-md ol { list-style: decimal; }
 .report-md li { margin: 0.15em 0; }
 .report-md strong { color: var(--ink); font-weight: 600; }
-.report-md code { font-size: 0.92em; color: var(--ug); }
+.report-md code { font-family: var(--font-mono); font-size: 0.92em; color: var(--orange-ink); }
 .report-md table { font-size: 11px; border-collapse: collapse; margin: 0.4em 0; }
 .report-md td, .report-md th { border: 1px solid var(--line); padding: 2px 6px; }
 @media print {
   html, body, #root { height: auto !important; overflow: visible !important; background: #fff; }
 }
 
-.input { height: 26px; border: 1px solid var(--line-2); border-radius: 2px; background: var(--surface); padding: 0 6px; color: var(--ink); outline: none; }
-.input:focus { border-color: color-mix(in srgb, var(--ug) 60%, transparent); }
+.input {
+  height: 28px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--surface-2);
+  box-shadow: inset 0 1px 2px var(--lo);
+  padding: 0 8px;
+  color: var(--ink);
+  outline: none;
+}
+.input:focus { border-color: color-mix(in srgb, var(--orange) 70%, transparent); }
+
+/* deeper key travel: OP-XY keys sit proud of the plate and drop 2px */
+.key {
+  box-shadow:
+    inset 0 1px 0 var(--hi),
+    0 2px 0 var(--key-edge),
+    0 4px 6px -3px var(--shadow);
+  transform: translateY(0);
+}
+.key:active:not(:disabled),
+.key[data-down="true"] {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 3px var(--lo),
+    0 0 0 var(--key-edge);
+}
+.key-orange {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 2px 0 color-mix(in oklab, var(--orange) 55%, black),
+    0 6px 12px -5px color-mix(in oklab, var(--orange) 80%, black);
+}
+.key-orange:active:not(:disabled) {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* a keycap surface without the key's layout: graph nodes, cards that are "things you can press" */
+.te-cap {
+  border-color: var(--key-edge) !important;
+  background: linear-gradient(180deg, var(--key-top), var(--key-bot)) !important;
+  box-shadow:
+    inset 0 1px 0 var(--hi),
+    0 2px 0 var(--key-edge),
+    0 6px 10px -6px var(--shadow);
+}

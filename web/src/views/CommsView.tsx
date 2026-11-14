@@ -17,8 +17,8 @@ export function CommsView() {
     <div className="scroll-thin h-full overflow-y-auto px-2">
       {comms.map((c) => (
         <div key={c.id} className="flex items-baseline gap-2 py-px text-[11px] leading-snug">
-          <span className="w-[38px] shrink-0 text-faint">{hm(c.at)}</span>
-          <span className="w-[58px] shrink-0 text-[9.5px] uppercase tracking-wider" style={{ color: KIND_COLOR[c.kind] }}>
+          <span className="w-[38px] shrink-0 tnum text-faint">{hm(c.at)}</span>
+          <span className="w-[58px] shrink-0 text-[9.5px] lowercase" style={{ color: KIND_COLOR[c.kind] }}>
             {KIND_LABEL[c.kind]}
           </span>
           <span className="shrink-0" style={{ color: agentColor(c.from) }}>
@@ -36,7 +36,7 @@ export function CommsView() {
             </span>
           )}
           {orgOf(c.from) && orgOf(c.to) && orgOf(c.from)!.id !== orgOf(c.to)!.id && (
-            <span className="shrink-0 text-[9px] uppercase tracking-wider text-faint">
+            <span className="shrink-0 text-[9px] lowercase text-faint">
               {orgOf(c.from)!.id} → {orgOf(c.to)!.id}
             </span>
           )}

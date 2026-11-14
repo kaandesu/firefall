@@ -37,8 +37,8 @@ export function PlanScreen() {
         </div>
       </div>
       <div className="pane min-h-0 flex-1">
-        <header className="pane-head text-[11px]">
-          <span className="tracking-[0.14em] text-ink">PLAN</span>
+        <header className="pane-head shrink-0 px-3.5 pt-3 text-[11.5px]">
+          <span className=" text-ink">plan</span>
           <span className="text-faint">{plan ? `${plan.subtasks.length} subtasks · click on/off to switch a step off` : 'planning…'}</span>
         </header>
         {plan ? (
@@ -52,7 +52,7 @@ export function PlanScreen() {
       <div className="flex items-center gap-3">
         <span className="text-[11.5px] text-warn">{canApprove ? 'waiting for your approval · nothing has run yet' : plan ? '' : ''}</span>
         {skip.length > 0 && <span className="text-[11.5px] text-faint">switched off: {skip.join(', ')}</span>}
-        <button type="button" disabled={!canApprove} onClick={approve} className="ml-auto rounded-sm bg-warn px-5 py-2 text-[12.5px] font-medium text-bg hover:brightness-110 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-faint">
+        <button type="button" disabled={!canApprove} onClick={approve} className="key key-orange ml-auto h-[38px] px-6 text-[13px] font-medium disabled:!bg-none disabled:!bg-surface-3 disabled:!text-faint disabled:!border-line">
           <span className="mr-2 opacity-60">a</span>approve plan
         </button>
       </div>

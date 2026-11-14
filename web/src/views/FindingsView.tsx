@@ -12,7 +12,7 @@ export function FindingsView() {
   if (!rows.length) return <div className="px-3 py-2 text-[11px] text-faint">the materials matrix lands here when @prevent finishes.</div>
   return (
     <div className="scroll-thin h-full overflow-y-auto px-1" onMouseLeave={() => setHover(undefined)}>
-      <div className="grid grid-cols-[14px_1.6fr_1.2fr_0.8fr_70px_90px] gap-2 px-1.5 pb-1 text-[9.5px] uppercase tracking-wider text-faint">
+      <div className="grid grid-cols-[14px_1.6fr_1.2fr_0.8fr_70px_90px] gap-2 px-1.5 pb-1 text-[9.5px] lowercase text-faint">
         <span />
         <span>part</span>
         <span>material</span>

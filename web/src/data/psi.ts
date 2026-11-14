@@ -210,10 +210,10 @@ export const BY_ID: Record<string, Investigation> = Object.fromEntries(INVESTIGA
 export const PSI_FETCHED_AT = snapshot.fetchedAt
 
 export const PILLAR_COLOR: Record<Pillar, string> = {
-  prevention: '#c2416c',
-  detection: '#1b84a8',
-  suppression: '#2f8f57',
-  cross: '#7c5cc4',
+  prevention: 'var(--orange)',
+  detection: 'var(--navy)',
+  suppression: 'var(--green)',
+  cross: 'var(--tan)',
 }
 
 export const label = (id: string) => BY_ID[id]?.c.short ?? id

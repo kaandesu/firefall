@@ -10,10 +10,10 @@ function OrgCard({ o }: { o: OrgDef }) {
   const agents = CREW.filter((a) => a.org === o.id && (NETWORK as readonly string[]).includes(a.handle))
   const people = PEOPLE.filter((p) => p.org === o.id)
   return (
-    <div className="pane gap-2.5 p-3 pt-4" style={{ borderColor: `color-mix(in oklab, ${o.color} 45%, var(--line-2))` }}>
+    <div className="pane gap-2.5 p-3.5">
       <header className="pane-head text-[11px]">
-        <span className="tracking-[0.14em]" style={{ color: o.color }}>
-          {o.id.toUpperCase()}
+        <span className="font-medium" style={{ color: o.color }}>
+          {o.id}
         </span>
         <span className="ml-auto text-faint">{o.kind}</span>
       </header>
@@ -36,7 +36,7 @@ function OrgCard({ o }: { o: OrgDef }) {
               <Avatar handle={a.handle} size={18} />
               <span style={{ color: a.color }}>{a.name}</span>
               <span className="text-faint">@{a.handle}</span>
-              <span className="ml-auto text-[9px] uppercase tracking-wider" style={{ color: MODEL_COLOR[a.model] }}>
+              <span className="ml-auto text-[9px] lowercase" style={{ color: MODEL_COLOR[a.model] }}>
                 {a.model}
               </span>
             </div>
@@ -54,7 +54,7 @@ function OrgCard({ o }: { o: OrgDef }) {
             <Avatar handle={p.handle} size={18} />
             <span className="text-ink">{p.name}</span>
             <span className="text-faint">· {p.role}</span>
-            <span className="ml-auto text-[9px] uppercase tracking-wider text-faint">person</span>
+            <span className="ml-auto text-[9px] lowercase text-faint">person</span>
           </div>
         ))}
       </div>
@@ -104,12 +104,12 @@ export function SetupScreen() {
         <div className="flex items-end gap-4">
           <div>
             <div className="label">the review network</div>
-            <h1 className="sans mt-1 text-[26px] font-semibold leading-tight">Four organizations. One review. Nobody hands over their data.</h1>
+            <h1 className="sans mt-1.5 text-[34px] font-normal leading-[1.05] tracking-[-0.035em]">Four organizations. One review. Nobody hands over their data.</h1>
             <p className="sans mt-1 max-w-[820px] text-[13px] text-muted-foreground">
               Each organization runs its own agents on its own hardware, with its own model and tools. On Lagrange they expose an agent, not a database: other agents ask it questions and get answers back, and the raw data, procedures and models stay where they are. People sit on the same network and step in when a decision is theirs.
             </p>
           </div>
-          <button type="button" onClick={() => setPhase('intake')} className="ml-auto shrink-0 rounded-sm bg-flame px-4 py-2 text-[12px] font-medium text-bg hover:brightness-110">
+          <button type="button" onClick={() => setPhase('intake')} className="key key-orange ml-auto h-[36px] shrink-0 px-5 text-[12.5px] font-medium">
             continue to intake ▸
           </button>
         </div>
@@ -123,7 +123,7 @@ export function SetupScreen() {
         <div className="grid grid-cols-[1.3fr_1fr] gap-4">
           <div className="pane gap-2 p-3 pt-4">
             <header className="pane-head text-[11px]">
-              <span className="tracking-[0.14em] text-gold">LAGRANGE</span>
+              <span className=" text-gold">lagrange</span>
               <span className="text-faint">the network between them</span>
             </header>
             <div className="sans text-[12.5px] leading-snug text-muted-foreground">
@@ -144,12 +144,12 @@ export function SetupScreen() {
           </div>
           <div className="pane gap-2 p-3 pt-4">
             <header className="pane-head text-[11px]">
-              <span className="tracking-[0.14em] text-ink">CONNECT AN AGENT</span>
+              <span className=" text-ink">connect an agent</span>
               <span className="text-faint">another org joins by its agent card</span>
             </header>
             <div className="flex gap-2">
               <input value={url} onChange={(e) => setUrl(e.target.value)} className="min-w-0 flex-1 rounded-sm border border-line-2 bg-bg px-2 py-1 text-[11px] outline-none focus:border-ug" />
-              <button type="button" onClick={() => connect(url)} className="flex shrink-0 items-center gap-1 rounded-sm border border-ug/60 px-2.5 text-[11px] text-ug hover:bg-ug/10">
+              <button type="button" onClick={() => connect(url)} className="key shrink-0 px-3 text-[11.5px]">
                 <Plug size={11} /> connect
               </button>
             </div>

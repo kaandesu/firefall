@@ -1,13 +1,17 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en" data-theme="field">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <title>FIREFALL · fire safety review</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Doto:wght@700;900&display=swap" rel="stylesheet" />
+    <script>
+      // finish before first paint: field (light) or xy (black)
+      try { var t = localStorage.getItem('ff-theme'); if (t === 'xy' || t === 'field') document.documentElement.dataset.theme = t } catch (e) {}
+    </script>
+    <title>firefall · fire safety review</title>
   </head>
   <body>
     <div id="root"></div>

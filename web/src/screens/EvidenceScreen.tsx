@@ -207,16 +207,16 @@ export function TestpointScatter({ rows, target, selected, onPick, h = 200 }: { 
     <svg viewBox={`0 0 ${W} ${h}`} className="w-full">
       {[0, 0.21, 0.4, 0.6, 0.85, 1].map((o) => (
         <g key={o}>
-          <line x1={X(o)} x2={X(o)} y1={6} y2={h - pad} stroke="#1b2430" />
-          <text x={X(o)} y={h - 8} fill="#4a5665" fontSize={8} textAnchor="middle">
+          <line x1={X(o)} x2={X(o)} y1={6} y2={h - pad} stroke="var(--line)" />
+          <text x={X(o)} y={h - 8} fill="var(--faint)" fontSize={8} textAnchor="middle">
             {Math.round(o * 100)}%
           </text>
         </g>
       ))}
       {[5, 10, 14.7, 30, 44].map((p) => (
         <g key={p}>
-          <line x1={pad} x2={W - 6} y1={Y(p)} y2={Y(p)} stroke="#1b2430" />
-          <text x={pad - 3} y={Y(p) + 3} fill="#4a5665" fontSize={8} textAnchor="end">
+          <line x1={pad} x2={W - 6} y1={Y(p)} y2={Y(p)} stroke="var(--line)" />
+          <text x={pad - 3} y={Y(p) + 3} fill="var(--faint)" fontSize={8} textAnchor="end">
             {p}
           </text>
         </g>
@@ -227,20 +227,20 @@ export function TestpointScatter({ rows, target, selected, onPick, h = 200 }: { 
           cx={X(e.o2)}
           cy={Y(e.psia)}
           r={selected === e.id ? 4.5 : 2.6}
-          fill={e.ign ? '#ff7a3d' : '#4a5665'}
+          fill={e.ign ? 'var(--orange)' : 'var(--faint)'}
           fillOpacity={e.o2at === 'burner' ? 0.35 : 0.85}
-          stroke={selected === e.id ? '#e6edf3' : 'none'}
+          stroke={selected === e.id ? 'var(--ink)' : 'none'}
           onClick={() => onPick?.(e.id)}
           className={onPick ? 'cursor-pointer' : undefined}
         >
           <title>{`${e.id} · ${Math.round(e.o2 * 100)} % O₂ · ${e.psia} psia`}</title>
         </circle>
       ))}
-      <g stroke="#e6edf3" strokeWidth={1.6}>
+      <g stroke="var(--ink)" strokeWidth={1.6}>
         <line x1={X(target.o2) - 6} x2={X(target.o2) + 6} y1={Y(tp)} y2={Y(tp)} />
         <line x1={X(target.o2)} x2={X(target.o2)} y1={Y(tp) - 6} y2={Y(tp) + 6} />
       </g>
-      <text x={X(target.o2) - 8} y={Y(tp) - 8} fill="#e6edf3" fontSize={8.5} textAnchor="end">
+      <text x={X(target.o2) - 8} y={Y(tp) - 8} fill="var(--ink)" fontSize={8.5} textAnchor="end">
         this cabin
       </text>
     </svg>

@@ -140,7 +140,7 @@ export function ReportChat({ context, section, seed, onSeedUsed, renderPull, scr
     <aside className="flex h-full w-[400px] shrink-0 flex-col border-l border-line bg-surface print:hidden">
       <header className="flex items-center gap-2 border-b border-line px-3 py-2 text-[11px]">
         <MessageSquare size={12} className="text-ug" />
-        <span className="tracking-[0.12em] text-ink">ASK THE REPORT</span>
+        <span className=" text-ink">ask the report</span>
         <span className="ml-auto text-faint">{demo ? 'scripted answers' : server?.live ? `OpenAI · ${server.model}` : 'checking…'}</span>
         <button
           type="button"
@@ -226,7 +226,7 @@ export function ReportChat({ context, section, seed, onSeedUsed, renderPull, scr
             <Square size={12} />
           </button>
         ) : (
-          <button type="submit" disabled={!text.trim()} className="rounded-sm border border-ug/50 bg-ug/10 p-2 text-ug disabled:opacity-30" title="ask">
+          <button type="submit" disabled={!text.trim()} className="key key-orange size-[34px] rounded-full p-0" title="ask">
             <ArrowUp size={12} />
           </button>
         )}

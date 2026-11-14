@@ -180,7 +180,7 @@ export function ReportScreen() {
       <div ref={scroller} className="scroll-thin min-w-0 flex-1 overflow-y-auto">
         <article className="mx-auto max-w-[860px] space-y-7 px-8 pb-24 pt-8">
           <header id="r-summary-head" className="space-y-3">
-            <div className="label tracking-[0.16em] text-flame">fire hazard review · design stage</div>
+            <div className="label text-flame">fire hazard review · design stage</div>
             <h1 className="sans text-[28px] font-semibold leading-tight text-ink">{r.verdict?.headline ?? `${pkg.vehicle}: review`}</h1>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-muted-foreground">
               <span className="text-ink">{pkg.vehicle}</span>
@@ -541,11 +541,11 @@ const arrivalField = (study: SmokeStudy) => (k: number): [number, number, number
 
 function Big({ n, label, color }: { n: string; label: string; color: string }) {
   return (
-    <div className="rounded-sm border border-line-2 bg-surface p-2.5">
-      <div className="text-[22px] leading-none tnum" style={{ color }}>
+    <div className="lcd px-3 py-2.5">
+      <div className="lcd-font tnum text-[26px] leading-none" style={{ color }}>
         {n}
       </div>
-      <div className="mt-1 text-[10.5px] text-muted-foreground">{label}</div>
+      <div className="mt-1 text-[10.5px] text-[var(--muted)]">{label}</div>
     </div>
   )
 }
@@ -633,7 +633,7 @@ function Figure({ caption, onOpen, children }: { caption: string; onOpen: () => 
   )
 }
 
-const RUN_COLOR: Record<string, string> = { 'as-built': '#ff6b6b', proposal: '#7ee787', '60-40': '#ffb547', ug: '#5aa9ff', base: '#c9a2ff' }
+const RUN_COLOR: Record<string, string> = { 'as-built': 'var(--red)', proposal: 'var(--green)', '60-40': 'var(--orange)', ug: 'var(--navy)', base: 'var(--tan)' }
 function PressureChart({ runs, hatch, h }: { runs: FireRun[]; hatch: number; h: number }) {
   if (!runs.length) return null
   const W = 600
@@ -644,29 +644,29 @@ function PressureChart({ runs, hatch, h }: { runs: FireRun[]; hatch: number; h: 
   const burst = runs[0].burstPsia
   return (
     <svg viewBox={`0 0 ${W} ${h + 16}`} className="w-full">
-      <line x1={0} x2={W} y1={Y(burst)} y2={Y(burst)} stroke="#ff6b6b" strokeDasharray="4 3" strokeWidth={0.8} />
-      <text x={4} y={Y(burst) - 3} fill="#ff6b6b" fontSize={9}>
+      <line x1={0} x2={W} y1={Y(burst)} y2={Y(burst)} stroke="var(--red)" strokeDasharray="4 3" strokeWidth={0.8} />
+      <text x={4} y={Y(burst) - 3} fill="var(--red)" fontSize={9}>
         hull burst {burst} psia
       </text>
-      <line x1={X(hatch)} x2={X(hatch)} y1={0} y2={h} stroke="#ffb547" strokeDasharray="3 3" strokeWidth={0.8} />
-      <text x={X(hatch) - 4} y={10} fill="#ffb547" fontSize={9} textAnchor="end">
+      <line x1={X(hatch)} x2={X(hatch)} y1={0} y2={h} stroke="var(--orange)" strokeDasharray="3 3" strokeWidth={0.8} />
+      <text x={X(hatch) - 4} y={10} fill="var(--orange)" fontSize={9} textAnchor="end">
         hatch open {hatch} s
       </text>
       {runs.map((r) => (
         <g key={r.variant.id}>
-          <polyline points={r.pressure.map((p) => `${X(p.t).toFixed(1)},${Y(p.psia).toFixed(1)}`).join(' ')} fill="none" stroke={RUN_COLOR[r.variant.id] ?? '#7d8a99'} strokeWidth={r.variant.id === 'as-built' ? 1.8 : 1} opacity={r.variant.id === 'as-built' ? 1 : 0.75} />
-          {r.rupture !== undefined && <circle cx={X(r.rupture)} cy={Y(burst)} r={3} fill={RUN_COLOR[r.variant.id] ?? '#7d8a99'} />}
+          <polyline points={r.pressure.map((p) => `${X(p.t).toFixed(1)},${Y(p.psia).toFixed(1)}`).join(' ')} fill="none" stroke={RUN_COLOR[r.variant.id] ?? 'var(--muted)'} strokeWidth={r.variant.id === 'as-built' ? 1.8 : 1} opacity={r.variant.id === 'as-built' ? 1 : 0.75} />
+          {r.rupture !== undefined && <circle cx={X(r.rupture)} cy={Y(burst)} r={3} fill={RUN_COLOR[r.variant.id] ?? 'var(--muted)'} />}
         </g>
       ))}
-      <text x={0} y={h + 12} fill="#4a5665" fontSize={9}>
+      <text x={0} y={h + 12} fill="var(--faint)" fontSize={9}>
         T+0 (ignition)
       </text>
-      <text x={W} y={h + 12} fill="#4a5665" fontSize={9} textAnchor="end">
+      <text x={W} y={h + 12} fill="var(--faint)" fontSize={9} textAnchor="end">
         T+{tMax.toFixed(0)} s · psia
       </text>
       <g transform={`translate(${W - 4}, ${h - 4})`}>
         {runs.map((r, i) => (
-          <text key={r.variant.id} x={0} y={-i * 11} fill={RUN_COLOR[r.variant.id] ?? '#7d8a99'} fontSize={8.5} textAnchor="end">
+          <text key={r.variant.id} x={0} y={-i * 11} fill={RUN_COLOR[r.variant.id] ?? 'var(--muted)'} fontSize={8.5} textAnchor="end">
             {r.variant.short}
           </text>
         ))}

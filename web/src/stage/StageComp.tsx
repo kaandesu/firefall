@@ -165,7 +165,7 @@ export function StageComp({ model, run, layer, status, highlight, hatchTime, onP
 function Readout({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <div>
-      <div style={{ fontSize: 9.5, letterSpacing: '0.14em', color: '#4a5665', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: 9.5, letterSpacing: '0.14em', color: '#4a5665', textTransform: 'lowercase' }}>{label}</div>
       <div style={{ fontSize: 17, color: color ?? '#e6edf3' }}>{value}</div>
     </div>
   )

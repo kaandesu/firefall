@@ -150,7 +150,7 @@ export function ComputeScreen() {
               <input value={form.gpu} onChange={(e) => setForm({ ...form, gpu: e.target.value })} className="input" />
             </Field>
           </div>
-          <button type="button" onClick={submitNode} className="mt-3 flex items-center gap-1.5 rounded-sm border border-ug/50 bg-ug/10 px-3 py-1 text-[11.5px] text-ug hover:bg-ug/20">
+          <button type="button" onClick={submitNode} className="key mt-3 h-[30px] px-3 text-[11.5px]">
             <Plus size={11} /> add server
           </button>
           <div className="mt-2 text-[10.5px] text-faint">The org's agents see it as a new target for `submit_job`; it shows up in the Lab panel's cluster strip.</div>
@@ -197,7 +197,7 @@ export function ComputeScreen() {
             <Field label="URL (inside the org network)">
               <input value={mform.url} onChange={(e) => setMform({ ...mform, url: e.target.value })} className="input" />
             </Field>
-            <button type="button" disabled={!!shake} onClick={submitMcp} className="flex h-[26px] items-center gap-1.5 rounded-sm border border-ug/50 bg-ug/10 px-3 text-[11.5px] text-ug hover:bg-ug/20 disabled:opacity-50">
+            <button type="button" disabled={!!shake} onClick={submitMcp} className="key h-[28px] px-3 text-[11.5px]">
               <Plus size={11} /> connect
             </button>
           </div>

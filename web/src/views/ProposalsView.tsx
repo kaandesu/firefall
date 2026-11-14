@@ -49,7 +49,7 @@ export function ProposalsView() {
                 <div key={r.by} className="flex gap-2">
                   <span className="w-[120px] shrink-0" style={{ color: agentColor(r.by) }}>
                     {agentName(r.by)}
-                    <span className="block text-[9px] uppercase tracking-wider" style={{ color: STANCE[r.stance].c }}>
+                    <span className="block text-[9px] lowercase" style={{ color: STANCE[r.stance].c }}>
                       {STANCE[r.stance].t}
                     </span>
                   </span>

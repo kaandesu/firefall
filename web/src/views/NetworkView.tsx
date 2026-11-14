@@ -111,7 +111,7 @@ function AgentNode({ data }: NodeProps<AgentNodeT>) {
   const tone = asked ? 'var(--warn)' : state === 'failed' ? 'var(--bad)' : state === 'working' || state === 'asking' || state === 'waiting' ? STATE_COLOR[state] : selected ? 'var(--ug)' : 'var(--line-2)'
   return (
     <div
-      className={cn('relative flex items-center gap-2 rounded-[5px] border bg-surface-2 px-2', asked && 'pulse-ring')}
+      className={cn('te-cap relative flex items-center gap-2 rounded-[10px] border px-2', asked && 'pulse-ring')}
       style={{
         width: NODE_W,
         height: NODE_H,
@@ -123,7 +123,7 @@ function AgentNode({ data }: NodeProps<AgentNodeT>) {
       <Handle type="source" position={Position.Top} style={center} />
       <Handle type="target" position={Position.Top} style={center} />
       {state === 'working' && <span className="work-halo" />}
-      <span className="absolute inset-y-1 left-0 w-[3px] rounded-r" style={{ background: orgOf(handle)?.color }} />
+      <span className="absolute inset-y-2 left-[3px] w-[3px] rounded-full" style={{ background: orgOf(handle)?.color }} />
       <Avatar handle={handle} size={26} />
       <div className="min-w-0 flex-1 leading-tight">
         <div className="truncate text-[11.5px] font-medium" style={{ color: human ? 'var(--ink)' : color }}>
@@ -132,12 +132,12 @@ function AgentNode({ data }: NodeProps<AgentNodeT>) {
         <div className="truncate text-[9.5px] text-muted-foreground">{asked ? (handle === HUMAN ? 'waiting on you' : 'on a task') : doing || (human ? 'lead engineer' : STATE_LABEL[state])}</div>
       </div>
       {data.model && (
-        <span className="absolute -top-2 right-2 bg-bg px-1 text-[8.5px] uppercase tracking-wider" style={{ color: MODEL_COLOR[data.model] }}>
+        <span className="absolute -top-2 right-2 rounded-full border border-line bg-surface px-1.5 text-[8.5px] lowercase" style={{ color: MODEL_COLOR[data.model] }}>
           {data.model}
         </span>
       )}
-      <span className="absolute -top-2 left-2 bg-bg px-1 text-[8.5px]" style={{ color: orgOf(handle)?.color }}>
-        {orgOf(handle)?.id.toUpperCase()}
+      <span className="absolute -top-2 left-2 rounded-full border border-line bg-surface px-1.5 text-[8.5px]" style={{ color: orgOf(handle)?.color }}>
+        {orgOf(handle)?.id}
         <span className="text-faint"> @{handle}</span>
       </span>
     </div>
@@ -159,7 +159,7 @@ function HubNode({ data }: NodeProps<HubNodeT>) {
       <Handle type="target" position={Position.Top} style={center} />
       {data.busy > 0 && <span className="absolute inset-[-5px] animate-ping rounded-full border border-gold/30" />}
       <Network size={16} />
-      <span className="mt-0.5 text-[8.5px] tracking-wider">LAGRANGE</span>
+      <span className="mt-0.5 text-[8.5px]">lagrange</span>
     </div>
   )
 }
@@ -293,7 +293,7 @@ function Callout({ at }: { at?: { x: number; y: number } }) {
         }}
       >
         <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="relative rounded border border-warn/70 bg-[color-mix(in_oklab,var(--warn)_12%,var(--bg))] p-2.5 text-[11px] shadow-2xl">
-          <div className="mb-1 flex items-center gap-1.5 text-[9.5px] uppercase tracking-wider text-warn">
+          <div className="mb-1 flex items-center gap-1.5 text-[9.5px] lowercase text-warn">
             <span className="size-1.5 animate-pulse rounded-full bg-warn" /> @{w.from} asks you
           </div>
           <div className="sans text-[12px] leading-snug text-ink">{w.question}</div>
@@ -436,7 +436,7 @@ export function NetworkView() {
         {Object.values(ORGS).map((o) => (
           <span key={o.id} className="flex items-center gap-1" title={`${o.name} · ${o.provider} · ${o.hosting}`}>
             <span className="h-2 w-[3px] rounded" style={{ background: o.color }} />
-            {o.id.toUpperCase()}
+            {o.id}
           </span>
         ))}
       </div>

@@ -44,7 +44,7 @@ function SubNode({ data }: NodeProps<SubNodeT>) {
   const color = agentColor(sub.agent)
   return (
     <div
-      className={cn('relative flex flex-col gap-1 rounded-[5px] border bg-surface-2 px-2.5 py-2 transition', off && 'opacity-40')}
+      className={cn('te-cap relative flex flex-col gap-1 rounded-[12px] border px-3 py-2.5 transition', off && 'opacity-40')}
       style={{ width: W, height: H, borderColor: sub.status === 'running' ? 'var(--k-task)' : sub.status === 'done' ? 'color-mix(in oklab, var(--k-reply) 45%, var(--line-2))' : 'var(--line-2)' }}
     >
       <Handle type="target" position={Position.Left} />
@@ -54,7 +54,7 @@ function SubNode({ data }: NodeProps<SubNodeT>) {
         <span className="text-faint">{sub.id}</span>
         <Avatar handle={sub.agent} size={15} />
         <span style={{ color }}>{agentName(sub.agent)}</span>
-        <span className="uppercase tracking-wider" style={{ color: MODEL_COLOR[sub.model] }}>
+        <span className="lowercase" style={{ color: MODEL_COLOR[sub.model] }}>
           {sub.model}
         </span>
         <span className="ml-auto flex items-center gap-1" style={{ color: st.c }}>
@@ -78,7 +78,7 @@ function SubNode({ data }: NodeProps<SubNodeT>) {
           type="button"
           onClick={onToggle}
           disabled={sub.required}
-          className={cn('nodrag absolute -top-2 right-2 flex items-center gap-1 rounded-sm border bg-bg px-1.5 text-[9px] uppercase tracking-wider', off ? 'border-line-2 text-faint' : 'border-ok/50 text-ok', sub.required && 'cursor-not-allowed')}
+          className={cn('nodrag absolute -top-2 right-2 flex items-center gap-1 rounded-full border bg-surface px-1.5 text-[9px] lowercase', off ? 'border-line-2 text-faint' : 'border-ok/50 text-ok', sub.required && 'cursor-not-allowed')}
           title={sub.required ? 'The lead needs this step' : off ? 'Switched off: click to run it' : 'Click to switch this step off'}
         >
           {sub.required ? <Lock size={8} /> : <span className={cn('size-1.5 rounded-full', off ? 'bg-faint' : 'bg-ok')} />}
