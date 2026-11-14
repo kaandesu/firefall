@@ -67,22 +67,22 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #121212;
-  --surface: #1b1b1b;
-  --surface-2: #252525;
-  --surface-3: #2e2e2e;
-  --line: #2a2a2a;
-  --line-2: #3a3a3a;
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #060606;
+  --surface-3: #0d0d0d;
+  --line: #1a1a1a;
+  --line-2: #262626;
   --ink: #f1f1ef;
   --muted: #a2a29d;
   --faint: #6b6b66;
-  --hi: rgba(255, 255, 255, 0.07);
-  --lo: rgba(0, 0, 0, 0.6);
-  --shadow: rgba(0, 0, 0, 0.75);
-  --key-top: #2c2c2c;
-  --key-bot: #1f1f1f;
-  --key-edge: #0a0a0a;
-  --viewport: #050505;
+  --hi: rgba(255, 255, 255, 0.04);
+  --lo: rgba(0, 0, 0, 0.85);
+  --shadow: rgba(0, 0, 0, 0.9);
+  --key-top: #080808;
+  --key-bot: #000000;
+  --key-edge: #262626;
+  --viewport: #000000;
   --screen-ink: #f2f2f0;
 
   --orange: #ff5a1f;
@@ -644,7 +644,36 @@
   transform-origin: 16px 16px;
   transition: transform 0.6s cubic-bezier(0.3, 1.4, 0.5, 1);
 }
+/* the logo, alive: three slow loops of different lengths (7 s, 9 s, 5 s) so it never looks like a loop */
+@keyframes orb-shine {
+  0%, 100% { transform: translate(-2.2px, 0); opacity: 0.32; }
+  50% { transform: translate(2.2px, 0.4px); opacity: 0.55; }
+}
+@keyframes orb-band {
+  0%, 100% { transform: translateY(0.8px) scaleX(1); }
+  50% { transform: translateY(-1.6px) scaleX(1.06); }
+}
+@keyframes orb-glow-soft {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0.95; }
+}
+.orb-alive .orb-shine {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: orb-shine 7s ease-in-out infinite;
+}
+.orb-alive .orb-band {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: orb-band 9s ease-in-out infinite;
+}
+.orb-alive:not(.orb-busy) .orb-glow {
+  animation: orb-glow-soft 5s ease-in-out infinite;
+}
 @media (prefers-reduced-motion: reduce) {
+  .orb-alive .orb-shine,
+  .orb-alive .orb-band,
+  .orb-alive .orb-glow,
   .orb-busy .orb-glow,
   .work-halo,
   .pulse-ring::after { animation: none; }
@@ -728,4 +757,13 @@
     color: #8e8e89;
     word-break: break-all;
   }
+}
+
+/* dark mode is pure space black: no sheen on the chassis, and displays get a hairline so they read on black */
+:root[data-theme="dark"] body {
+  background: #000;
+}
+:root[data-theme="dark"] .lcd,
+:root[data-theme="dark"] .bg-viewport {
+  box-shadow: inset 0 0 0 1px #1e1e1e;
 }
