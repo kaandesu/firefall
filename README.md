@@ -1,13 +1,39 @@
 # FIREFALL
 
-**A fire-safety review team for crewed spacecraft and habitats.** Specialist AI agents, one per engineering
-department, work together over an A2A network ([Lagrange](https://github.com/Three-Agent-Problem/agent2agency)).
-They take a vehicle's design package and turn NASA's microgravity combustion research into the deliverables a
-safety review panel asks for.
+**Human-in-the-loop agent collaboration across departments and companies, built for spacecraft fire safety.**
+
+A crewed-vehicle fire safety review already spans several organizations: the vehicle builder, a NASA data archive,
+a test lab and an independent safety office. Each one has its own data, tools, compute and sign-off. FIREFALL lets
+each of them put **an agent** on a shared network ([Lagrange](https://github.com/Three-Agent-Problem/agent2agency),
+A2A) and run the review together. Organizations expose an agent, not their data. People stay in charge of every call
+that matters.
 
 > Built for NASA Space Apps 2026: *Flame in Freefall*.
 
----
+## The value
+
+- **Cross-company, not just multi-agent.** Each organization runs its agents on its own hardware with its own model
+  provider: on-prem Claude, self-hosted Llama, GPT through an agency cloud, Claude on Bedrock GovCloud. They meet on
+  Lagrange as A2A addresses. This is not one orchestrator running many prompts on one machine.
+- **Expose the agent, keep the black box.** An org publishes an agent card with its skills ("test history lookup",
+  "schedule a test"). Raw camera frames, LIMS records, procedures, CAD and supplier data never leave the org. Other
+  agents get answers, not access.
+- **Each agent has its own tools.** Every agent brings its own MCP servers: `psi-archive` and `fit` at the archive,
+  `lims` and `chamber-scheduler` at the lab, `fire-tools` and `hpc-01 (Slurm)` at the vehicle team. The network does
+  not need to know how any of them work.
+- **Ask the owner instead of re-reading the data.** When Materials needs the limiting O₂ for nylon, it asks the PSI
+  Archivist, which already has 38 GB of Saffire-I processed into test points. It does not download and re-read the
+  dataset. The answer is more accurate because it comes from whoever owns the data, and much cheaper: the demo counts
+  the tokens each ask saved (≈544k across one review).
+- **Knowledge bases that build as they talk.** Each agent keeps what it has learned and where every fact came from:
+  an input file, a dataset, its own tool, another agent or a person. Later steps reuse those facts instead of the
+  raw context.
+- **People in the loop, with the lead as mediator.** Agents talk directly when they can settle something themselves.
+  When they disagree (Materials endorses a change, Safety Assurance objects), the Review Lead puts both positions side
+  by side and asks the engineer to decide. Agents can also hand physical work to people: the lab agent books a
+  chamber test and a technician runs it.
+- **The conversation is the audit trail.** Every ask, answer, objection, decision and citation is a signed message on
+  the network. That is what a safety review panel wants to see.
 
 ## Who it is for
 
@@ -41,116 +67,96 @@ Here is how spacecraft fire safety is handled today:
   example Saffire, BASS, FLEX, SAME and CFI. **None of it is connected to the review workflow.** It is searchable by
   keyword, but nobody turns it into "is *my* cabin safe at 34% O₂ on the Moon?"
 
-## What FIREFALL does
+## What happens in a review
 
-### Input: the design package
+**0 · Network.** Four organizations are on the network, each with its agents, models, compute, MCP tools and
+datasets. Each card shows what the org exposes and what stays private. Another company can join by its agent card
+URL; the demo connects a detector vendor.
 
-What the engineering team already has:
+| Org | Agent(s) | Runs on | Keeps private |
+|---|---|---|---|
+| **Vehicle team** (prime, you) | Review Lead, Materials, Simulation, Report | on-prem `hpc-01`, Claude via internal gateway | cabin CAD, supplier data, cost model |
+| **NASA PSI archive** | PSI Archivist | GRC GPU cluster, self-hosted Llama 3.3 | raw camera frames, unpublished runs |
+| **White Sands Test Facility** | WSTF Lab Agent + a technician | lab cluster, GPT-4.1 via agency cloud | LIMS records, procedures, other customers' results |
+| **Independent S&MA** | Safety Assurance | FedRAMP agency cloud, Claude on Bedrock | review checklists, past findings |
 
-- **Cabin spec:** atmosphere (O₂ %, pressure), gravity (µg / Moon / Mars), free volume, ventilation flow.
-- **Materials list:** each non-metal material, where it is used and how much.
-- **Ignition sources:** batteries, avionics, heaters, O₂ generators.
-- **Existing test data:** Test 1 results, if the team has them.
-- **Layout (optional):** a 3D model of the cabin. The demo uses a simple box model.
+**1 · Intake.** Real input files: `cabin.yaml` (atmosphere, gravity, volume, hatch, hull), `materials.csv` (part,
+material, zone, amount) and `cabin.model.json` (the cabin geometry by zone). FIREFALL parses and cross-checks them,
+for example a material with no zone in the model or an unknown material.
 
-### Output: what the safety review needs
+**2 · Plan.** The Review Lead proposes subtasks, each with its owning agent, what it reads and what it produces. You
+switch optional steps off and approve. Nothing runs until you do.
 
-- **Materials matrix.** Every material marked *passes*, *fails* or *needs retest* at the target atmosphere and
-  gravity, with the PSI evidence behind each call and the oxygen margin.
-- **Draft fire hazard report.** Hazard causes, controls (prevention, detection, suppression), verification methods and
-  open items, with every claim cited.
-- **Test requests.** Which materials to send to the test lab, and at which atmosphere.
-- **Crew response card.** Short, evidence-backed actions for an alarm in this specific cabin.
-- **Simulations.** Quick visual checks of how a flame, a smoke plume or flame spread behaves under the cabin's
-  conditions, bounded between microgravity and 1 g data. They are labeled as triage, not certification.
+**3 · Run.** One screen of panels:
+- **Network:** live traffic through Lagrange. Cross-org lines are dashed. When the review is waiting on you, the
+  question appears on your node.
+- **Stage:** the cabin built from the model, with the materials, spread, pressure and what-if layers. Each layer
+  unlocks when an agent produces it.
+- **Agent:** one agent's workspace: data jobs on its org's compute, tool calls, and its knowledge base with sources.
+- **Plan, Findings** (materials matrix, proposals) and **Comms**: every agent-to-agent message, with the tokens
+  saved by asking.
 
-### How it works
+What happens in the Apollo CM-012 example:
+1. The Archivist processes Saffire-I, BASS-II and ACME on the PSI cluster into fitted limits. Materials *asks* it
+   instead of reading the data.
+2. Materials asks the WSTF agent for Test 1 history on PTFE. There is none, so the lab offers a slot and the Lead asks
+   you whether to book it. The lab agent hands the job to the technician, who runs it, and the matrix updates.
+3. Simulation asks Materials for burn rates, runs spread and pressure, and finds hull rupture at T+15 s against a
+   90 s hatch.
+4. Materials **proposes PR-1** (Beta cloth for nylon, 60/40 O₂/N₂ on the pad). Simulation re-runs it and endorses it;
+   Safety Assurance objects with sources. The Lead mediates, and you accept, accept with the caveat, or reject.
+5. Report writes the verdict and the hazard report.
 
-You give the package and a request to the **Review Lead** in chat, for example *"Review the PR-2 rover for the
-Phase II safety review."* The lead publishes a plan and hands parts of it to specialist agents. Each agent stands for
-a real engineering department:
+**4 · Verdict.** Findings, the changes decided and by whom, collaboration stats (messages, cross-org lines, asks
+answered by the owner, tokens saved, steps that needed a person), and `matrix.csv` and `hazard-report.md` exports.
 
-| Agent | Department | Works from |
-|---|---|---|
-| Review Lead | Coordinates the review, asks you for decisions | — |
-| Research | Finds and ranks relevant PSI investigations | all PSI combustion studies |
-| Materials & Flammability | Material pass/fail at the target atmosphere and gravity | Saffire, BASS, BRE, CFI-G |
-| Detection | Smoke types, particle sizes, detector placement | SAME, SAME-R, DAFT |
-| Suppression | Extinguishing limits, CO₂ vs water mist, hidden "cool flames" | FLEX, FLEX-2, CFI |
-| Simulation | Runs the visual models with the cabin's parameters | — |
-| Safety Assurance | Independent reviewer: checks citations, flags claims outside the tested range | — |
-| Report | Assembles the hazard report and the materials matrix | — |
+## Demo vs real
 
-**People stay in the loop:**
-- **You (lead engineer)** approve the plan and make the trade-off calls, for example "keep 34% O₂, or lower it and
-  lose pre-breathe time?". The review pauses until you answer.
-- **The test lab** (for example White Sands Test Facility) is asked directly by the Materials agent when evidence is
-  missing, such as "do you have Test 1 data for Nomex at 34%?". The lab answers or schedules a test.
-- You can add more people and departments to the team.
-
-### Why multi-agent (A2A) and not one chatbot
-
-The real review is already split across departments and organizations. Each holds different data, and each has to
-sign off on its own part. FIREFALL keeps that structure:
-
-- **One agent per department.** Each has its own tools, data and context. On the Lagrange network they can sit in
-  different organizations: the test lab's agent can answer from lab data the vehicle builder never sees.
-- **Agents ask each other and ask people.** The Materials agent asks Detection a question, Safety Assurance challenges
-  a claim, and the Lead escalates to you. That is how a review board works, and a single chat answer can't do it.
-- **The conversation is the audit trail.** Every request, answer, approval and citation is a message on the network.
-  The record shows who decided what and on which evidence, which is what a safety panel wants to see.
-- **Scales with the program.** Adding a department or an organization means adding an agent to the network, not
-  rewriting a prompt.
-
-## Demo scenarios
-
-| Scenario | Story |
-|---|---|
-| **PR-2 rover design review** (main) | Lunar pressurized rover at 34% O₂ / 8.2 psia. Materials matrix, a question to the test lab, a trade-off decision for you, and a draft hazard report |
-| **Rover smoke alarm** | Operations case: an alarm in the aft avionics bay. Smoke or dust? What is burning? Then a crew response card |
-| **Apollo 1 case file** | Would this review have flagged the 1967 cabin (100% O₂ at 16.7 psia) before the test? Yes: 7 of 7 cabin materials burn |
-
-The demo is a scripted replay of the same events a live run produces, so it looks the same as live mode.
-
-## Data and honesty
-
-- **PSI metadata** for 24 combustion investigations is snapshotted from the public PSI API into
-  `data/psi/investigations.json` (`node scripts/fetch-psi.mjs`). The raw datasets need a PSI login; downloaded ones go
-  in `data/psi/<PSI-id>/`.
-- **The physics models** are simplified engineering models (limiting O₂ vs flow, spread rate, d² droplet law, detector
-  response by particle size), tuned to the trends reported by PSI investigations. They are for **triage**: they show
-  what to test first. They do not replace Test 1, FDS fire modelling or the review panel.
-- No partial-gravity fire data exists in PSI. Moon and Mars results are always shown as **bounded between µg and 1 g**.
+The demo is a **scripted replay** of the same Lagrange events a live run produces, and it goes through the same fold,
+so the UI is the same in both modes. **The data science is illustrative for now:** dataset jobs, fitted limits and
+token savings are scripted to show *how* agents would use the PSI library. The spread and pressure model is a simple
+zone model (Dijkstra spread and lumped pressure) tuned to the Apollo 1 record. It is for triage only and does not
+replace Test 1, FDS or the review panel. Input parsing and cross-checks are real.
 
 ## Architecture
 
 ```
 mates-end/
-  web/      React 19 + Vite + TypeScript + Tailwind v4 + shadcn/ui, three.js (react-three-fiber) for the sims
+  web/      React 19 + Vite + TypeScript + Tailwind v4, React Flow (network, plan), Remotion + react-three-fiber (stage)
+    public/examples/apollo-cm012/   cabin.yaml, materials.csv, cabin.model.json
+    src/intake/   parse + cross-check the input files
+    src/live/     Lagrange entry types, reducer, replay, store
+    src/demo/     orgs, agents, people, the Apollo review script
+    src/stage/    cabin, zone fire model, Remotion composition
   data/psi/ public PSI metadata snapshot (+ downloaded datasets, not committed)
-  scripts/  PSI snapshot script
-  server/   (next) PocketBase + Gin: datasets, saved reviews, Lagrange proxy
-  agents/   (next) fire-tools MCP server + one Claude Code agent per department, connected via `lagrange tunnel --acp`
+  server/   (next) Lagrange proxy, saved reviews
+  agents/   (next) one agent per org/department with its own MCP servers, connected via `lagrange tunnel --acp`
 ```
 
-Demo and live use one event model: every task, message, tool call and artifact is a Lagrange activity entry, and both
-the replay and the live SSE stream go through the same fold.
+Every task, message, tool call, knowledge fact, data job and proposal is a Lagrange activity entry. A pure
+`reduce(model, entry)` folds them for both the replay and the live SSE stream.
 
 ## Run it
 
 ```bash
 cd web
 pnpm install
-pnpm dev            # http://127.0.0.1:5180
+pnpm dev            # http://localhost:5180
 ```
 
-Deep links: `?run=habitat|incident|apollo1&autoplay=1&speed=4`.
+Deep links: `?example=1` loads the Apollo case, `&start=1` starts the review straight away, and `&speed=4` plays faster.
+Keys on the run screen: `1`–`6` focus a panel, `+`/`-` resize it, `h`/`l` switch agent, `a` answers with the
+default option, and `?` lists the rest.
 
 ## Status
 
-- [x] Scripted demo, three scenarios, PSI snapshot, four simulations
-- [x] Product-focused UI: design package, team & network, materials matrix, test requests, hazard report, chat, light/dark
-- [ ] Live agents on Lagrange (Claude Code over ACP + fire-tools MCP)
+- [x] Network setup: four orgs with providers, compute, MCP servers, exposed and private lists; connect an agent by card
+- [x] Intake from real files with cross-checks; plan approval
+- [x] Run: cross-org asks, knowledge bases with sources, data jobs, lab work by a person, proposals with reviews,
+      mediated decisions, token savings
+- [x] Cabin stage (materials, spread, pressure, what-if) and verdict with exports
+- [ ] Live agents on Lagrange (one per org, each with its own MCP servers and provider)
+- [ ] Real dataset processing on the PSI library
 - [ ] Deploy (public demo replay; live mode behind an access key)
 
 ## Sources

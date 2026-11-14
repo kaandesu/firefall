@@ -1,7 +1,7 @@
 // Folds Lagrange activity entries into the mission state the dashboard draws.
 // Pure: reduce(m, e) returns a new model. Demo replay and live SSE share it, so a demo looks exactly like a live run.
 import { CREW, HUB, HUMAN } from '@/demo/crew'
-import type { Alarm, MatrixRow, TestRequest, CaseFile, CaseItem, CommKind, Cite, DossierSection, Entry, HumanAsk, Payload, Plan, Ranked, SimRun, ToolCall, Verdict } from './types'
+import type { Job, KbEntry, Proposal, Saving, Alarm, MatrixRow, TestRequest, CaseFile, CaseItem, CommKind, Cite, DossierSection, Entry, HumanAsk, Payload, Plan, Ranked, SimRun, ToolCall, Verdict } from './types'
 
 export type AgentState = 'idle' | 'working' | 'asking' | 'waiting' | 'done' | 'failed'
 
@@ -17,7 +17,7 @@ export type AgentRT = {
   lastAt: number
 }
 
-export type Comm = { id: string; at: number; from: string; to: string; kind: CommKind; text: string; cites?: Cite[]; taskId?: string }
+export type Comm = { id: string; at: number; from: string; to: string; kind: CommKind; text: string; cites?: Cite[]; taskId?: string; saved?: Saving }
 
 /** Readable progress for the chat: things a lead engineer cares about, not every message. */
 export type Milestone = { id: string; at: number; text: string; view: 'overview' | 'materials' | 'evidence' | 'sim' | 'report' | 'case'; by?: string }
@@ -47,6 +47,10 @@ export type Model = {
   tests: TestRequest[]
   feed: Entry[]
   done: boolean
+  kb: Record<string, KbEntry[]>
+  jobs: Job[]
+  proposals: Proposal[]
+  saved: { tokens: number; asks: number }
 }
 
 const FEED_MAX = 200
@@ -55,7 +59,7 @@ const PACKET_MAX = 60
 export function emptyModel(): Model {
   const agents: Record<string, AgentRT> = {}
   for (const a of CREW) agents[a.handle] = { handle: a.handle, state: 'idle', doing: '', model: a.model, cost: 0, ctx: 0, tools: [], notes: [], lastAt: 0 }
-  return { seq: 0, now: 0, agents, tasks: {}, comms: [], packets: [], ranking: [], focusIds: [], sims: [], dossier: [], alarms: [], matrix: [], milestones: [], tests: [], feed: [], done: false }
+  return { seq: 0, now: 0, agents, tasks: {}, comms: [], packets: [], ranking: [], focusIds: [], sims: [], dossier: [], alarms: [], matrix: [], milestones: [], tests: [], feed: [], done: false, kb: {}, jobs: [], proposals: [], saved: { tokens: 0, asks: 0 } }
 }
 
 const ms = (iso?: string) => (iso ? Date.parse(iso) : 0)
@@ -111,7 +115,7 @@ export function reduce(prev: Model, e: Entry): Model {
       } else if (state === 'failed') touch(m, t.to, { state: 'failed', doing: e.summary ?? 'failed' }, at)
       else if (state === 'input_required') {
         if (t.to === HUMAN || d.awaiting === HUMAN) {
-          m.waiting = { taskId: id, from: t.from, question: e.summary ?? '', options: (d.options as string[]) ?? ['Approve'], at }
+          m.waiting = { taskId: id, from: t.from, question: e.summary ?? '', options: (d.options as string[]) ?? ['Approve'], at, positions: d.positions as HumanAsk['positions'] }
           touch(m, t.from, { state: 'waiting', doing: 'waiting on you' }, at)
         } else touch(m, t.to, { state: 'asking', doing: e.summary ?? '' }, at)
       }
@@ -125,7 +129,9 @@ export function reduce(prev: Model, e: Entry): Model {
       const kind = (d.kind as CommKind) ?? 'reply'
       const from = e.sender ?? '?'
       const to = e.recipient ?? '?'
-      m.comms = [...m.comms, { id: `c${e.seq}`, at, from, to, kind, text: String(d.text ?? ''), cites: d.cites as Cite[] | undefined, taskId: e.taskId }]
+      const saved = d.saved as Saving | undefined
+      m.comms = [...m.comms, { id: `c${e.seq}`, at, from, to, kind, text: String(d.text ?? ''), cites: d.cites as Cite[] | undefined, taskId: e.taskId, saved }]
+      if (saved) m.saved = { tokens: m.saved.tokens + saved.tokens, asks: m.saved.asks + 1 }
       packet(m, from, to, kind, at, `p${e.seq}`)
       if (kind === 'ask') touch(m, from, { state: 'asking', doing: `asking ${to}` }, at)
       else if (kind === 'reply' && m.agents[from]?.state === 'asking') touch(m, from, { state: 'working' }, at)
@@ -193,6 +199,24 @@ export function reduce(prev: Model, e: Entry): Model {
           const i = m.tests.findIndex((x) => x.id === r.id)
           m.tests = i >= 0 ? m.tests.map((x, j) => (j === i ? { ...x, ...r } : x)) : [...m.tests, r]
           milestone(m, `${r.id}-${r.status}`, at, `test request ${r.id} ${r.status}: ${r.material} at ${r.atmosphere}${r.eta ? ` (${r.eta})` : ''}`, 'materials', e.sender)
+          return m
+        }
+        case 'fc.kb': {
+          const k = d.entry as KbEntry
+          const list = m.kb[k.agent] ?? []
+          if (!list.some((x) => x.id === k.id)) m.kb = { ...m.kb, [k.agent]: [...list, k] }
+          return m
+        }
+        case 'fc.job': {
+          const j = d.job as Job
+          const i = m.jobs.findIndex((x) => x.id === j.id)
+          m.jobs = i >= 0 ? m.jobs.map((x, k) => (k === i ? { ...x, ...j } : x)) : [...m.jobs, j]
+          return m
+        }
+        case 'fc.proposal': {
+          const p = d.proposal as Proposal
+          const i = m.proposals.findIndex((x) => x.id === p.id)
+          m.proposals = i >= 0 ? m.proposals.map((x, k) => (k === i ? { ...x, ...p } : x)) : [...m.proposals, p]
           return m
         }
         case 'fc.alarm':

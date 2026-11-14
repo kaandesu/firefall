@@ -4,6 +4,7 @@ import { useMission } from '@/live/store'
 import { IntakeScreen } from '@/screens/IntakeScreen'
 import { PlanScreen } from '@/screens/PlanScreen'
 import { RunScreen } from '@/screens/RunScreen'
+import { SetupScreen } from '@/screens/SetupScreen'
 import { TopBar } from '@/screens/TopBar'
 import { VerdictScreen } from '@/screens/VerdictScreen'
 
@@ -23,6 +24,7 @@ export default function App() {
     <TooltipProvider delayDuration={250}>
       <div className="flex h-full flex-col">
         <TopBar />
+        {phase === 'setup' && <SetupScreen />}
         {phase === 'intake' && <IntakeScreen />}
         {phase === 'plan' && <PlanScreen />}
         {phase === 'run' && <RunScreen />}

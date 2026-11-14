@@ -1,6 +1,81 @@
-// The FIREFALL review team. Each agent stands for one engineering department and is one Lagrange address
-// (an A2A agent card at /a/{handle}). In live mode each runs as Claude Code over ACP (`lagrange tunnel --acp`)
-// with the fire-tools MCP server. Handles are stable ids used by the event log; names are what people see.
+// The FIREFALL review network. Every agent is one Lagrange address (an A2A agent card at /a/{handle}).
+// Agents belong to organizations: each org runs its own agents on its own hardware, with its own model provider
+// and MCP tools, and exposes only the agent, never the data or the tools behind it.
+// Handles are stable ids used by the event log; names are what people see.
+
+export type OrgId = 'prime' | 'psi' | 'wstf' | 'sma'
+
+export type OrgDef = {
+  id: OrgId
+  name: string
+  kind: string
+  color: string
+  /** Where its agents run. */
+  hosting: string
+  compute: string
+  /** The LLM behind its agents. */
+  provider: string
+  /** What other orgs can see: the agent's skills. */
+  exposes: string[]
+  /** What never leaves the org. */
+  private: string[]
+  /** Datasets it holds (sizes are what sits on its storage). */
+  datasets?: { name: string; size: string; kind: string }[]
+}
+
+export const ORGS: Record<OrgId, OrgDef> = {
+  prime: {
+    id: 'prime',
+    name: 'Vehicle team',
+    kind: 'prime contractor · you',
+    color: '#ff7a3d',
+    hosting: 'on-prem',
+    compute: 'hpc-01 · Slurm · 8× H100',
+    provider: 'Claude via internal gateway',
+    exposes: ['review lead', 'materials matrix', 'cabin sims'],
+    private: ['cabin CAD', 'supplier data', 'cost model'],
+  },
+  psi: {
+    id: 'psi',
+    name: 'NASA PSI archive',
+    kind: 'data provider',
+    color: '#5aa9ff',
+    hosting: 'NASA GRC data centre',
+    compute: 'grc-gpu · Kubernetes · 32× A100',
+    provider: 'self-hosted Llama 3.3 70B',
+    exposes: ['search', 'dataset features', 'test-point queries'],
+    private: ['raw camera frames', 'unpublished runs'],
+    datasets: [
+      { name: 'Saffire-I (PSI-98)', size: '38 GB', kind: 'video · O₂/CO₂ · heat flux' },
+      { name: 'BASS-II (PSI-25)', size: '12 GB', kind: 'video · flow · O₂' },
+      { name: 'ACME Flame Design (PSI-10)', size: '61 GB', kind: 'INTNS frames · radiometers' },
+      { name: 'ACME CFI-G (PSI-159)', size: '27 GB', kind: 'frames · thermocouples' },
+      { name: 'BRE (PSI-20)', size: '4 GB', kind: 'burner · O₂ · pressure' },
+    ],
+  },
+  wstf: {
+    id: 'wstf',
+    name: 'NASA White Sands Test Facility',
+    kind: 'test lab',
+    color: '#2dd4bf',
+    hosting: 'WSTF network',
+    compute: 'lab workstation cluster',
+    provider: 'GPT-4.1 via agency cloud',
+    exposes: ['test history lookup', 'schedule a test', 'test results'],
+    private: ['LIMS records', 'procedures', 'other customers’ results'],
+  },
+  sma: {
+    id: 'sma',
+    name: 'Independent S&MA',
+    kind: 'safety & mission assurance',
+    color: '#c9a2ff',
+    hosting: 'agency cloud (FedRAMP High)',
+    compute: 'managed',
+    provider: 'Claude via Bedrock (GovCloud)',
+    exposes: ['independent review', 'citation check'],
+    private: ['review checklists', 'past findings'],
+  },
+}
 
 export type AgentDef = {
   handle: string
@@ -9,9 +84,11 @@ export type AgentDef = {
   role: string
   blurb: string
   color: string
-  icon: 'lead' | 'research' | 'materials' | 'detection' | 'suppression' | 'sim' | 'safety' | 'report'
-  model: 'opus' | 'sonnet' | 'haiku'
-  org: 'builder' | 'independent'
+  icon: 'lead' | 'research' | 'materials' | 'detection' | 'suppression' | 'sim' | 'safety' | 'report' | 'lab'
+  model: 'opus' | 'sonnet' | 'haiku' | 'llama' | 'gpt'
+  org: OrgId
+  /** Its own MCP servers. */
+  mcp: string[]
   tools: { name: string; desc: string }[]
 }
 
@@ -19,7 +96,7 @@ export type PersonDef = {
   handle: string
   name: string
   role: string
-  org: string
+  org: OrgId
   color: string
   /** Agent this person works with (their department's agent), if any. */
   with?: string
@@ -36,35 +113,35 @@ export const CREW: AgentDef[] = [
     name: 'Review Lead',
     dept: 'Fire safety review',
     role: 'Coordinates the review',
-    blurb: 'Turns your request into a plan, hands work to departments, reviews results and asks you when a decision is yours.',
-    color: '#d4541f',
+    blurb: 'Turns your request into a plan, hands work to departments, mediates when they disagree and asks you when a decision is yours.',
+    color: '#ff7a3d',
     icon: 'lead',
     model: 'opus',
-    org: 'builder',
+    org: 'prime',
+    mcp: ['lagrange', 'review-board'],
     tools: [
       { name: 'publish_plan', desc: 'Publish the review plan' },
       { name: 'delegate', desc: 'Send a subtask to a department over A2A' },
-      { name: 'ask_human', desc: 'Pause for a decision from the lead engineer' },
-      { name: 'request_review', desc: 'Send work to Safety Assurance' },
-      { name: 'accept', desc: 'Accept a subtask as done' },
-      { name: 'escalate', desc: 'Retry a failed subtask on a stronger model' },
+      { name: 'ask_human', desc: 'Pause for a decision from a person' },
+      { name: 'mediate', desc: 'Put two positions side by side for a person to decide' },
     ],
   },
   {
     handle: 'archivist',
-    name: 'Research',
-    dept: 'Research · NASA PSI',
-    role: 'Finds the evidence',
-    blurb: 'Searches NASA Physical Sciences Informatics, ranks investigations against the design and compares them.',
-    color: '#7c5cc4',
+    name: 'PSI Archivist',
+    dept: 'NASA PSI archive',
+    role: 'Owns the combustion datasets',
+    blurb: 'Holds the raw PSI data next to it, turns frames and channels into test points, and answers questions about them so nobody else has to download 38 GB.',
+    color: '#5aa9ff',
     icon: 'research',
-    model: 'haiku',
-    org: 'builder',
+    model: 'llama',
+    org: 'psi',
+    mcp: ['psi-archive', 'frame-features', 'fit'],
     tools: [
       { name: 'psi_search', desc: 'Search the PSI repository' },
-      { name: 'psi_get', desc: 'Read one investigation: objectives, hardware, test matrix' },
-      { name: 'rank_investigations', desc: 'Score relevance against the design package' },
-      { name: 'compare', desc: 'Side-by-side of fuels, O₂, flow, sensors' },
+      { name: 'ingest', desc: 'Pull a raw dataset onto the archive cluster' },
+      { name: 'extract_features', desc: 'Frames and channels to per-frame features' },
+      { name: 'fit_model', desc: 'Fit a flammability or spread model to test points' },
     ],
   },
   {
@@ -72,16 +149,16 @@ export const CREW: AgentDef[] = [
     name: 'Materials',
     dept: 'Materials & flammability',
     role: 'Will it burn here?',
-    blurb: 'Checks every material on the list against the target atmosphere and gravity. Saffire, BASS, BRE, CFI-G.',
-    color: '#c2416c',
+    blurb: 'Checks every material on the list against the target atmosphere and gravity, and proposes substitutions.',
+    color: '#ff6b9a',
     icon: 'materials',
     model: 'sonnet',
-    org: 'builder',
+    org: 'prime',
+    mcp: ['fire-tools', 'maptis-mirror'],
     tools: [
-      { name: 'psi_get', desc: 'Read an investigation' },
-      { name: 'dataset_query', desc: 'Query a downloaded PSI dataset' },
       { name: 'flammability_map', desc: 'Limiting O₂ vs flow and gravity for a material' },
-      { name: 'request_test', desc: 'Ask the test lab for data or a retest' },
+      { name: 'maptis_lookup', desc: 'Look up a material in the internal MAPTIS mirror' },
+      { name: 'propose_change', desc: 'Propose a design change for review' },
     ],
   },
   {
@@ -93,12 +170,9 @@ export const CREW: AgentDef[] = [
     color: '#1b84a8',
     icon: 'detection',
     model: 'sonnet',
-    org: 'builder',
-    tools: [
-      { name: 'psi_get', desc: 'Read an investigation' },
-      { name: 'dataset_query', desc: 'Query a downloaded PSI dataset' },
-      { name: 'detector_coverage', desc: 'Time-to-alarm per detector for a smoke source' },
-    ],
+    org: 'prime',
+    mcp: ['fire-tools'],
+    tools: [{ name: 'detector_coverage', desc: 'Time-to-alarm per detector for a smoke source' }],
   },
   {
     handle: 'suppress',
@@ -109,41 +183,58 @@ export const CREW: AgentDef[] = [
     color: '#2f8f57',
     icon: 'suppression',
     model: 'sonnet',
-    org: 'builder',
-    tools: [
-      { name: 'psi_get', desc: 'Read an investigation' },
-      { name: 'dataset_query', desc: 'Query a downloaded PSI dataset' },
-      { name: 'extinction_limit', desc: 'Limiting oxygen index under a diluent' },
-    ],
+    org: 'prime',
+    mcp: ['fire-tools'],
+    tools: [{ name: 'extinction_limit', desc: 'Limiting oxygen index under a diluent' }],
   },
   {
     handle: 'sim',
     name: 'Simulation',
     dept: 'Analysis & simulation',
     role: 'Shows what happens',
-    blurb: 'Runs the flame, smoke, spread and droplet models with the cabin’s parameters and returns metrics.',
-    color: '#3566c9',
+    blurb: 'Builds the cabin from the model, runs spread and pressure on the in-house cluster and returns metrics.',
+    color: '#7aa2ff',
     icon: 'sim',
     model: 'haiku',
-    org: 'builder',
+    org: 'prime',
+    mcp: ['fire-tools', 'hpc-01 (Slurm)'],
     tools: [
-      { name: 'sim_run', desc: 'Run a simulation with given parameters' },
-      { name: 'sim_snapshot', desc: 'Capture the current frame and metrics' },
+      { name: 'build_cabin', desc: 'Mesh the cabin model into zones' },
+      { name: 'sim_run', desc: 'Submit a spread run to the cluster' },
+      { name: 'pressure_estimate', desc: 'Cabin pressure against the hull limit' },
+    ],
+  },
+  {
+    handle: 'wstf',
+    name: 'WSTF Lab Agent',
+    dept: 'White Sands Test Facility',
+    role: 'Test history and scheduling',
+    blurb: 'Answers from the lab’s own records and books chamber time. Raw records and procedures stay at the lab.',
+    color: '#2dd4bf',
+    icon: 'lab',
+    model: 'gpt',
+    org: 'wstf',
+    mcp: ['lims', 'chamber-scheduler'],
+    tools: [
+      { name: 'lims_query', desc: 'Search the lab’s test records (private)' },
+      { name: 'schedule_test', desc: 'Book a chamber slot' },
+      { name: 'publish_result', desc: 'Share a test result summary' },
     ],
   },
   {
     handle: 'skeptic',
     name: 'Safety Assurance',
-    dept: 'Safety & mission assurance',
+    dept: 'Independent S&MA',
     role: 'Independent check',
-    blurb: 'Checks every claim against its citation and flags anything outside the tested range (e.g. Moon gravity).',
-    color: '#a16207',
+    blurb: 'Checks every claim against its source and flags anything outside the tested range. Can object to a proposal.',
+    color: '#c9a2ff',
     icon: 'safety',
     model: 'opus',
-    org: 'independent',
+    org: 'sma',
+    mcp: ['citation-check', 'review-checklists'],
     tools: [
-      { name: 'check_citations', desc: 'Verify each claim maps to a PSI record' },
-      { name: 'bound_partial_g', desc: 'Bound Moon/Mars behaviour between µg and 1 g data' },
+      { name: 'check_citations', desc: 'Verify each claim maps to a source' },
+      { name: 'review_proposal', desc: 'Endorse or object to a proposed change' },
     ],
   },
   {
@@ -151,31 +242,33 @@ export const CREW: AgentDef[] = [
     name: 'Report',
     dept: 'Documentation',
     role: 'Writes the hazard report',
-    blurb: 'Assembles the materials matrix and the draft fire hazard report with citations.',
-    color: '#5b6573',
+    blurb: 'Assembles the materials matrix, the accepted changes and the hazard report with citations.',
+    color: '#9aa3ae',
     icon: 'report',
     model: 'sonnet',
-    org: 'builder',
-    tools: [
-      { name: 'report_write', desc: 'Write a hazard report section' },
-      { name: 'chart_make', desc: 'Render a chart from a dataset query' },
-    ],
+    org: 'prime',
+    mcp: ['docs'],
+    tools: [{ name: 'report_write', desc: 'Write a hazard report section' }],
   },
 ]
 
 export const AGENT: Record<string, AgentDef> = Object.fromEntries(CREW.map((a) => [a.handle, a]))
 
 export const PEOPLE: PersonDef[] = [
-  { handle: HUMAN, name: 'You', role: 'Lead engineer', org: 'Vehicle team', color: 'var(--ink)', with: 'flight' },
-  { handle: LAB, name: 'Test lab', role: 'Materials testing · White Sands (WSTF)', org: 'NASA WSTF', color: '#0f766e', with: 'prevent' },
+  { handle: HUMAN, name: 'You', role: 'Lead engineer', org: 'prime', color: 'var(--ink)', with: 'flight' },
+  { handle: LAB, name: 'WSTF technician', role: 'Runs the chamber tests', org: 'wstf', color: '#2dd4bf', with: 'wstf' },
 ]
 
 const PERSON: Record<string, PersonDef> = Object.fromEntries(PEOPLE.map((p) => [p.handle, p]))
 
 export const isPerson = (h?: string) => !!h && !!PERSON[h]
 export const personOf = (h?: string) => (h ? PERSON[h] : undefined)
+export const orgOf = (h?: string): OrgDef | undefined => {
+  const o = AGENT[h ?? '']?.org ?? PERSON[h ?? '']?.org
+  return o ? ORGS[o] : undefined
+}
 
-export const agentColor = (h?: string) => (h === HUB ? '#a16207' : (AGENT[h ?? '']?.color ?? PERSON[h ?? '']?.color ?? '#6b7280'))
+export const agentColor = (h?: string) => (h === HUB ? '#ffcf6b' : (AGENT[h ?? '']?.color ?? PERSON[h ?? '']?.color ?? '#6b7280'))
 export const agentName = (h?: string) => (h === HUB ? 'Lagrange' : (AGENT[h ?? '']?.name ?? PERSON[h ?? '']?.name ?? h ?? '?'))
 
-export const MODEL_COLOR: Record<string, string> = { haiku: 'var(--k-reply)', sonnet: 'var(--k-task)', opus: 'var(--k-review)', human: 'var(--muted)' }
+export const MODEL_COLOR: Record<string, string> = { haiku: 'var(--k-reply)', sonnet: 'var(--k-task)', opus: 'var(--k-review)', llama: 'var(--ug)', gpt: '#2dd4bf', human: 'var(--muted)' }

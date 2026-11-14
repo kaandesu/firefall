@@ -101,6 +101,8 @@ export type HumanAsk = {
   question: string
   options: string[]
   at: number
+  /** When the lead mediates: each side's position, so the person sees both before choosing. */
+  positions?: { by: string; text: string }[]
 }
 
 export type Alarm = { id: string; module: string; detector: string; level: 'caution' | 'warning'; text: string; at: number }
@@ -143,6 +145,44 @@ export type TestRequest = {
   eta?: string
 }
 
+/** One fact in an agent's knowledge base, and where it came from. */
+export type KbEntry = { id: string; agent: string; text: string; source: { kind: 'input' | 'dataset' | 'agent' | 'human' | 'tool'; ref: string }; tokens?: number }
+
+/** A data-processing job an agent runs on its own org's compute (looks only in the demo). */
+export type Job = {
+  id: string
+  agent: string
+  title: string
+  dataset: string
+  size: string
+  where: string
+  steps: string[]
+  step: number
+  progress: number // 0..1 overall
+  stats: Record<string, string>
+  /** A small series for the sparkline, 0..1. */
+  series?: number[]
+  done?: boolean
+}
+
+export type ProposalReview = { by: string; stance: 'endorse' | 'object' | 'comment'; text: string; cites?: Cite[] }
+
+/** A change an agent proposes; other agents review it, a person decides. */
+export type Proposal = {
+  id: string
+  by: string
+  title: string
+  change: string
+  why: string
+  impact: { label: string; before: string; after: string }[]
+  reviews: ProposalReview[]
+  status: 'open' | 'escalated' | 'accepted' | 'rejected' | 'deferred'
+  decidedBy?: string
+}
+
+/** What asking an agent saved, compared with reading the material yourself. */
+export type Saving = { tokens: number; instead: string }
+
 // Payload shapes carried in Entry.data (data.name discriminates).
 export type Payload =
   | { name: 'fc.plan'; plan: Plan }
@@ -152,8 +192,11 @@ export type Payload =
   | { name: 'fc.sim'; run: SimRun }
   | { name: 'fc.dossier'; section: DossierSection }
   | { name: 'fc.alarm'; alarm: Alarm }
-  | { name: 'fc.comm'; kind: CommKind; text: string; cites?: Cite[] }
+  | { name: 'fc.comm'; kind: CommKind; text: string; cites?: Cite[]; saved?: Saving }
   | { name: 'fc.run'; title: string; scenario: string; spec: Record<string, string | number> }
   | { name: 'fc.matrix'; rows: MatrixRow[] }
   | { name: 'fc.testreq'; request: TestRequest }
+  | { name: 'fc.kb'; entry: KbEntry }
+  | { name: 'fc.job'; job: Job }
+  | { name: 'fc.proposal'; proposal: Proposal }
   | { name: 'fc.case'; file?: Omit<CaseFile, 'items' | 'verdict'>; item?: CaseItem; verdict?: Verdict }

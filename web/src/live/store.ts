@@ -2,7 +2,7 @@
 // from Lagrange entries, and the Halo-style panel layout (focus + size per panel).
 import { create } from 'zustand'
 import { HUMAN } from '@/demo/crew'
-import { apollo1, PLAN_GATE, WHATIF_GATE, type ReviewInput } from '@/demo/apollo1'
+import { apollo1, DECISIONS, LAB_GATE, MEDIATE_GATE, PLAN_GATE, type Decision, type ReviewInput } from '@/demo/apollo1'
 import type { DesignPackage } from '@/demo/packages'
 import { IntakeError, parseCabin, parseMaterials, parseModel, toPackage, type CabinModel, type CabinSpec, type MaterialRow, type Slot } from '@/intake/parse'
 import type { Variant } from '@/stage/physics'
@@ -11,7 +11,7 @@ import { Replay, type ReplayStatus } from './replay'
 import { LagrangeSource } from './lagrange'
 import type { Entry, SimRun } from './types'
 
-export type Phase = 'intake' | 'plan' | 'run' | 'done'
+export type Phase = 'setup' | 'intake' | 'plan' | 'run' | 'done'
 
 export type SlotState<T> = { name: string; text: string; value?: T; error?: string }
 
@@ -46,6 +46,10 @@ type State = {
   pkg?: DesignPackage
   cabin?: CabinModel
   skip: string[]
+  labTest: boolean
+  decision: Decision
+  /** Agents connected from outside on the setup screen (demo). */
+  connected: string[]
   mode: 'demo' | 'live'
   liveError?: string
   model: Model
@@ -65,6 +69,8 @@ type State = {
   /** Bumped when an agent asks the stage to play from T+0. */
   stagePlay: number
 
+  setPhase: (p: Phase) => void
+  connect: (url: string) => void
   setSlot: (slot: Slot, name: string, text: string) => void
   clearSlot: (slot: Slot) => void
   loadExample: () => Promise<void>
@@ -108,15 +114,20 @@ function parseSlot(slot: Slot, text: string): { value?: unknown; error?: string 
   }
 }
 
-/** The handles the run involves, in the order the network shows them. */
-export function runAgents(m: Model): string[] {
-  const hs = ['flight', ...(m.plan?.subtasks.map((s) => s.agent) ?? [])]
-  return [...new Set(hs)]
+/** Everyone on the review network, grouped by organization (the order the network ring shows them). */
+export const NETWORK = ['flight', 'prevent', 'sim', 'scribe', 'archivist', 'wstf', 'lab', 'skeptic'] as const
+
+/** The agents (not people) on the network: what h / l cycles through. */
+export function runAgents(_m?: Model): string[] {
+  return NETWORK.filter((h) => h !== 'lab')
 }
 
 export const useMission = create<State>((set, get) => ({
-  phase: 'intake',
+  phase: 'setup',
   intake: {},
+  labTest: true,
+  decision: 'caveat',
+  connected: [],
   request: DEFAULT_REQUEST,
   skip: [],
   mode: 'demo',
@@ -132,6 +143,8 @@ export const useMission = create<State>((set, get) => ({
   variant: 'as-built',
   stagePlay: 0,
 
+  setPhase: (phase) => set({ phase }),
+  connect: (url) => set((s) => ({ connected: s.connected.includes(url) ? s.connected : [...s.connected, url] })),
   setSlot: (slot, name, text) => set((s) => ({ intake: { ...s.intake, [slot]: { name, text, ...parseSlot(slot, text) } } })),
   clearSlot: (slot) => set((s) => ({ intake: { ...s.intake, [slot]: undefined } })),
   loadExample: async () => {
@@ -162,6 +175,8 @@ export const useMission = create<State>((set, get) => ({
       pkg,
       cabin,
       skip: [],
+      labTest: true,
+      decision: 'caveat',
       model: emptyModel(),
       status: idleStatus,
       startedAt: Date.now(),
@@ -204,7 +219,14 @@ export const useMission = create<State>((set, get) => ({
       live?.answer(w.taskId, text)
       return
     }
-    if (w.taskId === WHATIF_GATE) replay?.swap(apollo1({ ...input(s), whatIf: !/skip/i.test(text) }))
+    if (w.taskId === LAB_GATE) {
+      set({ labTest: !/skip/i.test(text) })
+      replay?.swap(apollo1(input(get())))
+    }
+    if (w.taskId === MEDIATE_GATE) {
+      set({ decision: DECISIONS.find((d) => d.label === text)?.id ?? 'caveat' })
+      replay?.swap(apollo1(input(get())))
+    }
     replay?.answer(text)
   },
   ask: (text) => {
@@ -260,7 +282,7 @@ export const useMission = create<State>((set, get) => ({
       const run = d.run as SimRun
       if (run.id === 'cabin-spread' && !run.metrics) set({ layer: 'spread', variant: 'as-built', stagePlay: get().stagePlay + 1 })
       if (run.id === 'cabin-pressure') set({ layer: 'pressure' })
-      if (run.id === 'cabin-whatif') set({ layer: 'whatif', variant: '60-40', stagePlay: get().stagePlay + 1 })
+      if (run.id === 'cabin-whatif' && run.metrics) set({ layer: 'whatif', variant: 'proposal', stagePlay: get().stagePlay + 1 })
     }
   },
 
@@ -293,7 +315,7 @@ export const useMission = create<State>((set, get) => ({
 }))
 
 function input(s: State): ReviewInput {
-  return { pkg: s.pkg!, model: s.cabin!, request: s.request, skip: s.skip }
+  return { pkg: s.pkg!, model: s.cabin!, request: s.request, skip: s.skip, labTest: s.labTest, decision: s.decision }
 }
 
 /** Demo stand-in for the lead's answer when you type into "ask the lead". */

@@ -5,6 +5,7 @@ import { useMission, type Phase } from '@/live/store'
 import { cn } from '@/lib/utils'
 
 const STEPS: { id: Phase; label: string }[] = [
+  { id: 'setup', label: 'NETWORK' },
   { id: 'intake', label: 'INTAKE' },
   { id: 'plan', label: 'PLAN' },
   { id: 'run', label: 'RUN' },
@@ -36,12 +37,14 @@ export function TopBar() {
   const pause = useMission((s) => s.pause)
   const reset = useMission((s) => s.reset)
   const showVerdict = useMission((s) => s.showVerdict)
+  const setPhase = useMission((s) => s.setPhase)
+  const saved = useMission((s) => s.model.saved)
   const startedAt = useMission((s) => s.startedAt)
   const clock = useClock(startedAt, phase === 'run' && !done)
   const idx = STEPS.findIndex((s) => s.id === phase)
   const subs = plan?.subtasks.filter((s) => s.status !== 'skipped') ?? []
   const nDone = subs.filter((s) => s.status === 'done').length
-  const online = plan ? new Set(['flight', ...plan.subtasks.map((s) => s.agent)]).size : 0
+  const online = phase === 'intake' || phase === 'setup' ? 0 : 9
   const working = Object.values(agents).filter((a) => a.state === 'working' || a.state === 'asking').length
   const state = done ? 'done' : waiting ? 'waiting on you' : status.playing ? 'running' : phase === 'intake' ? 'idle' : 'paused'
 
@@ -58,11 +61,11 @@ export function TopBar() {
             {i > 0 && <span className="text-line-2">──▶</span>}
             <button
               type="button"
-              disabled={!(s.id === 'done' ? done : s.id === 'run' ? done : false)}
-              onClick={() => showVerdict(s.id === 'done')}
+              disabled={!(s.id === 'done' ? done : s.id === 'run' ? done : s.id === 'setup' || s.id === 'intake' ? phase === 'setup' || phase === 'intake' : false)}
+              onClick={() => (s.id === 'setup' || s.id === 'intake' ? setPhase(s.id) : showVerdict(s.id === 'done'))}
               className={cn('px-1', i === idx ? 'text-k-ask' : i < idx ? 'text-muted-foreground' : 'text-faint', 'disabled:cursor-default')}
             >
-              {i + 1} {s.label}
+              {i} {s.label}
             </button>
           </span>
         ))}
@@ -90,9 +93,14 @@ export function TopBar() {
             ))}
           </span>
         )}
+        {saved.asks > 0 && (
+          <span className="text-ok" title="Tokens an agent would have spent reading the material itself, saved by asking the agent that owns it">
+            ↯ {saved.asks} asks · ≈ {Math.round(saved.tokens / 1000)}k tokens saved
+          </span>
+        )}
         {online > 0 && (
           <span>
-            <b className="font-normal text-ink">{online}</b> online · <b className="font-normal text-k-task">{working}</b> working
+            <b className="font-normal text-ink">{online}</b> on the network · 4 orgs · <b className="font-normal text-k-task">{working}</b> working
           </span>
         )}
         <span className="tnum text-ink">{clock}</span>

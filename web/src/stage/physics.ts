@@ -14,7 +14,7 @@ import type { CabinModel, Vec3 } from '@/intake/parse'
 import { zonesOf } from '@/intake/parse'
 import { MATERIALS, spreadRate } from '@/sims/models'
 
-export type Variant = { id: 'as-built' | '60-40' | 'ug' | 'base'; label: string; short: string; o2: number; psi: number; g: number; flow: number }
+export type Variant = { id: 'as-built' | 'proposal' | '60-40' | 'ug' | 'base'; label: string; short: string; o2: number; psi: number; g: number; flow: number }
 
 /** The as-built case and the three what-ifs: the post-fire pad atmosphere, the same cabin in orbit, and Artemis base camp. */
 export function variantsFor(pkg: DesignPackage): Variant[] {

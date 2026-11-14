@@ -1,4 +1,4 @@
-import { BookOpenText, Box, ClipboardCheck, Crown, FileText, FlaskConical, Radar, ShieldCheck, SprayCan, User, Network } from 'lucide-react'
+import { BookOpenText, Box, ClipboardCheck, Crown, FileText, FlaskConical, Microscope, Radar, ShieldCheck, SprayCan, User, Network } from 'lucide-react'
 import { AGENT, HUB, agentColor, agentName, isPerson, type AgentDef } from '@/demo/crew'
 import { BY_ID, label } from '@/data/psi'
 import { Popover } from 'radix-ui'
@@ -53,6 +53,7 @@ const ICON: Record<AgentDef['icon'], typeof User> = {
   sim: Box,
   safety: ShieldCheck,
   report: FileText,
+  lab: Microscope,
 }
 
 /** A flat, square department avatar: icon for agents, initials for people. */

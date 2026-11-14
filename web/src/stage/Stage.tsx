@@ -3,7 +3,7 @@
 import { Player, type PlayerRef } from '@remotion/player'
 import { Pause, Play, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { fireRuns } from '@/demo/apollo1'
+import { stageRuns } from '@/demo/apollo1'
 import { useMission, type Layer } from '@/live/store'
 import { cn } from '@/lib/utils'
 import { MATERIALS } from '@/sims/models'
@@ -54,7 +54,7 @@ export function Stage() {
   const [playing, setPlaying] = useState(false)
   const [box, size] = useSize()
 
-  const runs = useMemo(() => (pkg && cabin ? fireRuns(pkg, cabin) : []), [pkg, cabin])
+  const runs = useMemo(() => (pkg && cabin ? stageRuns(pkg, cabin) : []), [pkg, cabin])
   const has = (id: string) => sims.some((s) => s.id === id)
   const ready: Record<Layer, boolean> = { materials: matrix.length > 0, spread: has('cabin-spread'), pressure: has('cabin-pressure'), whatif: has('cabin-whatif') }
   const shown: StageLayer = ready[layer] ? layer : 'none'

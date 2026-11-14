@@ -7,6 +7,7 @@ import { Stage } from '@/stage/Stage'
 import { AgentView } from '@/views/AgentView'
 import { CommsView } from '@/views/CommsView'
 import { FindingsView } from '@/views/FindingsView'
+import { ProposalsView } from '@/views/ProposalsView'
 import { NetworkView } from '@/views/NetworkView'
 import { PlanGraph } from '@/views/PlanGraph'
 
@@ -95,8 +96,14 @@ export function RunScreen() {
   const layer = useMission((s) => s.layer)
   const ask = useMission((s) => s.ask)
   const waiting = useMission((s) => s.model.waiting)
+  const proposals = useMission((s) => s.model.proposals)
   const askRef = useRef<HTMLInputElement>(null)
   const [q, setQ] = useState('')
+  const [ftab, setFtab] = useState<'matrix' | 'proposals'>('matrix')
+  const nProps = proposals.length
+  useEffect(() => {
+    if (nProps) setFtab('proposals')
+  }, [nProps])
   useKeys(askRef)
 
   const subs = plan?.subtasks.filter((s) => s.status !== 'skipped') ?? []
@@ -113,7 +120,22 @@ export function RunScreen() {
       right: <span>{subs.filter((s) => s.status === 'done').length}/{subs.length} done</span>,
       body: plan ? <PlanGraph plan={plan} /> : null,
     },
-    5: { id: 5, title: 'FINDINGS', summary: matrix.length ? `${burn}/${matrix.length} burn` : 'waiting for @prevent', right: <span>{matrix.length ? `${burn}/${matrix.length} burn` : ''}</span>, body: <FindingsView /> },
+    5: {
+      id: 5,
+      title: 'FINDINGS',
+      summary: [matrix.length ? `${burn}/${matrix.length} burn` : 'waiting for @prevent', proposals.length ? `${proposals.length} proposal · ${proposals[0].status}` : ''].filter(Boolean).join(' · '),
+      right: (
+        <span className="flex gap-2">
+          {(['matrix', 'proposals'] as const).map((t) => (
+            <button key={t} type="button" onClick={() => setFtab(t)} className={ftab === t ? 'text-ink' : 'hover:text-ink'}>
+              {t}
+              {t === 'proposals' && proposals.some((p) => p.status === 'escalated') && <span className="ml-1 text-warn">●</span>}
+            </button>
+          ))}
+        </span>
+      ),
+      body: ftab === 'matrix' ? <FindingsView /> : <ProposalsView />,
+    },
     6: { id: 6, title: 'COMMS', right: <span>agent ⇄ agent · {comms.length}</span>, summary: comms.length ? comms[comms.length - 1].text : 'quiet', body: <CommsView /> },
   }
 
