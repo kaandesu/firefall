@@ -3,6 +3,5 @@
 **/.vitest
 **/.env*
 web/.env.local
-data/psi/*/
 .git
 .claude
