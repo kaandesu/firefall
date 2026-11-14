@@ -24,7 +24,7 @@ that matters.
 - **Ask the owner instead of re-reading the data.** When Materials needs the limiting O₂ for nylon, it asks the PSI
   Archivist, which already has 38 GB of Saffire-I processed into test points. It does not download and re-read the
   dataset. The answer is more accurate because it comes from whoever owns the data, and much cheaper: the demo counts
-  the tokens each ask saved (≈544k across one review).
+  the tokens each ask saved (≈730k across one review).
 - **Knowledge bases that build as they talk.** Each agent keeps what it has learned and where every fact came from:
   an input file, a dataset, its own tool, another agent or a person. Later steps reuse those facts instead of the
   raw context.
@@ -32,6 +32,21 @@ that matters.
   When they disagree (Materials endorses a change, Safety Assurance objects), the Review Lead puts both positions side
   by side and asks the engineer to decide. Agents can also hand physical work to people: the lab agent books a
   chamber test and a technician runs it.
+- **Real data, really processed.** The PSI Archivist runs on the actual ACME files (CFI-G test 21256C2 camera
+  series and frames, Flame Design sensor log 19175A4, 143 chamber test points). Ignition, steady flame, transient
+  and glow are *found by code* from the brightness series, not typed in. The evidence explorer scores all 182 test
+  points against your cabin and shows plainly that nothing in the archive was tested above 40 % ambient O₂.
+- **Simulations where they run in real life: on GPU farms.** The Lab panel is the review's compute floor. Every
+  job an agent starts lands on its org's cluster (Slurm `hpc-01` 8×H100, the archive's 32×A100 Kubernetes pool,
+  the WSTF chamber) and plays live: ACME frames being processed, flame-spread ducts, a limiting-O₂ sweep, flames in
+  µg vs 1 g, droplet suppression, and a 2-D smoke CFD of the cabin at µg, Moon and 1 g.
+- **Sensor placement from the spec, checked at every gravity.** Detectors come from `cabin.yaml`; the Detection
+  agent runs smoke CFD for every ignition source × gravity case, finds the designed layout misses 3 of 9 cases
+  (no buoyancy in µg; 0.18 µm PTFE smoke is invisible to a photoelectric head), and proposes a layout that alarms in
+  all 9 (worst 25 s). You adopt it or keep the design.
+- **A report you can question.** The report reads like a technical summary: the review in 30 seconds, numbered
+  sections with the data behind each claim, who decided what. An AI chat sits beside it, grounded only in the
+  report, and pulls up the chart, matrix row, test point or section that answers your question.
 - **The conversation is the audit trail.** Every ask, answer, objection, decision and citation is a signed message on
   the network. That is what a safety review panel wants to see.
 
@@ -80,9 +95,12 @@ URL; the demo connects a detector vendor.
 | **White Sands Test Facility** | WSTF Lab Agent + a technician | lab cluster, GPT-4.1 via agency cloud | LIMS records, procedures, other customers' results |
 | **Independent S&MA** | Safety Assurance | FedRAMP agency cloud, Claude on Bedrock | review checklists, past findings |
 
-**1 · Intake.** Real input files: `cabin.yaml` (atmosphere, gravity, volume, hatch, hull), `materials.csv` (part,
-material, zone, amount) and `cabin.model.json` (the cabin geometry by zone). FIREFALL parses and cross-checks them,
-for example a material with no zone in the model or an unknown material.
+**1 · Intake.** Real input files: `cabin.yaml` (atmosphere, gravity, volume, hatch, hull, ignition zones, smoke
+detectors), `materials.csv` (part, material, rating, zone, amount) and `cabin.model.json` (the cabin geometry by
+zone). FIREFALL parses and cross-checks them, for example a material or a detector in a zone the model doesn't have.
+
+**Cabin intro.** Before anything runs, a camera tour of the model: every zone, what sits there and its rating, the
+listed ignition source pulsing, the detectors, and finally the atmosphere it all sits in. Skippable (Esc).
 
 **2 · Plan.** The Review Lead proposes subtasks, each with its owning agent, what it reads and what it produces. You
 switch optional steps off and approve. Nothing runs until you do.
@@ -93,8 +111,10 @@ switch optional steps off and approve. Nothing runs until you do.
 - **Stage:** the cabin built from the model, with the materials, spread, pressure and what-if layers. Each layer
   unlocks when an agent produces it.
 - **Agent:** one agent's workspace: data jobs on its org's compute, tool calls, and its knowledge base with sources.
-- **Plan, Findings** (materials matrix, proposals) and **Comms**: every agent-to-agent message, with the tokens
-  saved by asking.
+- **Lab:** the plan as chips, every org's machines with live GPU use, the job queue, and a tile per running job
+  (real ACME frames, flame and smoke sims, sweeps, the technician's chamber test). `p` opens the full plan graph.
+- **Findings** (materials matrix, proposals) and **Comms**: every agent-to-agent message, with the tokens saved by
+  asking.
 
 What happens in the Apollo CM-012 example:
 1. The Archivist processes Saffire-I, BASS-II and ACME on the PSI cluster into fitted limits. Materials *asks* it
@@ -105,18 +125,41 @@ What happens in the Apollo CM-012 example:
    90 s hatch.
 4. Materials **proposes PR-1** (Beta cloth for nylon, 60/40 O₂/N₂ on the pad). Simulation re-runs it and endorses it;
    Safety Assurance objects with sources. The Lead mediates, and you accept, accept with the caveat, or reject.
-5. Report writes the verdict and the hazard report.
+5. Detection asks the Archivist for SAME smoke sizes, runs 18 smoke CFD jobs on `hpc-01` and the placement sweep,
+   and **proposes PR-2** (two ionization heads, moved). Simulation endorses; you adopt it or keep the design.
+6. Suppression asks for FLEX limits and runs a droplet with a 25 % CO₂ flood: at 100 % O₂ it keeps burning.
+7. Report writes the verdict and the hazard report.
 
-**4 · Verdict.** Findings, the changes decided and by whom, collaboration stats (messages, cross-org lines, asks
-answered by the owner, tokens saved, steps that needed a person), and `matrix.csv` and `hazard-report.md` exports.
+**4 · Report.** A table of contents, "the review in 30 seconds", and twelve numbered sections: cabin and inputs,
+materials, evidence and data processed (real ACME frames, brightness with detected events, sensor log, nearest test
+points, best-fitting studies), fire spread and pressure, smoke detection and sensor placement (coverage maps and the
+time-to-alarm table for every source × gravity), suppression, the lab test, decisions and who made them, what-ifs,
+open items, how the review ran, and sources. Every section has an **Ask** button; the chat on the right answers
+from the report and pulls up charts, rows, test points and sections. Exports: `hazard-report.md`, `matrix.csv`,
+print to PDF.
+
+**Library · Evidence · Compute** (tabs in the top bar, the run keeps going behind them):
+- **Library:** the 20 PSI studies ranked by fit to this cabin; the ACME studies open their real data (frame
+  scrubber against the brightness series, the 10 sensor channels, the test-point scatter with the cabin marked).
+- **Evidence:** 182 test points with filters, sort, match score and a scatter; pin rows into the report.
+- **Compute:** every org's servers, GPU pools and chamber, with live use; add a server or GPU farm, or connect an
+  MCP server to an agent (handshake, discovered tools). Everything is marked in-house: data never leaves.
 
 ## Demo vs real
 
 The demo is a **scripted replay** of the same Lagrange events a live run produces, and it goes through the same fold,
-so the UI is the same in both modes. **The data science is illustrative for now:** dataset jobs, fitted limits and
-token savings are scripted to show *how* agents would use the PSI library. The spread and pressure model is a simple
-zone model (Dijkstra spread and lumped pressure) tuned to the Apollo 1 record. It is for triage only and does not
-replace Test 1, FDS or the review panel. Input parsing and cross-checks are real.
+so the UI is the same in both modes. What is real and what is illustrative:
+
+| Real (computed in the browser from the files) | Illustrative |
+|---|---|
+| Input parsing and cross-checks | Saffire, BASS-II, FLEX fits (catalogue values; no raw data in the archive) |
+| ACME 21256C2 event detection, 19175A4 sensor stats, 182 evidence rows and match scores | Token savings per ask |
+| Smoke CFD (2-D stable fluids on the cabin section, Web Worker) and sensor optimisation | Cluster names, GPU counts, job timings |
+| Fire spread / pressure zone model, what-ifs | Agent message wording (scripted) |
+| Report chat (OpenAI, grounded in the report JSON) | Demo-mode chat answers (built from the same report) |
+
+The spread and pressure model is a simple zone model (Dijkstra spread and lumped pressure) tuned to the Apollo 1
+record; the smoke CFD is 2-D. Both are for triage only and do not replace Test 1, FDS or the review panel.
 
 ## Architecture
 
@@ -127,7 +170,12 @@ mates-end/
     src/intake/   parse + cross-check the input files
     src/live/     Lagrange entry types, reducer, replay, store
     src/demo/     orgs, agents, people, the Apollo review script
-    src/stage/    cabin, zone fire model, Remotion composition
+    src/stage/    cabin, zone fire model, Remotion compositions (stage, intro)
+    src/lab/      smoke CFD + sensor optimiser (worker), lab tiles and three.js sims
+    src/data/     ACME loaders + event detection, PSI library and fit, evidence rows
+    src/report/   the report as data, the chat's context and scripted answers
+    server/       dev-server route /api/ask (OpenAI streaming; key stays server-side)
+    public/data/acme/   real ACME data extracted from flame-in-freefall (scripts/extract-fif.mjs)
   data/psi/ public PSI metadata snapshot (+ downloaded datasets, not committed)
   server/   (next) Lagrange proxy, saved reviews
   agents/   (next) one agent per org/department with its own MCP servers, connected via `lagrange tunnel --acp`
@@ -144,7 +192,17 @@ pnpm install
 pnpm dev            # http://localhost:5180
 ```
 
-Deep links: `?example=1` loads the Apollo case, `&start=1` starts the review straight away, and `&speed=4` plays faster.
+For the report chat, put an OpenAI key in `web/.env.local` (gitignored; read only by the dev server, never bundled):
+
+```bash
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-5.4-mini   # optional
+```
+
+Without a key the chat runs in **demo** mode with scripted answers; the `demo` toggle switches between the two.
+
+Deep links: `?example=1` loads the Apollo case, `&start=1` starts the review straight away, `&speed=4` plays faster,
+and `&intro=0` skips the cabin intro.
 Keys on the run screen: `1`–`6` focus a panel, `+`/`-` resize it, `h`/`l` switch agent, `a` answers with the
 default option, and `?` lists the rest.
 
@@ -154,9 +212,12 @@ default option, and `?` lists the rest.
 - [x] Intake from real files with cross-checks; plan approval
 - [x] Run: cross-org asks, knowledge bases with sources, data jobs, lab work by a person, proposals with reviews,
       mediated decisions, token savings
-- [x] Cabin stage (materials, spread, pressure, what-if) and verdict with exports
+- [x] Cabin stage (materials, spread, pressure, smoke, what-if) and the cabin intro
+- [x] Lab panel: per-org clusters, job queue, live sim tiles; compute and MCP setup
+- [x] Real ACME data processing; library and evidence explorer; smoke CFD and sensor placement at µg / Moon / 1 g
+- [x] Report with TOC, sections, exports and an AI chat (OpenAI) that pulls up report items
 - [ ] Live agents on Lagrange (one per org, each with its own MCP servers and provider)
-- [ ] Real dataset processing on the PSI library
+- [ ] Saffire / BASS / FLEX raw data (not in the public archive)
 - [ ] Deploy (public demo replay; live mode behind an access key)
 
 ## Sources

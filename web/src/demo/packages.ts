@@ -36,6 +36,8 @@ export type DesignPackage = {
   hatch?: { type: string; openTime: number }
   hull?: { burstPsia: number }
   volumeM3?: number
+  /** Smoke detectors from cabin.yaml. */
+  sensors?: { id: string; type: 'photoelectric' | 'ionization'; zone: string; pos: [number, number, number] }[]
 }
 
 const PR2_BOM: BomItem[] = [

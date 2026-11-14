@@ -79,7 +79,7 @@ export function Pane({ def, size, vertical = false }: { def: PaneDef; size: Size
 
 const TOP_WEIGHT: Record<number, number> = { 1: 3, 2: 5, 3: 3 }
 
-/** Lays the six panels out: three columns on top, plan and findings in the middle, comms as a strip. */
+/** Lays the six panels out: three columns on top, lab and findings in the middle, comms as a strip. */
 export function PanelLayout({ panes }: { panes: Record<PanelId, PaneDef> }) {
   const sizes = useMission((s) => s.sizes)
   const full = (Object.keys(sizes).map(Number) as PanelId[]).find((id) => sizes[id] === 'full')
@@ -96,9 +96,9 @@ export function PanelLayout({ panes }: { panes: Record<PanelId, PaneDef> }) {
   const eff = (id: PanelId): Size => (topColumn && id >= 4 ? 'bar' : sizes[id])
   const mid = [eff(4), eff(5)]
   const midOpen = mid.some((z) => z !== 'bar')
-  const midH = mid.includes('column') ? '56%' : '32%'
+  const midH = mid.includes('column') ? '58%' : '40%'
   const comms = eff(6)
-  const commsH = comms === 'column' ? '46%' : '21%'
+  const commsH = comms === 'column' ? '46%' : '17%'
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 p-2 pt-3">
@@ -122,7 +122,7 @@ export function PanelLayout({ panes }: { panes: Record<PanelId, PaneDef> }) {
               </div>
             </div>
           ) : (
-            <div key={id} className="flex min-w-0 flex-1">
+            <div key={id} className="flex min-w-0" style={{ flex: `${id === 4 ? 3 : 2} 1 0` }}>
               <Pane def={panes[id]} size={eff(id)} />
             </div>
           ),

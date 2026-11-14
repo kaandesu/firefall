@@ -9,7 +9,7 @@ const STEPS: { id: Phase; label: string }[] = [
   { id: 'intake', label: 'INTAKE' },
   { id: 'plan', label: 'PLAN' },
   { id: 'run', label: 'RUN' },
-  { id: 'done', label: 'VERDICT' },
+  { id: 'done', label: 'REPORT' },
 ]
 
 function useClock(from?: number, on = true) {
@@ -40,6 +40,8 @@ export function TopBar() {
   const setPhase = useMission((s) => s.setPhase)
   const saved = useMission((s) => s.model.saved)
   const startedAt = useMission((s) => s.startedAt)
+  const view = useMission((s) => s.view)
+  const setView = useMission((s) => s.setView)
   const clock = useClock(startedAt, phase === 'run' && !done)
   const idx = STEPS.findIndex((s) => s.id === phase)
   const subs = plan?.subtasks.filter((s) => s.status !== 'skipped') ?? []
@@ -49,20 +51,24 @@ export function TopBar() {
   const state = done ? 'done' : waiting ? 'waiting on you' : status.playing ? 'running' : phase === 'intake' ? 'idle' : 'paused'
 
   return (
-    <header className="flex h-9 shrink-0 items-center gap-4 border-b border-line px-3 text-[11.5px]">
+    <header className="flex h-9 shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-b border-line px-3 text-[11.5px]">
       <button type="button" onClick={reset} className="flex items-center gap-2" title="back to intake">
         <span className={cn('size-2 rounded-full', done ? 'bg-ok' : waiting ? 'animate-pulse bg-warn' : status.playing ? 'animate-pulse bg-flame' : 'bg-faint')} />
         <span className="tracking-[0.2em] text-ink">FIREFALL</span>
       </button>
-      <span className="text-muted-foreground">apollo-cm012</span>
+      <span className="hidden text-muted-foreground 2xl:inline">apollo-cm012</span>
       <nav className="flex items-center gap-1 text-[10.5px]">
         {STEPS.map((s, i) => (
           <span key={s.id} className="flex items-center gap-1">
-            {i > 0 && <span className="text-line-2">──▶</span>}
+            {i > 0 && <span className="text-line-2">▸</span>}
             <button
               type="button"
               disabled={!(s.id === 'done' ? done : s.id === 'run' ? done : s.id === 'setup' || s.id === 'intake' ? phase === 'setup' || phase === 'intake' : false)}
-              onClick={() => (s.id === 'setup' || s.id === 'intake' ? setPhase(s.id) : showVerdict(s.id === 'done'))}
+              onClick={() => {
+                setView('review')
+                if (s.id === 'setup' || s.id === 'intake') setPhase(s.id)
+                else showVerdict(s.id === 'done')
+              }}
               className={cn('px-1', i === idx ? 'text-k-ask' : i < idx ? 'text-muted-foreground' : 'text-faint', 'disabled:cursor-default')}
             >
               {i} {s.label}
@@ -70,6 +76,18 @@ export function TopBar() {
           </span>
         ))}
       </nav>
+      <nav className="flex items-center rounded-sm border border-line text-[10.5px]">
+        {(['review', 'library', 'evidence', 'compute'] as const).map((v) => (
+          <button key={v} type="button" onClick={() => setView(v)} className={cn('px-2 py-0.5 capitalize', view === v ? 'bg-surface-2 text-ink' : 'text-muted-foreground hover:text-ink')}>
+            {v}
+          </button>
+        ))}
+      </nav>
+      {view !== 'review' && waiting && (
+        <button type="button" onClick={() => setView('review')} className="animate-pulse rounded-sm border border-warn/60 px-1.5 text-warn">
+          decision waiting →
+        </button>
+      )}
       {phase !== 'intake' && (
         <>
           <span className={cn(waiting ? 'text-warn' : done ? 'text-ok' : 'text-k-task')}>{state}</span>
@@ -95,12 +113,12 @@ export function TopBar() {
         )}
         {saved.asks > 0 && (
           <span className="text-ok" title="Tokens an agent would have spent reading the material itself, saved by asking the agent that owns it">
-            ↯ {saved.asks} asks · ≈ {Math.round(saved.tokens / 1000)}k tokens saved
+            ↯ {saved.asks} asks · {Math.round(saved.tokens / 1000)}k saved
           </span>
         )}
         {online > 0 && (
           <span>
-            <b className="font-normal text-ink">{online}</b> on the network · 4 orgs · <b className="font-normal text-k-task">{working}</b> working
+            <b className="font-normal text-ink">{online}</b> agents · 4 orgs · <b className="font-normal text-k-task">{working}</b> working
           </span>
         )}
         <span className="tnum text-ink">{clock}</span>

@@ -17,6 +17,13 @@ describe('cabin.yaml', () => {
     expect(s.hatch.openTime).toBe(90)
     expect(s.hull.burstPsia).toBe(29)
     expect(cabinSummary(s)).toBe('100 % O₂ · 16.7 psia · 1 g')
+    expect(s.sensors.map((d) => `${d.id}:${d.type}`)).toEqual(['D1:ionization', 'D2:photoelectric'])
+    expect(s.sensors[1].pos).toEqual([1.45, 0.55, 0])
+  })
+  it('rejects a sensor without a position or with an unknown type', () => {
+    const base = 'atmosphere: { o2_pct: 21, pressure_psia: 14.7 }\ngravity_g: 1\nvolume_m3: 5\n'
+    expect(() => parseCabin(base + 'sensors:\n  - { id: D1, type: laser, pos: [0, 1, 0] }')).toThrow(/photoelectric or ionization/)
+    expect(() => parseCabin(base + 'sensors:\n  - { id: D1, type: ionization }')).toThrow(/pos must be/)
   })
   it('rejects bad YAML and out-of-range numbers with a readable message', () => {
     expect(() => parseCabin('atmosphere: [')).toThrow(IntakeError)

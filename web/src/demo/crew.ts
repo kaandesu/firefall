@@ -77,6 +77,28 @@ export const ORGS: Record<OrgId, OrgDef> = {
   },
 }
 
+/** A machine an org runs jobs on. Jobs stay on the owner's hardware; only results cross the network. */
+export type ComputeNode = {
+  id: string
+  org: OrgId
+  host: string
+  scheduler: 'Slurm' | 'Kubernetes' | 'Lab' | 'Ray'
+  gpus: number
+  gpu: string
+  cpus: number
+  /** A physical test chamber rather than a computer. */
+  chamber?: boolean
+  added?: boolean
+}
+
+export const NODES: ComputeNode[] = [
+  { id: 'hpc-01', org: 'prime', host: 'hpc-01.vehicle.internal', scheduler: 'Slurm', gpus: 8, gpu: 'H100', cpus: 128 },
+  { id: 'grc-gpu', org: 'psi', host: 'grc-gpu.archive.nasa', scheduler: 'Kubernetes', gpus: 32, gpu: 'A100', cpus: 512 },
+  { id: 'wstf-ws', org: 'wstf', host: 'ws-cluster.wstf.nasa', scheduler: 'Lab', gpus: 2, gpu: 'L40S', cpus: 64 },
+  { id: 'chamber-3', org: 'wstf', host: 'Test 1 chamber 3', scheduler: 'Lab', gpus: 0, gpu: '', cpus: 0, chamber: true },
+  { id: 'sma-cloud', org: 'sma', host: 'govcloud managed', scheduler: 'Kubernetes', gpus: 4, gpu: 'L4', cpus: 32 },
+]
+
 export type AgentDef = {
   handle: string
   name: string
@@ -171,8 +193,12 @@ export const CREW: AgentDef[] = [
     icon: 'detection',
     model: 'sonnet',
     org: 'prime',
-    mcp: ['fire-tools'],
-    tools: [{ name: 'detector_coverage', desc: 'Time-to-alarm per detector for a smoke source' }],
+    mcp: ['fire-tools', 'hpc-01 (Slurm)'],
+    tools: [
+      { name: 'smoke_cfd', desc: 'Smoke transport in the cabin section, per gravity case' },
+      { name: 'place_sensors', desc: 'Search sensor positions for the worst-case first alarm' },
+      { name: 'detector_coverage', desc: 'Time-to-alarm per detector for a smoke source' },
+    ],
   },
   {
     handle: 'suppress',
@@ -184,8 +210,11 @@ export const CREW: AgentDef[] = [
     icon: 'suppression',
     model: 'sonnet',
     org: 'prime',
-    mcp: ['fire-tools'],
-    tools: [{ name: 'extinction_limit', desc: 'Limiting oxygen index under a diluent' }],
+    mcp: ['fire-tools', 'hpc-01 (Slurm)'],
+    tools: [
+      { name: 'extinction_limit', desc: 'Limiting oxygen index under a diluent' },
+      { name: 'droplet_run', desc: 'FLEX-style droplet burn with a suppressant' },
+    ],
   },
   {
     handle: 'sim',

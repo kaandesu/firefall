@@ -210,7 +210,7 @@ export function reduce(prev: Model, e: Entry): Model {
         case 'fc.job': {
           const j = d.job as Job
           const i = m.jobs.findIndex((x) => x.id === j.id)
-          m.jobs = i >= 0 ? m.jobs.map((x, k) => (k === i ? { ...x, ...j } : x)) : [...m.jobs, j]
+          m.jobs = i >= 0 ? m.jobs.map((x, k) => (k === i ? { ...x, ...j, startedAt: x.startedAt, endedAt: j.done ? (x.endedAt ?? at) : undefined } : x)) : [...m.jobs, { ...j, startedAt: at }]
           return m
         }
         case 'fc.proposal': {

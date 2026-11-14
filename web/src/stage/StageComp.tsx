@@ -3,11 +3,14 @@
 import { OrbitControls } from '@react-three/drei'
 import { ThreeCanvas } from '@remotion/three'
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion'
+import { useMemo } from 'react'
+import * as THREE from 'three'
 import type { CabinModel } from '@/intake/parse'
+import type { SmokeStudy } from '@/lab/smokeStudy'
 import { Cabin, type ZoneLook } from './Cabin'
 import { burningAt, pressureAt, zonePhase, type FireRun } from './physics'
 
-export type StageLayer = 'none' | 'materials' | 'spread' | 'pressure' | 'whatif'
+export type StageLayer = 'none' | 'materials' | 'spread' | 'pressure' | 'smoke' | 'whatif'
 
 export type StageProps = {
   model: CabinModel
@@ -18,6 +21,8 @@ export type StageProps = {
   hatchTime: number
   onPick?: (zone: string | undefined) => void
   orbit?: boolean
+  /** Smoke layer: the detection study, which gravity case, which sensor layout. */
+  smoke?: { study: SmokeStudy; g: number; layout: 'designed' | 'proposed' }
 }
 
 export const FPS = 30
@@ -102,7 +107,7 @@ function PressureChart({ run, t, hatchTime }: { run: FireRun; t: number; hatchTi
   )
 }
 
-export function StageComp({ model, run, layer, status, highlight, hatchTime, onPick, orbit = true }: StageProps) {
+export function StageComp({ model, run, layer, status, highlight, hatchTime, onPick, orbit = true, smoke }: StageProps) {
   const frame = useCurrentFrame()
   const { width, height } = useVideoConfig()
   const t = frame / FPS
@@ -133,6 +138,7 @@ export function StageComp({ model, run, layer, status, highlight, hatchTime, onP
         <group position={[0, -1.5, 0]}>
           <Cabin model={model} look={look} shellTint={shellTint} highlight={highlight} onPick={onPick} />
           {fire && <Flames model={model} run={run} t={t} frame={frame} />}
+          {layer === 'smoke' && smoke && <SmokeSlice smoke={smoke} t={t} />}
           <gridHelper args={[8, 16, '#1b2430', '#10161e']} position={[0, -0.02, 0]} />
         </group>
         {orbit && <OrbitControls target={[0, 0.1, 0]} enableDamping={false} enablePan={false} minDistance={3} maxDistance={12} />}
@@ -151,6 +157,7 @@ export function StageComp({ model, run, layer, status, highlight, hatchTime, onP
         </div>
       )}
       {layer === 'pressure' && <PressureChart run={run} t={t} hatchTime={hatchTime} />}
+      {layer === 'smoke' && smoke && <SmokeReadout smoke={smoke} t={t} />}
     </AbsoluteFill>
   )
 }
@@ -160,6 +167,85 @@ function Readout({ label, value, color }: { label: string; value: string; color?
     <div>
       <div style={{ fontSize: 9.5, letterSpacing: '0.14em', color: '#4a5665', textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontSize: 17, color: color ?? '#e6edf3' }}>{value}</div>
+    </div>
+  )
+}
+
+// ── smoke: the CFD slice through the cabin at z = 0, with the sensors ──────────────────
+
+const caseOf = (smoke: NonNullable<StageProps['smoke']>) => smoke.study.frames.find((f) => f.g === smoke.g) ?? smoke.study.frames[0]
+
+function SmokeSlice({ smoke, t }: { smoke: NonNullable<StageProps['smoke']>; t: number }) {
+  const { study } = smoke
+  const c = caseOf(smoke)
+  const i = Math.min(c.frames.length - 1, Math.max(0, Math.round(t / c.every)))
+  const tex = useMemo(() => {
+    const { nx, ny, open } = study
+    const data = new Uint8Array(nx * ny * 4)
+    const f = c.frames[i]
+    for (let k = 0; k < nx * ny; k++) {
+      const v = open[k] ? Math.min(1, f[k] * 5) : 0
+      data[k * 4] = 200 + 40 * v
+      data[k * 4 + 1] = 205 + 30 * v
+      data[k * 4 + 2] = 215
+      data[k * 4 + 3] = Math.round(235 * Math.sqrt(v))
+    }
+    const tx = new THREE.DataTexture(data, nx, ny, THREE.RGBAFormat)
+    tx.magFilter = THREE.LinearFilter
+    tx.minFilter = THREE.LinearFilter
+    tx.needsUpdate = true
+    return tx
+  }, [study, c, i])
+  const sensors = smoke.layout === 'proposed' ? study.proposed : study.designed
+  const color = smoke.layout === 'proposed' ? '#3fd07a' : '#c9d1d9'
+  return (
+    <group>
+      <mesh position={[0, study.h / 2, 0]}>
+        <planeGeometry args={[study.w, study.h]} />
+        <meshBasicMaterial map={tex} transparent depthWrite={false} side={THREE.DoubleSide} />
+      </mesh>
+      {study.sources.map((s) => (
+        <mesh key={s.id} position={[s.at[0], s.at[1], 0]}>
+          <sphereGeometry args={[s.listed ? 0.07 : 0.045, 12, 12]} />
+          <meshBasicMaterial color="#ff6b3d" transparent opacity={s.listed ? 1 : 0.5} />
+        </mesh>
+      ))}
+      {sensors.map((s) => {
+        const a = c.alarms[s.id]
+        const alarmed = smoke.layout === 'designed' && a !== null && a !== undefined && t >= a
+        return (
+          <mesh key={s.id} position={[s.x, s.y, 0.02]}>
+            <boxGeometry args={[0.13, 0.13, 0.13]} />
+            <meshBasicMaterial color={alarmed ? '#ff4d4d' : color} />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+function SmokeReadout({ smoke, t }: { smoke: NonNullable<StageProps['smoke']>; t: number }) {
+  const { study } = smoke
+  const c = caseOf(smoke)
+  const cases = (smoke.layout === 'proposed' ? study.proposedCases : study.cases).filter((x) => x.g === smoke.g)
+  const sensors = smoke.layout === 'proposed' ? study.proposed : study.designed
+  return (
+    <div style={{ position: 'absolute', left: 14, top: 12, fontFamily: 'DM Mono, monospace', color: '#e6edf3', pointerEvents: 'none', fontSize: 10.5 }}>
+      <div style={{ display: 'flex', gap: 22 }}>
+        <Readout label="time" value={`T+${t.toFixed(1)} s`} />
+        <Readout label="gravity" value={c.gLabel} />
+        <Readout label="smoke" value={`${study.smokeD} µm`} />
+      </div>
+      <div style={{ marginTop: 8, padding: 6, background: 'rgba(5,7,10,0.82)', border: '1px solid #263242', borderRadius: 3 }}>
+        <div style={{ color: '#7d8a99', letterSpacing: '0.12em', marginBottom: 3 }}>FIRST ALARM · {smoke.layout.toUpperCase()} LAYOUT</div>
+        {cases.map((x) => (
+          <div key={x.source} style={{ display: 'flex', gap: 10 }}>
+            <span style={{ width: 150, color: '#9aa3ae' }}>{study.sources.find((s) => s.id === x.source)?.label}</span>
+            <span style={{ color: x.firstAlarm === null ? '#ff6b6b' : '#3fd07a' }}>{x.firstAlarm === null ? 'no alarm in 60 s' : `${x.firstAlarm.toFixed(0)} s`}</span>
+          </div>
+        ))}
+        <div style={{ color: '#4a5665', marginTop: 3 }}>{sensors.map((s) => `${s.id} ${s.type}`).join(' · ')}</div>
+      </div>
     </div>
   )
 }

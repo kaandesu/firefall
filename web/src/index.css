@@ -268,3 +268,21 @@
   body { background: white; color: black; overflow: visible; }
   .no-print { display: none !important; }
 }
+
+/* markdown answers in the report chat */
+.report-md p { margin: 0 0 0.5em; }
+.report-md p:last-child { margin-bottom: 0; }
+.report-md ul, .report-md ol { margin: 0.25em 0 0.5em; padding-left: 1.1em; }
+.report-md ul { list-style: disc; }
+.report-md ol { list-style: decimal; }
+.report-md li { margin: 0.15em 0; }
+.report-md strong { color: var(--ink); font-weight: 600; }
+.report-md code { font-size: 0.92em; color: var(--ug); }
+.report-md table { font-size: 11px; border-collapse: collapse; margin: 0.4em 0; }
+.report-md td, .report-md th { border: 1px solid var(--line); padding: 2px 6px; }
+@media print {
+  html, body, #root { height: auto !important; overflow: visible !important; background: #fff; }
+}
+
+.input { height: 26px; border: 1px solid var(--line-2); border-radius: 2px; background: var(--surface); padding: 0 6px; color: var(--ink); outline: none; }
+.input:focus { border-color: color-mix(in srgb, var(--ug) 60%, transparent); }

@@ -1,4 +1,4 @@
-// 3 RUN: Halo layout. Network, stage and agent on top, plan and findings as bars, comms as a strip.
+// 3 RUN: Halo layout. Network, stage and agent on top, the lab and findings in the middle, comms as a strip.
 import { useEffect, useRef, useState } from 'react'
 import { PanelLayout, type PaneDef } from '@/components/shell/Panels'
 import { AGENT } from '@/demo/crew'
@@ -9,6 +9,7 @@ import { CommsView } from '@/views/CommsView'
 import { FindingsView } from '@/views/FindingsView'
 import { ProposalsView } from '@/views/ProposalsView'
 import { NetworkView } from '@/views/NetworkView'
+import { LabView } from '@/views/LabView'
 import { PlanGraph } from '@/views/PlanGraph'
 
 const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
@@ -30,8 +31,10 @@ function useKeys(askRef: React.RefObject<HTMLInputElement | null>) {
       else if (k === 'l') s.cycleAgent(1)
       else if (k === 'a' && s.model.waiting) s.answer(s.model.waiting.options[0])
       else if (k === '?') s.setHelp(!s.help)
+      else if (k === 'p') s.setPlanOpen(!s.planOpen)
       else if (k === 'Escape') {
         if (s.help) s.setHelp(false)
+        else if (s.planOpen) s.setPlanOpen(false)
         else if (s.sizes[s.focus] === 'full') s.grow(-1)
       }
       else if (k === ' ') {
@@ -66,6 +69,7 @@ function Help() {
     ['h / l', 'previous / next agent'],
     ['j / k · enter', 'move through / open findings rows'],
     ['a', 'answer the waiting question (first option)'],
+    ['p', 'the whole plan as a graph'],
     ['/ or i', 'ask the lead'],
     ['space', 'pause / resume the demo'],
     ['esc', 'close · leave full screen'],
@@ -97,6 +101,9 @@ export function RunScreen() {
   const ask = useMission((s) => s.ask)
   const waiting = useMission((s) => s.model.waiting)
   const proposals = useMission((s) => s.model.proposals)
+  const jobs = useMission((s) => s.model.jobs)
+  const planOpen = useMission((s) => s.planOpen)
+  const setPlanOpen = useMission((s) => s.setPlanOpen)
   const askRef = useRef<HTMLInputElement>(null)
   const [q, setQ] = useState('')
   const [ftab, setFtab] = useState<'matrix' | 'proposals'>('matrix')
@@ -115,10 +122,14 @@ export function RunScreen() {
     3: { id: 3, title: `AGENT @${selected}`, right: <span>{AGENT[selected]?.name}</span>, summary: agents[selected]?.doing, body: <AgentView /> },
     4: {
       id: 4,
-      title: 'PLAN',
-      summary: `${subs.filter((s) => s.status === 'done').length}/${subs.length}${running ? ` · ${running.id} ${running.title}` : ''}`,
-      right: <span>{subs.filter((s) => s.status === 'done').length}/{subs.length} done</span>,
-      body: plan ? <PlanGraph plan={plan} /> : null,
+      title: 'LAB',
+      summary: `${jobs.filter((j) => !j.done).length} running · ${jobs.length} jobs${running ? ` · ${running.id} ${running.title}` : ''}`,
+      right: (
+        <span>
+          {jobs.filter((j) => !j.done).length} running · plan {subs.filter((s) => s.status === 'done').length}/{subs.length}
+        </span>
+      ),
+      body: <LabView />,
     },
     5: {
       id: 5,
@@ -154,10 +165,21 @@ export function RunScreen() {
         <input ref={askRef} value={q} onChange={(e) => setQ(e.target.value)} placeholder="ask the lead…" className="sans min-w-0 flex-1 bg-transparent outline-none placeholder:text-faint" />
         {waiting && <span className="text-warn">@{waiting.from} is waiting on you · a</span>}
         <span className="text-faint">
-          {PANELS.length > 0 && '1-6 panel  +/- size  h/l agent  a answer  ? keys'}
+          {PANELS.length > 0 && '1-6 panel  +/- size  h/l agent  a answer  p plan  ? keys'}
         </span>
       </form>
       <Help />
+      {planOpen && plan && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-bg/70" onClick={() => setPlanOpen(false)}>
+          <div className="pane h-[70%] w-[78%] p-3 pt-5" onClick={(e) => e.stopPropagation()}>
+            <header className="pane-head text-[11px]">
+              <span className="tracking-[0.14em] text-ink">PLAN</span>
+              <span className="ml-auto text-faint">p / esc to close</span>
+            </header>
+            <PlanGraph plan={plan} />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

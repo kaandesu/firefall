@@ -5,6 +5,7 @@ import { Avatar } from '@/components/bits'
 import { PLAN_GATE } from '@/demo/apollo1'
 import { useMission } from '@/live/store'
 import { PlanGraph } from '@/views/PlanGraph'
+import { IntroScreen } from './IntroScreen'
 
 export function PlanScreen() {
   const plan = useMission((s) => s.model.plan)
@@ -14,6 +15,7 @@ export function PlanScreen() {
   const approve = useMission((s) => s.approve)
   const pkg = useMission((s) => s.pkg)
   const request = useMission((s) => s.request)
+  const intro = useMission((s) => s.intro)
   const canApprove = waiting?.taskId === PLAN_GATE
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'a' && canApprove && approve()
@@ -21,7 +23,8 @@ export function PlanScreen() {
     return () => window.removeEventListener('keydown', k)
   }, [canApprove, approve])
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 p-4 pt-5">
+    <div className="relative flex min-h-0 flex-1 flex-col gap-4 p-4 pt-5">
+      {intro && <IntroScreen />}
       <div className="flex items-start gap-3">
         <Avatar handle="flight" size={30} />
         <div className="min-w-0 flex-1">

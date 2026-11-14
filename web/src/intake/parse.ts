@@ -9,6 +9,8 @@ import { MATERIALS } from '@/sims/models'
 
 export type MaterialKey = keyof typeof MATERIALS
 
+export type SensorDef = { id: string; type: 'photoelectric' | 'ionization'; zone: string; pos: [number, number, number] }
+
 export type CabinSpec = {
   vehicle: string
   program: string
@@ -22,6 +24,8 @@ export type CabinSpec = {
   ignition: { id: string; zone: string; note: string }[]
   hatch: { type: string; openTime: number }
   hull: { burstPsia: number }
+  /** Smoke detectors in the design: type and mount point (cabin coordinates, m). */
+  sensors: SensorDef[]
 }
 
 export type MaterialRow = {
@@ -83,6 +87,7 @@ export function parseCabin(text: string): CabinSpec {
   const hatch = (doc.hatch ?? {}) as Record<string, unknown>
   const hull = (doc.hull ?? {}) as Record<string, unknown>
   const ign = Array.isArray(doc.ignition_sources) ? (doc.ignition_sources as Record<string, unknown>[]) : []
+  const sen = Array.isArray(doc.sensors) ? (doc.sensors as Record<string, unknown>[]) : []
   return {
     vehicle: str(doc.vehicle, 'Unnamed vehicle'),
     program: str(doc.program),
@@ -96,6 +101,13 @@ export function parseCabin(text: string): CabinSpec {
     ignition: ign.map((x, i) => ({ id: str(x.id, `ign-${i + 1}`), zone: str(x.zone), note: str(x.note) })),
     hatch: { type: str(hatch.type, 'unspecified'), openTime: num(hatch.open_time_s ?? 0, 'hatch.open_time_s', { min: 0 }) },
     hull: { burstPsia: num(hull.burst_psia ?? 0, 'hull.burst_psia', { min: 0 }) },
+    sensors: sen.map((x, i) => {
+      const type = str(x.type, 'photoelectric')
+      if (type !== 'photoelectric' && type !== 'ionization') throw new IntakeError(`cabin.yaml: sensors[${i}].type must be photoelectric or ionization, got "${type}"`)
+      const pos = Array.isArray(x.pos) && x.pos.length === 3 && x.pos.every((v) => typeof v === 'number') ? (x.pos as [number, number, number]) : undefined
+      if (!pos) throw new IntakeError(`cabin.yaml: sensors[${i}].pos must be [x, y, z] in metres`)
+      return { id: str(x.id, `D${i + 1}`), type, zone: str(x.zone), pos }
+    }),
   }
 }
 
@@ -239,6 +251,8 @@ export function crossCheck(spec?: CabinSpec, rows?: MaterialRow[], model?: Cabin
   }
   if (spec && zones) for (const ig of spec.ignition) if (!zones.has(ig.zone)) out.push({ slot: 'cabin', level: 'warn', text: `ignition source ${ig.id}: zone "${ig.zone}" is not in the cabin model` })
   if (spec && !spec.ignition.length) out.push({ slot: 'cabin', level: 'warn', text: 'no ignition sources listed: spread starts at the first zone' })
+  if (spec && zones) for (const d of spec.sensors) if (d.zone && !zones.has(d.zone)) out.push({ slot: 'cabin', level: 'warn', text: `sensor ${d.id}: zone "${d.zone}" is not in the cabin model` })
+  if (spec && !spec.sensors.length) out.push({ slot: 'cabin', level: 'warn', text: 'no smoke sensors listed: detection is checked against a proposed layout only' })
   if (spec && !spec.hull.burstPsia) out.push({ slot: 'cabin', level: 'warn', text: 'no hull.burst_psia: the pressure layer cannot show rupture' })
   return out
 }
@@ -277,5 +291,6 @@ export function toPackage(spec: CabinSpec, rows: MaterialRow[]): DesignPackage {
     layout: 'cabin.model.json',
     hatch: spec.hatch,
     hull: spec.hull,
+    sensors: spec.sensors,
   }
 }

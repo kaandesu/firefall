@@ -6,10 +6,14 @@ import { PlanScreen } from '@/screens/PlanScreen'
 import { RunScreen } from '@/screens/RunScreen'
 import { SetupScreen } from '@/screens/SetupScreen'
 import { TopBar } from '@/screens/TopBar'
-import { VerdictScreen } from '@/screens/VerdictScreen'
+import { ComputeScreen } from '@/screens/ComputeScreen'
+import { EvidenceScreen } from '@/screens/EvidenceScreen'
+import { LibraryScreen } from '@/screens/LibraryScreen'
+import { ReportScreen } from '@/screens/ReportScreen'
 
 export default function App() {
   const phase = useMission((s) => s.phase)
+  const view = useMission((s) => s.view)
 
   useEffect(() => {
     // Deep links: ?example=1 loads the Apollo files, &start=1 goes straight to the plan, &speed=4, &live=<lagrange url>
@@ -17,18 +21,27 @@ export default function App() {
     const s = useMission.getState()
     if (q.get('speed')) s.setSpeed(Number(q.get('speed')))
     if (q.get('live')) return s.goLive(q.get('live')!)
-    if (q.get('example') === '1') void s.loadExample().then(() => q.get('start') === '1' && useMission.getState().start())
+    if (q.get('example') === '1') void s.loadExample().then(() => {
+      if (q.get('start') === '1') void useMission.getState().start()
+    })
   }, [])
 
   return (
     <TooltipProvider delayDuration={250}>
       <div className="flex h-full flex-col">
         <TopBar />
-        {phase === 'setup' && <SetupScreen />}
-        {phase === 'intake' && <IntakeScreen />}
-        {phase === 'plan' && <PlanScreen />}
-        {phase === 'run' && <RunScreen />}
-        {phase === 'done' && <VerdictScreen />}
+        {view === 'library' && <LibraryScreen />}
+        {view === 'evidence' && <EvidenceScreen />}
+        {view === 'compute' && <ComputeScreen />}
+        {view === 'review' && (
+          <>
+            {phase === 'setup' && <SetupScreen />}
+            {phase === 'intake' && <IntakeScreen />}
+            {phase === 'plan' && <PlanScreen />}
+            {phase === 'run' && <RunScreen />}
+            {phase === 'done' && <ReportScreen />}
+          </>
+        )}
       </div>
     </TooltipProvider>
   )

@@ -4,6 +4,7 @@ import { Player, type PlayerRef } from '@remotion/player'
 import { Pause, Play, RotateCcw } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { stageRuns } from '@/demo/apollo1'
+import { useSmokeStudy } from '@/lab/useSmokeStudy'
 import { useMission, type Layer } from '@/live/store'
 import { cn } from '@/lib/utils'
 import { MATERIALS } from '@/sims/models'
@@ -14,6 +15,7 @@ const LAYERS: { id: Layer; label: string; q: string; by: string }[] = [
   { id: 'materials', label: 'materials', q: 'What in here burns?', by: '@prevent' },
   { id: 'spread', label: 'spread', q: 'How fast does it take the cabin?', by: '@sim' },
   { id: 'pressure', label: 'pressure', q: 'Could the crew get out?', by: '@sim' },
+  { id: 'smoke', label: 'smoke', q: 'Would the sensors see it, in µg, on the Moon and at 1 g?', by: '@detect' },
   { id: 'whatif', label: 'what-if', q: 'What would have changed it?', by: '@sim' },
 ]
 
@@ -53,10 +55,13 @@ export function Stage() {
   const [frame, setFrame] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [box, size] = useSize()
+  const { study } = useSmokeStudy(pkg, cabin)
+  const [smokeG, setSmokeG] = useState(pkg?.gravity.g ?? 1)
+  const [smokeLayout, setSmokeLayout] = useState<'designed' | 'proposed'>('designed')
 
   const runs = useMemo(() => (pkg && cabin ? stageRuns(pkg, cabin) : []), [pkg, cabin])
   const has = (id: string) => sims.some((s) => s.id === id)
-  const ready: Record<Layer, boolean> = { materials: matrix.length > 0, spread: has('cabin-spread'), pressure: has('cabin-pressure'), whatif: has('cabin-whatif') }
+  const ready: Record<Layer, boolean> = { materials: matrix.length > 0, spread: has('cabin-spread'), pressure: has('cabin-pressure'), smoke: has('cabin-smoke') && !!study, whatif: has('cabin-whatif') }
   const shown: StageLayer = ready[layer] ? layer : 'none'
   const run = runs.find((r) => r.variant.id === (shown === 'whatif' ? variant : 'as-built')) ?? runs[0]
 
@@ -94,8 +99,8 @@ export function Stage() {
   }, [stagePlay])
 
   if (!pkg || !cabin || !run) return null
-  const duration = run.duration * FPS
-  const fire = shown === 'spread' || shown === 'pressure' || shown === 'whatif'
+  const duration = (shown === 'smoke' && study ? study.seconds : run.duration) * FPS
+  const fire = shown === 'spread' || shown === 'pressure' || shown === 'whatif' || shown === 'smoke'
   const zoneInfo = picked ?? hoverZone
   const z = zoneInfo ? run.zones.find((x) => x.zone === zoneInfo) : undefined
   const props: StageProps = {
@@ -105,6 +110,7 @@ export function Stage() {
     status,
     highlight: zoneInfo,
     hatchTime: pkg.hatch?.openTime ?? 0,
+    smoke: study ? { study, g: smokeG, layout: smokeLayout } : undefined,
     onPick: (zone) => {
       setPicked(zone)
       setHoverZone(undefined)
@@ -128,6 +134,21 @@ export function Stage() {
           </button>
         ))}
         <span className="sans ml-2 truncate text-[11.5px] text-muted-foreground">{shown === 'none' ? 'waiting for the agents' : LAYERS.find((l) => l.id === shown)?.q}</span>
+        {shown === 'smoke' && study && (
+          <span className="ml-auto flex items-center gap-1">
+            {study.frames.map((c) => (
+              <button key={c.gLabel} type="button" onClick={() => setSmokeG(c.g)} className={cn('whitespace-nowrap rounded-sm border px-1.5 py-0.5', smokeG === c.g ? 'border-ug/70 bg-ug/10 text-ink' : 'border-line-2 text-muted-foreground hover:text-ink')}>
+                {c.gLabel}
+              </button>
+            ))}
+            <span className="mx-1 text-faint">·</span>
+            {(['designed', 'proposed'] as const).map((l) => (
+              <button key={l} type="button" onClick={() => setSmokeLayout(l)} className={cn('whitespace-nowrap rounded-sm border px-1.5 py-0.5', smokeLayout === l ? (l === 'proposed' ? 'border-ok/70 bg-ok/10 text-ok' : 'border-line-2 bg-surface-2 text-ink') : 'border-line-2 text-muted-foreground hover:text-ink')}>
+                {l}
+              </button>
+            ))}
+          </span>
+        )}
         {shown === 'whatif' && (
           <span className="ml-auto flex items-center gap-1">
             {runs.map((r) => (

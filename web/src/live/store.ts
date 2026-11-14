@@ -1,8 +1,11 @@
 // App state: the phase you are in (intake → plan → run → done), the intake files, the run model folded
 // from Lagrange entries, and the Halo-style panel layout (focus + size per panel).
 import { create } from 'zustand'
-import { HUMAN } from '@/demo/crew'
-import { apollo1, DECISIONS, LAB_GATE, MEDIATE_GATE, PLAN_GATE, type Decision, type ReviewInput } from '@/demo/apollo1'
+import { HUMAN, type ComputeNode } from '@/demo/crew'
+import { apollo1, DECISIONS, LAB_GATE, MEDIATE_GATE, PLAN_GATE, SENSOR_GATE, type Decision, type ReviewInput } from '@/demo/apollo1'
+import { detectEvents, loadFrames, loadSensors, loadTestpoints, sensorStats } from '@/data/acme'
+import { buildEvidence } from '@/data/evidence'
+import { getSmokeStudy, startSmokeStudy, whenSmokeStudy } from '@/lab/useSmokeStudy'
 import type { DesignPackage } from '@/demo/packages'
 import { IntakeError, parseCabin, parseMaterials, parseModel, toPackage, type CabinModel, type CabinSpec, type MaterialRow, type Slot } from '@/intake/parse'
 import type { Variant } from '@/stage/physics'
@@ -26,13 +29,13 @@ export const PANELS: { id: PanelId; name: string }[] = [
   { id: 1, name: 'network' },
   { id: 2, name: 'stage' },
   { id: 3, name: 'agent' },
-  { id: 4, name: 'plan' },
+  { id: 4, name: 'lab' },
   { id: 5, name: 'findings' },
   { id: 6, name: 'comms' },
 ]
-const DEFAULT_SIZES: Record<PanelId, Size> = { 1: 'normal', 2: 'normal', 3: 'normal', 4: 'bar', 5: 'bar', 6: 'normal' }
+const DEFAULT_SIZES: Record<PanelId, Size> = { 1: 'normal', 2: 'normal', 3: 'normal', 4: 'normal', 5: 'normal', 6: 'normal' }
 
-export type Layer = 'materials' | 'spread' | 'pressure' | 'whatif'
+export type Layer = 'materials' | 'spread' | 'pressure' | 'smoke' | 'whatif'
 
 export const EXAMPLE_DIR = '/examples/apollo-cm012'
 export const EXAMPLE_FILES: Record<Slot, string> = { cabin: 'cabin.yaml', materials: 'materials.csv', model: 'cabin.model.json' }
@@ -48,8 +51,21 @@ type State = {
   skip: string[]
   labTest: boolean
   decision: Decision
+  pr2: boolean
+  acme?: ReviewInput['acme']
   /** Agents connected from outside on the setup screen (demo). */
   connected: string[]
+  /** Servers / GPU farms an org added on the compute screen (demo). */
+  nodes: ComputeNode[]
+  /** MCP servers added per agent (demo handshake). */
+  mcp: Record<string, { name: string; url: string; tools: string[] }[]>
+  /** Which top-level view is open beside the review. */
+  view: 'review' | 'library' | 'evidence' | 'compute'
+  /** Evidence rows pinned for the report. */
+  pins: string[]
+  planOpen: boolean
+  /** The cabin intro is showing (once per review). */
+  intro: boolean
   mode: 'demo' | 'live'
   liveError?: string
   model: Model
@@ -71,13 +87,19 @@ type State = {
 
   setPhase: (p: Phase) => void
   connect: (url: string) => void
+  addNode: (n: ComputeNode) => void
+  addMcp: (agent: string, server: { name: string; url: string; tools: string[] }) => void
+  setView: (v: State['view']) => void
+  togglePin: (id: string) => void
+  setPlanOpen: (on: boolean) => void
+  skipIntro: () => void
   setSlot: (slot: Slot, name: string, text: string) => void
   clearSlot: (slot: Slot) => void
   loadExample: () => Promise<void>
   setRequest: (r: string) => void
-  start: () => void
+  start: () => Promise<void>
   toggleSkip: (id: string) => void
-  approve: () => void
+  approve: () => Promise<void>
   answer: (text: string) => void
   ask: (text: string) => void
   play: () => void
@@ -115,7 +137,7 @@ function parseSlot(slot: Slot, text: string): { value?: unknown; error?: string 
 }
 
 /** Everyone on the review network, grouped by organization (the order the network ring shows them). */
-export const NETWORK = ['flight', 'prevent', 'sim', 'scribe', 'archivist', 'wstf', 'lab', 'skeptic'] as const
+export const NETWORK = ['flight', 'prevent', 'detect', 'suppress', 'sim', 'scribe', 'archivist', 'wstf', 'lab', 'skeptic'] as const
 
 /** The agents (not people) on the network: what h / l cycles through. */
 export function runAgents(_m?: Model): string[] {
@@ -127,7 +149,14 @@ export const useMission = create<State>((set, get) => ({
   intake: {},
   labTest: true,
   decision: 'caveat',
+  pr2: true,
   connected: [],
+  nodes: [],
+  mcp: {},
+  view: 'review',
+  pins: [],
+  intro: false,
+  planOpen: false,
   request: DEFAULT_REQUEST,
   skip: [],
   mode: 'demo',
@@ -145,6 +174,12 @@ export const useMission = create<State>((set, get) => ({
 
   setPhase: (phase) => set({ phase }),
   connect: (url) => set((s) => ({ connected: s.connected.includes(url) ? s.connected : [...s.connected, url] })),
+  addNode: (n) => set((s) => ({ nodes: [...s.nodes.filter((x) => x.id !== n.id), { ...n, added: true }] })),
+  addMcp: (agent, server) => set((s) => ({ mcp: { ...s.mcp, [agent]: [...(s.mcp[agent] ?? []), server] } })),
+  setView: (view) => set({ view }),
+  skipIntro: () => set({ intro: false }),
+  togglePin: (id) => set((s) => ({ pins: s.pins.includes(id) ? s.pins.filter((x) => x !== id) : [...s.pins, id] })),
+  setPlanOpen: (planOpen) => set({ planOpen }),
   setSlot: (slot, name, text) => set((s) => ({ intake: { ...s.intake, [slot]: { name, text, ...parseSlot(slot, text) } } })),
   clearSlot: (slot) => set((s) => ({ intake: { ...s.intake, [slot]: undefined } })),
   loadExample: async () => {
@@ -159,24 +194,37 @@ export const useMission = create<State>((set, get) => ({
   },
   setRequest: (request) => set({ request }),
 
-  start: () => {
+  start: async () => {
     const { intake } = get()
     const spec = intake.cabin?.value
     const rows = intake.materials?.value
     const cabin = intake.model?.value
     if (!spec || !rows || !cabin) return
     const pkg = toPackage(spec, rows)
+    startSmokeStudy(pkg, cabin)
+    // Real ACME results, computed in the browser from public/data/acme before the agents use them.
+    if (!get().acme) {
+      try {
+        const [f, sen, tp] = await Promise.all([loadFrames(), loadSensors(), loadTestpoints()])
+        set({ acme: { events: detectEvents(f), sensors: sensorStats(sen), evidence: buildEvidence(tp).length } })
+      } catch {
+        /* the run still works without the real data */
+      }
+    }
     replay?.dispose()
     live?.close()
     live = null
     set({
       phase: 'plan',
+      intro: new URLSearchParams(location.search).get('intro') !== '0',
+      view: 'review',
       mode: 'demo',
       pkg,
       cabin,
       skip: [],
       labTest: true,
       decision: 'caveat',
+      pr2: true,
       model: emptyModel(),
       status: idleStatus,
       startedAt: Date.now(),
@@ -197,18 +245,22 @@ export const useMission = create<State>((set, get) => ({
     if (!sub || sub.required || get().model.plan?.approved) return
     set((s) => ({ skip: s.skip.includes(id) ? s.skip.filter((x) => x !== id) : [...s.skip, id] }))
   },
-  approve: () => {
-    const s = get()
+  approve: async () => {
+    let s = get()
     if (s.model.waiting?.taskId !== PLAN_GATE) return
     if (s.mode === 'live') {
       live?.answer(PLAN_GATE, 'Approve plan')
       return
     }
+    // The detection agent needs its CFD results; they run in a worker from the moment the case is loaded.
+    if (!getSmokeStudy().study) await whenSmokeStudy(20_000)
+    s = get()
+    if (s.model.waiting?.taskId !== PLAN_GATE) return
     // The skipped subtasks change what comes after the gate.
     replay?.swap(apollo1(input(s)))
     const off = s.skip.length ? ` (switched off: ${s.skip.join(', ')})` : ''
     replay?.answer(`Approve plan${off}`)
-    set({ phase: 'run', startedAt: Date.now() })
+    set({ phase: 'run', intro: false, startedAt: Date.now() })
   },
   answer: (text) => {
     const s = get()
@@ -221,6 +273,10 @@ export const useMission = create<State>((set, get) => ({
     }
     if (w.taskId === LAB_GATE) {
       set({ labTest: !/skip/i.test(text) })
+      replay?.swap(apollo1(input(get())))
+    }
+    if (w.taskId === SENSOR_GATE) {
+      set({ pr2: !/keep/i.test(text) })
       replay?.swap(apollo1(input(get())))
     }
     if (w.taskId === MEDIATE_GATE) {
@@ -282,6 +338,7 @@ export const useMission = create<State>((set, get) => ({
       const run = d.run as SimRun
       if (run.id === 'cabin-spread' && !run.metrics) set({ layer: 'spread', variant: 'as-built', stagePlay: get().stagePlay + 1 })
       if (run.id === 'cabin-pressure') set({ layer: 'pressure' })
+      if (run.id === 'cabin-smoke') set({ layer: 'smoke', stagePlay: get().stagePlay + 1 })
       if (run.id === 'cabin-whatif' && run.metrics) set({ layer: 'whatif', variant: 'proposal', stagePlay: get().stagePlay + 1 })
     }
   },
@@ -315,7 +372,7 @@ export const useMission = create<State>((set, get) => ({
 }))
 
 function input(s: State): ReviewInput {
-  return { pkg: s.pkg!, model: s.cabin!, request: s.request, skip: s.skip, labTest: s.labTest, decision: s.decision }
+  return { pkg: s.pkg!, model: s.cabin!, request: s.request, skip: s.skip, labTest: s.labTest, decision: s.decision, pr2: s.pr2, acme: s.acme, smoke: getSmokeStudy().study }
 }
 
 /** Demo stand-in for the lead's answer when you type into "ask the lead". */

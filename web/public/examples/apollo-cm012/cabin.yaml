@@ -18,6 +18,17 @@ ignition_sources:
     zone: wiring
     note: Damaged wiring near the environmental control unit (most probable source)
 
+# Smoke detection. CM-012 flew none; these two are the candidate layout this review is asked to check.
+sensors:
+  - id: D1
+    type: ionization
+    zone: console
+    pos: [0, 2.7, 0]       # on the upper bulkhead above the couches
+  - id: D2
+    type: photoelectric
+    zone: couches
+    pos: [1.45, 0.55, 0]   # low on the right wall, beside the couch
+
 hatch:
   type: inward-opening plug hatch
   open_time_s: 90       # nominal time to open the inner hatch from the inside

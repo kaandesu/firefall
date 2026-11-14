@@ -149,6 +149,9 @@ export type TestRequest = {
 export type KbEntry = { id: string; agent: string; text: string; source: { kind: 'input' | 'dataset' | 'agent' | 'human' | 'tool'; ref: string }; tokens?: number }
 
 /** A data-processing job an agent runs on its own org's compute (looks only in the demo). */
+/** What a lab tile draws for a job. */
+export type SceneId = 'acme-frames' | 'spread-duct' | 'lim-sweep' | 'gravity-flame' | 'smoke-cfd' | 'sensor-opt' | 'droplet' | 'chamber-test' | 'cabin-fire'
+
 export type Job = {
   id: string
   agent: string
@@ -163,6 +166,17 @@ export type Job = {
   /** A small series for the sparkline, 0..1. */
   series?: number[]
   done?: boolean
+  /** data = processing a dataset, sim = a simulation run, test = a physical test run by a person. */
+  kind?: 'data' | 'sim' | 'test'
+  /** The live view of this job in the Lab panel. */
+  scene?: SceneId
+  params?: Record<string, number | string>
+  /** Cluster node and accelerators it holds while running. */
+  node?: string
+  gpus?: number
+  /** Model time (ms since run start) it was first seen and finished. */
+  startedAt?: number
+  endedAt?: number
 }
 
 export type ProposalReview = { by: string; stance: 'endorse' | 'object' | 'comment'; text: string; cites?: Cite[] }
