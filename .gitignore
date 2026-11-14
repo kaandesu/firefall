@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.local
+.DS_Store
+.claude/settings.local.json
+# downloaded PSI datasets (large; keep only the public metadata snapshot)
+data/psi/*/
