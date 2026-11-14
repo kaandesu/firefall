@@ -1,0 +1,23 @@
+{
+  "source": "Saffire spacecraft fire experiments in Cygnus after ISS departure, 2016-2023",
+  "refs": {
+    "ruff2016": { "cite": "Ruff, Urban. Operation and Development Status of the Spacecraft Fire Experiment (Saffire). NASA GRC, 2016", "ntrs": "20170002628", "url": "https://ntrs.nasa.gov/citations/20170002628" },
+    "urban2024": { "cite": "Urban, Ruff, Ferkul, Easton, Johnston, Owens, Olson, Fortenberry et al. Preliminary Results from the Saffire VI Experiment. ICES-2024-365", "ntrs": "20240002981", "url": "https://ntrs.nasa.gov/citations/20240002981" }
+  },
+  "flights": [
+    { "id": "SAF-I", "flight": "Saffire-I (OA-6, 2016)", "material": "cotton", "fuel": "SIBAL 75 % cotton / 25 % fiberglass, 0.4 × 0.94 m", "flow": 20, "o2": 0.21, "kpa": 101, "ref": "ruff2016", "where": "slides 5, 13, 18", "how": "text" },
+    { "id": "SAF-III", "flight": "Saffire-III", "material": "cotton", "fuel": "SIBAL, as Saffire-I", "flow": 30, "o2": 0.21, "kpa": 101, "ref": "ruff2016", "where": "slide 18: flow close to 30 cm/s vs 20 for Saffire-I", "how": "text" }
+  ],
+  "rows": [
+    { "id": "SAF-IV-1", "material": "cotton", "fuel": "SIBAL cloth, 50 cm", "flow": 20, "o2": 0.220, "kpa": 100.0, "volume": 17.9, "burn_s": 130, "avg_w": 3150, "total_kj": 409, "peak_w": null, "outlet_c": 45, "ffd_c": 25, "co2_ppm": 1390, "co_ppm": 80, "ref": "urban2024", "where": "Tables 1 and 2", "how": "table" },
+    { "id": "SAF-V-2", "material": "cotton", "fuel": "Cotton jersey, 50 cm", "flow": 20, "o2": 0.262, "kpa": 70.7, "volume": 19.0, "burn_s": 200, "avg_w": 2800, "total_kj": 560, "peak_w": null, "outlet_c": 46, "ffd_c": 23, "co2_ppm": 2360, "co_ppm": 83, "ref": "urban2024", "where": "Tables 1 and 2", "how": "table" },
+    { "id": "SAF-VI-2", "material": "cotton", "fuel": "SIBAL cloth, 50 cm", "flow": 20, "o2": 0.310, "kpa": 54.1, "volume": 16.7, "burn_s": 112, "avg_w": 3650, "total_kj": 409, "peak_w": 3217, "outlet_c": 48, "ffd_c": 20, "co2_ppm": 2800, "co_ppm": 120, "ref": "urban2024", "where": "Tables 1 and 2 (O2-consumption: peak 3217 W, 580 kJ; fuel-consumption: 3650 W, 409 kJ)", "how": "table" },
+    { "id": "SAF-VI-3", "material": "pmma", "fuel": "2-sided PMMA, 1 cm thick, 18 cm", "flow": 20, "o2": 0.303, "kpa": 54.6, "volume": 16.7, "burn_s": 780, "avg_w": null, "total_kj": 1280, "peak_w": 3080, "outlet_c": 77, "ffd_c": 21, "co2_ppm": 8539, "co_ppm": 308, "ref": "urban2024", "where": "Tables 1 and 2", "how": "table" },
+    { "id": "SAF-VI-4", "material": "pmma", "fuel": "1-sided PMMA, 0.5 cm thick, 18 cm", "flow": 20, "o2": 0.288, "kpa": 55.2, "volume": 16.7, "burn_s": 1200, "avg_w": null, "total_kj": 830, "peak_w": 1507, "outlet_c": 57, "ffd_c": 21, "co2_ppm": 8117, "co_ppm": 320, "ref": "urban2024", "where": "Tables 1 and 2", "how": "table" }
+  ],
+  "notes": [
+    "Fires were 1.5 to 3.2 kW in vehicles with 17-19 m³ free volume; temperature rose significantly only near the fire (urban2024 p. 6).",
+    "A typical smoke alarm threshold was reached only at 981 s, after most hazardous gas had been released (urban2024 p. 6).",
+    "The Nomex sample in Saffire VI did not ignite (urban2024 p. 4)."
+  ]
+}

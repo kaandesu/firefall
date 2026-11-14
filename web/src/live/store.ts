@@ -60,9 +60,11 @@ type State = {
   /** MCP servers added per agent (demo handshake). */
   mcp: Record<string, { name: string; url: string; tools: string[] }[]>
   /** Which top-level view is open beside the review. */
-  view: 'review' | 'library' | 'evidence' | 'compute'
+  view: 'review' | 'inbox' | 'library' | 'evidence' | 'fds' | 'compute'
   /** Evidence rows pinned for the report. */
   pins: string[]
+  /** Whose inbox is open: you (lead engineer) or the WSTF technician. */
+  persona: string
   planOpen: boolean
   /** The cabin intro is showing (once per review). */
   intro: boolean
@@ -90,6 +92,9 @@ type State = {
   addNode: (n: ComputeNode) => void
   addMcp: (agent: string, server: { name: string; url: string; tools: string[] }) => void
   setView: (v: State['view']) => void
+  setPersona: (h: string) => void
+  /** A person answers an inbox item (live: sent to Lagrange; demo: the held question, or ignored for the technician, who submits on the script's clock). */
+  respond: (id: string, text: string) => void
   togglePin: (id: string) => void
   setPlanOpen: (on: boolean) => void
   skipIntro: () => void
@@ -155,6 +160,7 @@ export const useMission = create<State>((set, get) => ({
   mcp: {},
   view: 'review',
   pins: [],
+  persona: HUMAN,
   intro: false,
   planOpen: false,
   request: DEFAULT_REQUEST,
@@ -177,6 +183,12 @@ export const useMission = create<State>((set, get) => ({
   addNode: (n) => set((s) => ({ nodes: [...s.nodes.filter((x) => x.id !== n.id), { ...n, added: true }] })),
   addMcp: (agent, server) => set((s) => ({ mcp: { ...s.mcp, [agent]: [...(s.mcp[agent] ?? []), server] } })),
   setView: (view) => set({ view }),
+  setPersona: (persona) => set({ persona }),
+  respond: (id, text) => {
+    const s = get()
+    if (s.model.waiting?.taskId === id) return s.answer(text)
+    if (s.mode === 'live') live?.answer(id, text)
+  },
   skipIntro: () => set({ intro: false }),
   togglePin: (id) => set((s) => ({ pins: s.pins.includes(id) ? s.pins.filter((x) => x !== id) : [...s.pins, id] })),
   setPlanOpen: (planOpen) => set({ planOpen }),

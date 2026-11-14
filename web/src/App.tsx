@@ -10,6 +10,8 @@ import { ComputeScreen } from '@/screens/ComputeScreen'
 import { EvidenceScreen } from '@/screens/EvidenceScreen'
 import { LibraryScreen } from '@/screens/LibraryScreen'
 import { ReportScreen } from '@/screens/ReportScreen'
+import { FdsScreen } from '@/screens/FdsScreen'
+import { InboxScreen } from '@/screens/InboxScreen'
 
 export default function App() {
   const phase = useMission((s) => s.phase)
@@ -19,6 +21,8 @@ export default function App() {
     // Deep links: ?example=1 loads the Apollo files, &start=1 goes straight to the plan, &speed=4, &live=<lagrange url>
     const q = new URLSearchParams(location.search)
     const s = useMission.getState()
+    const v = q.get('view')
+    if (v === 'fds' || v === 'library' || v === 'evidence' || v === 'compute' || v === 'inbox') s.setView(v)
     if (q.get('speed')) s.setSpeed(Number(q.get('speed')))
     if (q.get('live')) return s.goLive(q.get('live')!)
     if (q.get('example') === '1') void s.loadExample().then(() => {
@@ -33,6 +37,8 @@ export default function App() {
         {view === 'library' && <LibraryScreen />}
         {view === 'evidence' && <EvidenceScreen />}
         {view === 'compute' && <ComputeScreen />}
+        {view === 'fds' && <FdsScreen />}
+        {view === 'inbox' && <InboxScreen />}
         {view === 'review' && (
           <>
             {phase === 'setup' && <SetupScreen />}

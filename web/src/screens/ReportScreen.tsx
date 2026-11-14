@@ -8,6 +8,7 @@ import { AgentTag, CiteChip, StatusPill } from '@/components/bits'
 import { ReportChat, type Pull } from '@/components/ReportChat'
 import { match, type EvidenceRow } from '@/data/evidence'
 import { useEvidenceRows } from './EvidenceScreen'
+import { signature } from '@/live/sign'
 import { targetOf } from '@/data/library'
 import { stageRuns } from '@/demo/apollo1'
 import { NODES, ORGS, agentColor, agentName } from '@/demo/crew'
@@ -16,7 +17,8 @@ import type { SmokeStudy } from '@/lab/smokeStudy'
 import { useSmokeStudy } from '@/lab/useSmokeStudy'
 import { useMission } from '@/live/store'
 import type { MatrixRow } from '@/live/types'
-import { SECTIONS, buildReport, numberOf, scripted, type ReportInput, type SectionId } from '@/report/build'
+import { SECTIONS, buildReport, fdsFire, fdsSmoke, numberOf, scripted, type ReportInput, type SectionId } from '@/report/build'
+import { FdsCheckBlock, FdsPressureCheck } from '@/fds/FdsCheck'
 import { FPS, StageComp } from '@/stage/StageComp'
 import type { FireRun } from '@/stage/physics'
 import { cn } from '@/lib/utils'
@@ -48,6 +50,8 @@ export function ReportScreen() {
   const showVerdict = useMission((s) => s.showVerdict)
   const reset = useMission((s) => s.reset)
   const startedAt = useMission((s) => s.startedAt)
+  const setView = useMission((s) => s.setView)
+  const sig = signature(model)
   const { study } = useSmokeStudy(pkg, cabin)
   const frames = useAcmeFrames()
   const evidence = useEvidenceRows()
@@ -132,6 +136,7 @@ export function ReportScreen() {
       if (!e) return null
       return <EvidenceCard e={e} m={match(e, target)} pinned={pins.includes(e.id)} onPin={() => togglePin(e.id)} />
     }
+    if (p.id === 'fds') return <Figure caption="FDS check · cabin pressure, FDS 1 g / µg vs quick model" onOpen={() => go('r-fire')}><FdsPressureCheck quick={asBuilt} h={110} /></Figure>
     if (p.id === 'pressure') return <Figure caption="cabin pressure after ignition" onOpen={() => go('r-fire')}><PressureChart runs={runs} hatch={r.hatch} h={110} /></Figure>
     if (p.id === 'smoke' && study) return <Figure caption="first alarm per source × gravity" onOpen={() => go('r-smoke')}><AlarmGrid study={study} compact /></Figure>
     if (p.id === 'acme' && frames) return <Figure caption="ACME 21256C2 · brightness, events detected" onOpen={() => go('r-evidence')}><BrightnessChart f={frames.f} ev={frames.ev} upTo={72} h={110} /></Figure>
@@ -180,7 +185,18 @@ export function ReportScreen() {
       <div ref={scroller} className="scroll-thin min-w-0 flex-1 overflow-y-auto">
         <article className="mx-auto max-w-[860px] space-y-7 px-8 pb-24 pt-8">
           <header id="r-summary-head" className="space-y-3">
-            <div className="label tracking-[0.16em] text-flame">fire hazard review · design stage</div>
+            <div className="flex items-center gap-3">
+              <div className="label tracking-[0.16em] text-flame">fire hazard review · design stage</div>
+              {sig.signed ? (
+                <span className="rounded-sm border border-ok/60 px-1.5 py-0.5 text-[10.5px] text-ok">
+                  Signed by {sig.by} · {sig.when}
+                </span>
+              ) : (
+                <button type="button" onClick={() => setView('inbox')} className="rounded-sm border border-warn/60 px-1.5 py-0.5 text-[10.5px] uppercase tracking-wide text-warn" title="Only a person signs the hazard report; the sign-off waits in your inbox">
+                  Draft · not signed
+                </button>
+              )}
+            </div>
             <h1 className="sans text-[28px] font-semibold leading-tight text-ink">{r.verdict?.headline ?? `${pkg.vehicle}: review`}</h1>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] text-muted-foreground">
               <span className="text-ink">{pkg.vehicle}</span>
@@ -313,7 +329,7 @@ export function ReportScreen() {
               </div>
             )}
             <div>
-              <div className="label mb-1.5">nearest test points to this cabin ({pct(pkg.atmosphere.o2)} O₂ · {pkg.atmosphere.psi} psia) · of {evidence.length} rows</div>
+              <div className="label mb-1.5">nearest real tests to this cabin ({pct(pkg.atmosphere.o2)} O₂ · {pkg.atmosphere.psi} psia) · of {evidence.length} rows</div>
               <div className="grid grid-cols-2 gap-1.5">
                 {[...r.near.map((x) => x.e), ...r.pinned.filter((p) => !r.near.some((x) => x.e.id === p.id))].map((e) => (
                   <EvidenceCard key={e.id} e={e} m={match(e, target)} pinned={pins.includes(e.id)} onPin={() => togglePin(e.id)} />
@@ -348,6 +364,7 @@ export function ReportScreen() {
             </div>
             <JobsTable jobs={model.jobs.filter((j) => j.kind === 'sim' && /spread|flame/.test(j.scene ?? ''))} />
             <Callout kind="caveat">Spread and pressure are lumped models checked against the Apollo 204 Review Board timeline: use them for ordering, not for exact times.</Callout>
+            <FdsCheckBlock quick={asBuilt} lines={fdsFire(asBuilt)} />
           </ReportSection>
 
           <ReportSection flash={flash} onAsk={ask} id="smoke" by={['detect', 'sim']}>
@@ -371,7 +388,13 @@ export function ReportScreen() {
                 </div>
                 <div className="text-[10.5px] text-faint">Cabin cross-section at z = 0 from cabin.model.json. Colour: in how many of the {study.cases.length} cases ({study.sources.length} sources × µg / Moon / 1 g) smoke reaches each cell within {study.seconds} s. Green = all, red = few. A good detector sits in green.</div>
                 <AlarmGrid study={study} />
-                <JobsTable jobs={model.jobs.filter((j) => j.scene === 'smoke-cfd' || j.scene === 'sensor-opt')} />
+                <div className="rounded-sm border border-line bg-viewport p-3 text-[11.5px] leading-snug text-muted-foreground">
+                  <div className="label mb-1 text-ug">FDS check</div>
+                  {fdsSmoke().map((l) => (
+                    <div key={l}>{l}</div>
+                  ))}
+                </div>
+                <JobsTable jobs={model.jobs.filter((j) => j.scene === 'smoke-cfd' || j.scene === 'sensor-opt' || j.scene === 'fds')} />
               </>
             ) : (
               <div className="text-faint">The smoke study is still running.</div>

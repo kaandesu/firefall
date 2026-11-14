@@ -9,6 +9,8 @@ import type { DesignPackage } from '@/demo/packages'
 import type { SmokeStudy } from '@/lab/smokeStudy'
 import type { Model } from '@/live/model'
 import type { FireRun } from '@/stage/physics'
+import { FDS_MANIFEST, fdsCase } from '@/fds/manifest'
+import { FITS } from '@/sims/fits'
 
 export type SectionId = 'summary' | 'cabin' | 'materials' | 'evidence' | 'fire' | 'smoke' | 'suppression' | 'lab' | 'decisions' | 'whatif' | 'open' | 'how' | 'sources'
 
@@ -16,7 +18,7 @@ export const SECTIONS: { id: SectionId; title: string; ask: string }[] = [
   { id: 'summary', title: 'The review in 30 seconds', ask: 'Why does this cabin fail?' },
   { id: 'cabin', title: 'The cabin and the inputs', ask: 'What was in the input files?' },
   { id: 'materials', title: 'Materials: what burns here', ask: 'Which materials fail and by how much?' },
-  { id: 'evidence', title: 'Evidence and data processed', ask: 'What did the ACME data show?' },
+  { id: 'evidence', title: 'Test data and what we processed', ask: 'Which real NASA tests is this based on?' },
   { id: 'fire', title: 'Fire spread and cabin pressure', ask: 'How fast does the fire spread and when does the hull fail?' },
   { id: 'smoke', title: 'Smoke detection and sensor placement', ask: 'Where should the smoke sensors go?' },
   { id: 'suppression', title: 'Suppression', ask: 'Would a CO₂ extinguisher put it out?' },
@@ -87,18 +89,23 @@ export function buildReport(x: ReportInput) {
     evidence: [
       ev('ignition') ? `ACME CFI-G test 21256C2 (real camera data, processed in the browser): ignition at ${ev('ignition')!.t.toFixed(2)} s, steady flame at ${ev('steady')?.t.toFixed(1)} s, bright transient at ${ev('transient')?.t.toFixed(1)} s, dim glow at ${ev('glow')?.t.toFixed(1)} s.` : 'ACME frames not loaded.',
       sensors ? `ACME test 19175A4 sensor log (${sensors.channels} channels): fuel on ${sensors.fuelOn?.toFixed(1)} s, ignition by ion current ${sensors.ignition?.toFixed(1)} s, fuel off ${sensors.fuelOff?.toFixed(1)} s, burn ${sensors.burn?.toFixed(1)} s.` : '',
-      `${evidence.length} evidence rows (143 Flame Design test points + 39 CFI-G days). Nearest to this cabin: ${near.map((n) => `${n.e.id} (${pct(n.e.o2)} O₂, ${n.e.psia} psia, match ${n.m.toFixed(2)})`).join('; ')}.`,
+      `${evidence.length} real test rows (143 Flame Design test points, 39 CFI-G days, ${evidence.filter((e) => e.src !== 'Flame Design' && e.src !== 'CFI-G').length} points from the published BASS-II, Saffire and FLEX papers). Nearest to this cabin: ${near.map((n) => `${n.e.id} (${pct(n.e.o2)} O₂, ${n.e.psia} psia, match ${n.m.toFixed(2)})`).join('; ')}.`,
       `No test in the archive is at ${pct(pkg.atmosphere.o2)} ambient O₂: the verdict extrapolates the fitted limits.`,
+      ...Object.values(FITS).map((f) => `Fit to published data, ${f.name} (${f.source}): rms error ${f.rmsModel.toFixed(3)} with our model → ${f.rmsFit.toFixed(3)} fitted. ${f.caveat}`),
       `Best-fitting studies: ${fit.map((f) => `${f.study.name} (${f.study.psi ?? f.study.id}, fit ${f.total.toFixed(2)})`).join('; ')}.`,
       ...model.jobs.filter((j) => j.kind === 'data').map((j) => `${j.title} by @${j.agent} on ${j.node ?? j.where}: ${Object.entries(j.stats).map(([k, v]) => `${k} ${v}`).join(', ')}.`),
     ],
-    fire: runs.map((r) => `${r.variant.label}: ${Object.values(r.ignite).filter((v) => v !== null).length}/${r.zones.length} zones burn, full involvement ${secs(r.fullAt)}, rupture ${secs(r.rupture)} (hull ${r.burstPsia} psia).`),
+    fire: [
+      ...runs.map((r) => `${r.variant.label}: ${Object.values(r.ignite).filter((v) => v !== null).length}/${r.zones.length} zones burn, full involvement ${secs(r.fullAt)}, rupture ${secs(r.rupture)} (hull ${r.burstPsia} psia).`),
+      ...fdsFire(asBuilt),
+    ],
     smoke: study
       ? [
           `${study.runs} 2-D smoke CFD runs (stable fluids, ${study.nx}×${study.ny} cells of ${study.cell * 100} cm) on the cabin cross-section; ${study.sources.length} sources × µg / Moon / 1 g; smoke median ${study.smokeD} µm.`,
           ...study.cases.map((c) => `designed · ${c.source} · ${c.gLabel}: first alarm ${alarm(c.firstAlarm)} (${Object.entries(c.alarms).map(([k, v]) => `${k} ${alarm(v)}`).join(', ')})`),
           ...study.proposed.map((p) => `proposed ${p.id}: ${p.type} at (${p.x.toFixed(2)}, ${p.y.toFixed(2)}) m`),
           `Worst-case first alarm: designed ${alarm(study.worstDesigned)}, proposed ${alarm(study.worstProposed)}.`,
+          ...fdsSmoke(),
         ]
       : ['The smoke study did not finish.'],
     suppression: droplet ? [`${droplet.title} (@${droplet.agent}, ${droplet.node}): ${Object.entries(droplet.stats).map(([k, v]) => `${k} ${v}`).join(', ')}.`, 'FLEX: droplet flames die below about 17 % O₂ with CO₂ as diluent (PSI-69).'] : ['Not run.'],
@@ -136,6 +143,30 @@ export function buildReport(x: ReportInput) {
 
 export type Report = ReturnType<typeof buildReport>
 
+const fdsT = (v: number | null) => (v === null ? 'never' : `${v.toFixed(0)} s`)
+
+/** FDS check lines for §4: the real FDS run beside the quick zone model. */
+export function fdsFire(asBuilt?: FireRun): string[] {
+  const g1 = fdsCase('1g'), ug = fdsCase('ug')
+  if (!g1 || !ug) return []
+  const a = g1.summary, u = ug.summary
+  return [
+    `FDS check (${FDS_MANIFEST.fds}, ${g1.cells.toLocaleString()} cells of ${g1.dx * 100} cm, generated from the same three files): at 1 g the ${g1.burner.kw} kW burner ignites the ${g1.burner.under?.toLowerCase() ?? 'nearest item'} and the fire outgrows it at ${fdsT(a.spreadAt)}; cabin pressure passes ${asBuilt?.burstPsia ?? 29} psia at ${fdsT(a.burstAt)} (quick model ${secs(asBuilt?.rupture)}; Review Board ≈ 15 s); peak ${(a.peakHrrKw / 1000).toFixed(1)} MW, ceiling ${a.maxCeilingC.toFixed(0)} °C.`,
+    `FDS in µg: the same burner flashes once, then averages ${u.lateHrrKw.toFixed(0)} kW over the second half of the run (the burner is set to ${ug.burner.kw} kW until ${ug.burner.offAt} s) and nothing else catches in ${u.tEnd.toFixed(0)} s; cabin +${(u.peakPsia - u.startPsia).toFixed(1)} psi.`,
+    'FDS surfaces use air cone-calorimeter data, so in 100 % O₂ it under-predicts the fire; it agrees with the quick model on the order of events, not on the exact times.',
+  ]
+}
+
+/** FDS check lines for §5: detector obscuration in the real FDS run. */
+export function fdsSmoke(): string[] {
+  const g1 = fdsCase('1g'), ug = fdsCase('ug')
+  if (!g1 || !ug) return []
+  return [
+    `FDS check, 1 g: ${Object.entries(g1.summary.alarms).map(([d, t]) => `${d} alarms at ${fdsT(t)}`).join(', ')} (chamber obscuration ≥ 3.24 %/m). µg: ${Object.values(ug.summary.alarms).every((t) => t === null) ? `no detector alarms in ${ug.summary.tEnd.toFixed(0)} s` : 'detectors alarm'}.`,
+    'FDS models smoke as soot mass, so it cannot see that a photoelectric head misses small PTFE smoke: the 2-D study above can, which is why D2 differs.',
+  ]
+}
+
 /** Scripted answers for demo mode: built from the same report, with the same pull-up tags the live model uses. */
 export function scripted(r: Report, x: ReportInput, q: string): string {
   const s = q.toLowerCase()
@@ -150,13 +181,13 @@ export function scripted(r: Report, x: ReportInput, q: string): string {
       '[[chart:pressure]]',
       '[[section:materials]]',
     ].filter(Boolean).join('\n\n')
-  if (/acme|data|camera|frame|evidence/.test(s)) {
+  if (/acme|data|camera|frame|evidence|nasa test/.test(s)) {
     const e = (id: string) => x.events.find((v) => v.id === id)
     return [
       `The Archivist processed the real ACME camera series for test **21256C2** (420 samples, 18 frames). From brightness alone it found ignition at **${e('ignition')?.t.toFixed(2)} s**, a steady flame from ${e('steady')?.t.toFixed(1)} s, a bright transient at ${e('transient')?.t.toFixed(1)} s and a dim glow at ${e('glow')?.t.toFixed(1)} s.`,
       '[[chart:acme]]',
       x.sensors ? `The 19175A4 sensor log agrees on the sequence: fuel on ${x.sensors.fuelOn?.toFixed(1)} s, ion-current ignition ${x.sensors.ignition?.toFixed(1)} s, ${x.sensors.burn?.toFixed(0)} s of burning.` : '',
-      `Of ${x.evidence.length} evidence rows none is near ${pct(x.pkg.atmosphere.o2)} ambient O₂. The closest:`,
+      `Of ${x.evidence.length} real test rows none is near ${pct(x.pkg.atmosphere.o2)} ambient O₂. The closest:`,
       ...r.near.slice(0, 2).map((n) => `[[evidence:${n.e.id}]]`),
       'So the cabin verdict is an extrapolation, and the report says so.',
       '[[section:evidence]]',
@@ -180,6 +211,14 @@ export function scripted(r: Report, x: ReportInput, q: string): string {
   if (/open|still|left|next/.test(s))
     return [...brief(r, 'open').map((l) => `- ${l}`), '', '[[section:open]]'].join('\n')
   if (/co2|co₂|extingu|suppress/.test(s)) return [...brief(r, 'suppression'), '[[section:suppression]]'].join('\n\n')
+  if (/fds|cfd check|nist/.test(s))
+    return [
+      `**FDS check.** The Simulation agent generated a real NIST FDS case from the three input files and ran it at 1 g and in µg.`,
+      ...fdsFire(r.asBuilt),
+      '[[chart:fds]]',
+      ...fdsSmoke(),
+      '[[section:fire]]',
+    ].join('\n\n')
   if (/pressure|hull|spread|fast/.test(s)) return [...brief(r, 'fire'), '[[chart:pressure]]', '[[section:fire]]'].join('\n\n')
   const sec = SECTIONS.find((v) => s.includes(v.title.toLowerCase()) || s.includes(`§${numberOf(v.id)}`)) ?? SECTIONS.find((v) => v.ask.toLowerCase() === s)
   if (sec) return [...brief(r, sec.id).slice(0, 6), `[[section:${sec.id}]]`].join('\n\n')

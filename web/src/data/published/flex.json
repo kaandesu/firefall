@@ -1,0 +1,24 @@
+{
+  "source": "FLEX / FLEX-2 droplet combustion in the ISS Combustion Integrated Rack, 2009-",
+  "refs": {
+    "nayagam2014": { "cite": "Nayagam, Dietrich, Hicks, Williams. Cool-flame extinction during n-alkane droplet combustion in microgravity. Central States Combustion Meeting, 2014", "ntrs": "20140006750", "url": "https://ntrs.nasa.gov/citations/20140006750" },
+    "nayagam2013": { "cite": "Nayagam, Dietrich, Hicks, Williams. Methanol Droplet Combustion in Oxygen-Inert Environments in Microgravity. 8th US National Combustion Meeting, 2013", "ntrs": "20130014061", "url": "https://ntrs.nasa.gov/citations/20130014061" },
+    "nasaflex": { "cite": "NASA. Flame Extinguishment Experiment (FLEX) investigation summary", "url": "https://www.nasa.gov/wp-content/uploads/2025/07/flame-extinguishment-experiment-flex.pdf" }
+  },
+  "rows": [
+    { "id": "FLEX-1", "fuel": "n-decane", "diluent": "N2", "o2": 0.25, "atm": 0.5, "d0": 3.79, "quantity": "K hot flame", "value": 0.52, "unit": "mm²/s", "ref": "nayagam2014", "where": "§3.1, Fig. 1b (R374)", "how": "text" },
+    { "id": "FLEX-2", "fuel": "n-decane", "diluent": "N2", "o2": 0.21, "atm": 0.5, "d0": 4.03, "quantity": "K hot flame", "value": 0.41, "unit": "mm²/s", "ref": "nayagam2014", "where": "§3.1, Fig. 1a (R377)", "how": "text" },
+    { "id": "FLEX-3", "fuel": "n-decane", "diluent": "N2", "o2": 0.17, "atm": 0.5, "d0": 3.86, "quantity": "K hot flame", "value": 0.31, "unit": "mm²/s", "ref": "nayagam2014", "where": "§3.1, Fig. 1c (R379)", "how": "text" },
+    { "id": "FLEX-4", "fuel": "n-decane", "diluent": "N2", "o2": 0.14, "atm": 0.5, "d0": null, "quantity": "K hot flame", "value": 0.29, "unit": "mm²/s", "ref": "nayagam2014", "where": "§3.1, Fig. 1d (R383)", "how": "text" },
+    { "id": "FLEX-5", "fuel": "n-decane", "diluent": "N2", "o2": 0.21, "atm": 0.5, "d0": 4.03, "quantity": "K cool flame", "value": 0.33, "unit": "mm²/s", "ref": "nayagam2014", "where": "§3.1 (R377)", "how": "text" },
+    { "id": "FLEX-6", "fuel": "n-octane", "diluent": "N2 (air)", "o2": 0.21, "atm": 1.0, "d0": 3.6, "quantity": "K hot flame", "value": 0.48, "unit": "mm²/s", "ref": "nayagam2014", "where": "§3.2 (R298)", "how": "text" },
+    { "id": "FLEX-7", "fuel": "n-octane", "diluent": "15 % He", "o2": 0.21, "atm": 1.0, "d0": 3.37, "quantity": "K hot flame", "value": 0.54, "unit": "mm²/s", "ref": "nayagam2014", "where": "§3.2 (R694)", "how": "text" },
+    { "id": "FLEX-8", "fuel": "n-octane", "diluent": "50 % He", "o2": 0.21, "atm": 1.0, "d0": 3.6, "quantity": "K hot flame", "value": 0.63, "unit": "mm²/s", "ref": "nayagam2014", "where": "§3.2 (R698)", "how": "text" },
+    { "id": "FLEX-9", "fuel": "n-octane", "diluent": "75 % He", "o2": 0.21, "atm": 1.0, "d0": 2.49, "quantity": "hot flame", "value": null, "unit": "almost eliminated; cool flame only", "ref": "nayagam2014", "where": "§3.2 (R707)", "how": "text" },
+    { "id": "FLEX-10", "fuel": "methanol", "diluent": "N2 / CO2 / He", "o2": 0.125, "atm": 1.0, "d0": null, "quantity": "limiting oxygen index", "value": 0.125, "unit": "O2 vol. fraction (12-13 %)", "ref": "nayagam2013", "where": "abstract", "how": "text" },
+    { "id": "FLEX-11", "fuel": "methanol", "diluent": "N2 (air)", "o2": 0.20, "atm": 1.0, "d0": 2.75, "quantity": "extinction diameter", "value": 1.10, "unit": "mm", "ref": "nayagam2013", "where": "§3.1 (run 204)", "how": "text" },
+    { "id": "FLEX-12", "fuel": "methanol", "diluent": "30 % CO2", "o2": 0.21, "atm": 0.7, "d0": 2.83, "quantity": "extinction diameter", "value": 1.57, "unit": "mm", "ref": "nayagam2013", "where": "§3.1 (run 110)", "how": "text" },
+    { "id": "FLEX-13", "fuel": "methanol", "diluent": "30 % He", "o2": 0.21, "atm": 0.7, "d0": 2.67, "quantity": "extinction diameter", "value": 1.42, "unit": "mm", "ref": "nayagam2013", "where": "§3.1 (run 263)", "how": "text" }
+  ],
+  "matrix": "FLEX test matrix: O2 0.10-0.50 mole fraction, CO2 or He 0-0.70, 0.5-1.0 atm, d0 2-5 mm, heptane and methanol (nasaflex p. 1-2)"
+}

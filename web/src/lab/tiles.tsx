@@ -8,6 +8,7 @@
 //   sensor-opt     worst-case smoke arrival map, designed vs proposed sensors
 //   chamber-test   WSTF Test 1: five samples, burn lengths
 import { OrbitControls } from '@react-three/drei'
+import { FdsTile } from '@/fds/FdsTile'
 import { Canvas } from '@react-three/fiber'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -18,6 +19,7 @@ import { DropletScene } from './Droplet'
 import { FlameSpreadScene } from './FlameSpread'
 import { GravityFlameScene } from './GravityFlame'
 import type { SmokeStudy } from './smokeStudy'
+import { LAB_BURN } from '@/demo/apollo1'
 
 const num = (v: unknown, d: number) => (typeof v === 'number' ? v : typeof v === 'string' && v !== '' && !Number.isNaN(+v) ? +v : d)
 
@@ -370,7 +372,7 @@ function SensorTile({ job, study, progress }: { job: Job; study?: SmokeStudy; pr
 
 // ── WSTF chamber ──────────────────────────────────────────────────────────────────────
 
-const BURN = [0.92, 0.31, 1, 0.84, 0.27] // fraction of the 30 cm sample; > 0.5 = burned past 15 cm
+const BURN = LAB_BURN // fraction of the 30 cm sample; > 0.5 counts as burned
 
 function ChamberTile({ job }: { job: Job }) {
   const n = BURN.length
@@ -433,6 +435,8 @@ export function JobScene({ job, study, studyProgress, live }: { job: Job; study?
       return <SensorTile job={job} study={study} progress={studyProgress} />
     case 'chamber-test':
       return <ChamberTile job={job} />
+    case 'fds':
+      return <FdsTile job={job} />
     default:
       return <Wait text={job.title} />
   }

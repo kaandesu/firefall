@@ -1,0 +1,19 @@
+{
+  "source": "BASS-II (Burning and Suppression of Solids II), ISS Microgravity Science Glovebox, 2012-2014",
+  "refs": {
+    "ferkul2014": { "cite": "Ferkul, Bhattacharjee, Fernandez-Pello, Miller, Olson, Takahashi, T'ien. Combustion of Solids in Microgravity: Results from the BASS-II Experiment. ASGSR 2014 poster", "ntrs": "20160000593", "url": "https://ntrs.nasa.gov/citations/20160000593" },
+    "olson2015": { "cite": "Olson, Ferkul. Microgravity Flammability of PMMA Rods in Concurrent Flow. 9th US National Combustion Meeting, 2015", "ntrs": "20150008961", "url": "https://ntrs.nasa.gov/citations/20150008961" }
+  },
+  "rows": [
+    { "id": "BASS-1", "material": "pmma", "fuel": "PMMA rod, 1/4 in (R 0.635 cm), concurrent", "o2": 0.136, "flow": 1.40, "g": 0, "psia": 14.7, "quantity": "steady burning at", "value": 0.136, "unit": "O2 mole fraction", "burns": true, "ref": "ferkul2014", "where": "p. 18 (text); flow from olson2015 Table 1, U = (2/3)·a_f·R with a_f 3.31 s⁻¹", "how": "text + derived" },
+    { "id": "BASS-2", "material": "pmma", "fuel": "PMMA rod, 1/4 in, normal-gravity blowoff", "o2": 0.16, "flow": 0, "g": 1, "psia": 14.7, "quantity": "1 g blowoff limit", "value": 0.16, "unit": "O2 mole fraction", "burns": false, "ref": "ferkul2014", "where": "p. 18 (text): 1 g blowoff for the 1/4 in rod is at 16 % O2", "how": "text" },
+    { "id": "BASS-3", "material": "pmma", "fuel": "PMMA rods, concurrent, blowoff branch", "o2": 0.133, "flow": 0, "g": 0, "psia": 14.7, "quantity": "blowoff line at zero stretch", "value": 0.133, "unit": "O2 mole fraction", "burns": false, "ref": "olson2015", "where": "p. 7 (text): y-intercept of the linear blowoff fit, Fig. 4", "how": "text" },
+    { "id": "BASS-4", "material": "pmma", "fuel": "PMMA rods, opposed flow", "o2": 0.164, "flow": null, "g": 0, "psia": 14.7, "quantity": "no opposed spread below", "value": 0.164, "unit": "O2 mole fraction", "burns": false, "ref": "olson2015", "where": "p. 5 (text): flame spread was not observed below 16.4 % O2", "how": "text" },
+    { "id": "BASS-5", "material": "pmma", "fuel": "PMMA rods after blowoff", "o2": 0.161, "flow": null, "g": 0, "psia": 14.7, "quantity": "no upstream re-spread at or below", "value": 0.161, "unit": "O2 mole fraction", "burns": false, "ref": "olson2015", "where": "p. 5 (text)", "how": "text" },
+    { "id": "BASS-6", "material": "cotton", "fuel": "SIBAL cotton-fiberglass strip, 2.2 cm wide, concurrent", "o2": 0.187, "flow": 2.2, "g": 0, "psia": 14.7, "quantity": "quenching extinction at", "value": 2.2, "unit": "cm/s flow", "burns": false, "ref": "ferkul2014", "where": "p. 21 (caption): 18.7 % O2, flow reduced from 5 to 2.2 cm/s, quenched", "how": "text" },
+    { "id": "BASS-7", "material": "pmma", "fuel": "PMMA sheet 0.1 mm, opposed", "o2": null, "flow": 2, "g": 0, "psia": 14.7, "quantity": "radiative quench below", "value": 2, "unit": "cm/s flow", "burns": false, "ref": "ferkul2014", "where": "p. 13 (caption)", "how": "text" },
+    { "id": "BASS-8", "material": "pmma", "fuel": "PMMA sheet 0.1 mm, opposed", "o2": null, "flow": 40, "g": 0, "psia": 14.7, "quantity": "blowoff above", "value": 40, "unit": "cm/s flow", "burns": false, "ref": "ferkul2014", "where": "p. 13 (caption)", "how": "text" },
+    { "id": "BASS-9", "material": "pmma", "fuel": "PMMA rod R 0.318 cm, lowest-O2 test", "o2": null, "flow": 0.50, "g": 0, "psia": 14.7, "quantity": "forced stretch a_f", "value": 2.36, "unit": "1/s", "burns": true, "ref": "olson2015", "where": "Table 1, p. 7", "how": "table" },
+    { "id": "BASS-10", "material": "pmma", "fuel": "PMMA rod R 0.476 cm, lowest-O2 test", "o2": null, "flow": 1.10, "g": 0, "psia": 14.7, "quantity": "forced stretch a_f", "value": 3.46, "unit": "1/s", "burns": true, "ref": "olson2015", "where": "Table 1, p. 7", "how": "table" }
+  ]
+}

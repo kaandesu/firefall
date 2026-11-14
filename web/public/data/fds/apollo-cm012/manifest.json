@@ -1,0 +1,203 @@
+{
+  "fds": "FDS-6.11.1-0-gff928db-release",
+  "generated": "2026-11-14",
+  "machine": "Apple M1 (8 cores, 16 GB), FDS 6.11.1 macOS x86_64 build under Rosetta, OpenMP 4 threads",
+  "cases": [
+    {
+      "id": "1g",
+      "label": "On the pad · 1 g",
+      "g": 1,
+      "chid": "apollo_cm012_1g",
+      "runtime_s": 235,
+      "cells": 51200,
+      "ijk": [
+        40,
+        40,
+        32
+      ],
+      "dx": 0.1,
+      "t_end": 30,
+      "steps": 1328,
+      "burner": {
+        "xb": [
+          -0.6,
+          -0.30000000000000004,
+          0.20000000000000004,
+          0.5,
+          0.20000000000000004,
+          0.30000000000000004
+        ],
+        "kw": 75,
+        "offAt": 20,
+        "under": "Debris nets"
+      },
+      "surfs": [
+        {
+          "id": "NYLON",
+          "zone": "netting",
+          "material": "nylon",
+          "hrrpua": 800,
+          "ignitionC": 430
+        },
+        {
+          "id": "NYLON",
+          "zone": "walls",
+          "material": "nylon",
+          "hrrpua": 800,
+          "ignitionC": 430
+        },
+        {
+          "id": "COTTON",
+          "zone": "couches",
+          "material": "cotton",
+          "hrrpua": 200,
+          "ignitionC": 260
+        },
+        {
+          "id": "PMMA",
+          "zone": "floor",
+          "material": "pmma",
+          "hrrpua": 650,
+          "ignitionC": 300
+        },
+        {
+          "id": "TEFLON",
+          "zone": "wiring",
+          "material": "teflon",
+          "hrrpua": 20,
+          "ignitionC": 560
+        },
+        {
+          "id": "SILICONE",
+          "zone": "hatch",
+          "material": "silicone",
+          "hrrpua": 150,
+          "ignitionC": 450
+        },
+        {
+          "id": "COTTON",
+          "zone": "leb",
+          "material": "cotton",
+          "hrrpua": 200,
+          "ignitionC": 260
+        }
+      ],
+      "summary": {
+        "peakHrrKw": 7639.1027,
+        "peakHrrAt": 30,
+        "lateHrrKw": 2577.4974552459016,
+        "burnerKw": 75,
+        "spreadAt": 10.77636,
+        "peakPsia": 79.61924401396597,
+        "peakPsiaAt": 30,
+        "startPsia": 16.69641004026683,
+        "burstAt": 22.28634618136468,
+        "alarms": {
+          "D1": 8.607238798803376,
+          "D2": 13.299789112260726
+        },
+        "maxCeilingC": 1369.4849,
+        "minO2": 0.58947742,
+        "tEnd": 30
+      }
+    },
+    {
+      "id": "ug",
+      "label": "In orbit · µg",
+      "g": 0,
+      "chid": "apollo_cm012_ug",
+      "runtime_s": 43,
+      "cells": 51200,
+      "ijk": [
+        40,
+        40,
+        32
+      ],
+      "dx": 0.1,
+      "t_end": 30,
+      "steps": 164,
+      "burner": {
+        "xb": [
+          -0.6,
+          -0.30000000000000004,
+          0.20000000000000004,
+          0.5,
+          0.20000000000000004,
+          0.30000000000000004
+        ],
+        "kw": 75,
+        "offAt": 20,
+        "under": "Debris nets"
+      },
+      "surfs": [
+        {
+          "id": "NYLON",
+          "zone": "netting",
+          "material": "nylon",
+          "hrrpua": 800,
+          "ignitionC": 430
+        },
+        {
+          "id": "NYLON",
+          "zone": "walls",
+          "material": "nylon",
+          "hrrpua": 800,
+          "ignitionC": 430
+        },
+        {
+          "id": "COTTON",
+          "zone": "couches",
+          "material": "cotton",
+          "hrrpua": 200,
+          "ignitionC": 260
+        },
+        {
+          "id": "PMMA",
+          "zone": "floor",
+          "material": "pmma",
+          "hrrpua": 650,
+          "ignitionC": 300
+        },
+        {
+          "id": "TEFLON",
+          "zone": "wiring",
+          "material": "teflon",
+          "hrrpua": 20,
+          "ignitionC": 560
+        },
+        {
+          "id": "SILICONE",
+          "zone": "hatch",
+          "material": "silicone",
+          "hrrpua": 150,
+          "ignitionC": 450
+        },
+        {
+          "id": "COTTON",
+          "zone": "leb",
+          "material": "cotton",
+          "hrrpua": 200,
+          "ignitionC": 260
+        }
+      ],
+      "summary": {
+        "peakHrrKw": 538.8877,
+        "peakHrrAt": 2.0460629,
+        "lateHrrKw": 19.156112484848485,
+        "burnerKw": 75,
+        "spreadAt": null,
+        "peakPsia": 17.39985035005585,
+        "peakPsiaAt": 30,
+        "startPsia": 16.699935907820972,
+        "burstAt": null,
+        "alarms": {
+          "D1": null,
+          "D2": null
+        },
+        "maxCeilingC": 25.450186,
+        "minO2": 1,
+        "tEnd": 30
+      }
+    }
+  ]
+}

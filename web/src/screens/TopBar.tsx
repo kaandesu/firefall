@@ -3,6 +3,8 @@ import { Pause, Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useMission, type Phase } from '@/live/store'
 import { cn } from '@/lib/utils'
+import { openFor } from '@/live/sign'
+import { HUMAN, LAB } from '@/demo/crew'
 
 const STEPS: { id: Phase; label: string }[] = [
   { id: 'setup', label: 'NETWORK' },
@@ -11,6 +13,15 @@ const STEPS: { id: Phase; label: string }[] = [
   { id: 'run', label: 'RUN' },
   { id: 'done', label: 'REPORT' },
 ]
+
+const VIEWS = [
+  ['review', 'Review'],
+  ['inbox', 'Inbox'],
+  ['library', 'Library'],
+  ['evidence', 'Test data'],
+  ['fds', 'FDS'],
+  ['compute', 'Compute'],
+] as const
 
 function useClock(from?: number, on = true) {
   const [now, setNow] = useState(Date.now)
@@ -41,6 +52,8 @@ export function TopBar() {
   const saved = useMission((s) => s.model.saved)
   const startedAt = useMission((s) => s.startedAt)
   const view = useMission((s) => s.view)
+  const inbox = useMission((s) => s.model.inbox)
+  const nYou = openFor(inbox, HUMAN), nLab = openFor(inbox, LAB)
   const setView = useMission((s) => s.setView)
   const clock = useClock(startedAt, phase === 'run' && !done)
   const idx = STEPS.findIndex((s) => s.id === phase)
@@ -77,9 +90,10 @@ export function TopBar() {
         ))}
       </nav>
       <nav className="flex items-center rounded-sm border border-line text-[10.5px]">
-        {(['review', 'library', 'evidence', 'compute'] as const).map((v) => (
-          <button key={v} type="button" onClick={() => setView(v)} className={cn('px-2 py-0.5 capitalize', view === v ? 'bg-surface-2 text-ink' : 'text-muted-foreground hover:text-ink')}>
-            {v}
+        {VIEWS.map(([v, label]) => (
+          <button key={v} type="button" onClick={() => setView(v)} className={cn('px-2 py-0.5', view === v ? 'bg-surface-2 text-ink' : 'text-muted-foreground hover:text-ink')}>
+            {label}
+            {v === 'inbox' && nYou + nLab > 0 && <span className="ml-1 rounded-full bg-warn px-1 text-[9.5px] font-semibold text-background">{nYou + nLab}</span>}
           </button>
         ))}
       </nav>

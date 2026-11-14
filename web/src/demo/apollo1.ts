@@ -7,14 +7,17 @@
 //  - people step in where a person must: approve the plan, book a lab test (a WSTF technician runs it),
 //    and decide between two agents that disagree, with the lead as mediator
 // Real: the ACME camera job (events detected from the 21256C2 frames), the smoke CFD + sensor search (lab/fluid.ts),
-// the spread/pressure model. Illustrative: Saffire/BASS job sizes and fitted numbers (no raw data in this repo).
+// the spread/pressure model, the FDS runs, and the Saffire/BASS/FLEX fits (sims/fits.ts, against numbers taken from the
+// published NTRS papers in data/published). Illustrative: the job sizes and node names.
 // Sources for the narrative: Apollo 204 Review Board (NASA), JSC Roundup 1967.
 import type { CameraEvent, SensorStats } from '@/data/acme'
 import type { CabinModel } from '@/intake/parse'
 import type { SmokeStudy } from '@/lab/smokeStudy'
+import { fdsCase } from '@/fds/manifest'
 import { Script } from '@/live/script'
 import type { Cite, MatrixRow, Proposal, Subtask } from '@/live/types'
 import { simulateFire, variantsFor, type FireRun } from '@/stage/physics'
+import { FITS, FLEX_LOI } from '@/sims/fits'
 import { MATERIALS, limitingO2, pct } from '@/sims/models'
 import { HUMAN, LAB } from './crew'
 import { computeMatrix, type DesignPackage } from './packages'
@@ -43,6 +46,11 @@ export const PLAN_GATE = 'ask-plan'
 export const LAB_GATE = 'ask-lab'
 export const MEDIATE_GATE = 'ask-mediate'
 export const SENSOR_GATE = 'ask-sensors'
+export const SIGN_GATE = 'ask-sign'
+export const SIGN_OPTIONS = ['Sign the hazard report', 'Not yet, keep it a draft']
+
+/** What the WSTF technician measures: burn length of each of the 5 samples, as a fraction of the 30 cm sample. */
+export const LAB_BURN = [0.92, 0.31, 1, 0.84, 0.27]
 
 export const DECISIONS: { id: Decision; label: string }[] = [
   { id: 'caveat', label: 'Accept with the S&MA caveat' },
@@ -136,16 +144,16 @@ export function apollo1({ pkg, model, request, skip = [], labTest = true, decisi
     const steady = ev.find((e) => e.id === 'steady')
     const tr = ev.find((e) => e.id === 'transient')
     s.wait(0.3).job(
-      { id: 'j-saffire', agent: 'archivist', kind: 'data', scene: 'spread-duct', params: { material: 'cotton', o2: 0.21, psi: 14.7, g: 0, flow: 20 }, node: 'grc-gpu', gpus: 8, title: 'Saffire-I · flame-front fit (replica at test conditions)', dataset: 'PSI-98', size: '38 GB', where: 'grc-gpu · 8× A100', steps: ['ingest', 'decode frames', 'track front', 'fit spread'], stats: { frames: '41,200', channels: '14' }, series: series(24, 1, 'rise') },
+      { id: 'j-saffire', agent: 'archivist', kind: 'data', scene: 'spread-duct', params: { material: 'cotton', o2: 0.21, psi: 14.7, g: 0, flow: 20 }, node: 'grc-gpu', gpus: 8, title: 'Saffire IV–VI · spread model fitted to published burns', dataset: 'PSI-98', size: '38 GB', where: 'grc-gpu · 8× A100', steps: ['ingest', 'read published tables', 'fit spread', 'residuals'], stats: { burns: `${FITS.spread.points.length} cotton`, source: 'NTRS 20240002981' }, series: series(24, 1, 'rise') },
       6.5,
       8,
-      { 'spread fit': 'R² 0.94 (illustrative)' },
+      { 'spread scale': `×${FITS.spread.params.scale.toFixed(2)}`, 'rms error': `${FITS.spread.rmsModel.toFixed(1)} → ${FITS.spread.rmsFit.toFixed(1)} mm/s` },
     )
     s.wait(0.4).job(
-      { id: 'j-bass', agent: 'archivist', kind: 'data', scene: 'lim-sweep', params: { material: 'nylon', o2: pkg.atmosphere.o2, psi: pkg.atmosphere.psi, g: pkg.gravity.g, flow: pkg.ventFlow }, node: 'grc-gpu', gpus: 4, title: 'BASS-II · extinction limit sweep, flow × O₂', dataset: 'PSI-25', size: '12 GB', where: 'grc-gpu · 4× A100', steps: ['ingest', 'flame length', 'sweep', 'fit limit'], stats: { tests: '87', grid: '30 × 24' }, series: series(24, 2, 'decay') },
+      { id: 'j-bass', agent: 'archivist', kind: 'data', scene: 'lim-sweep', params: { material: 'nylon', o2: pkg.atmosphere.o2, psi: pkg.atmosphere.psi, g: pkg.gravity.g, flow: pkg.ventFlow }, node: 'grc-gpu', gpus: 4, title: 'BASS-II · extinction limit sweep, flow × O₂', dataset: 'PSI-25', size: '12 GB', where: 'grc-gpu · 4× A100', steps: ['ingest', 'read published limits', 'fit limit', 'residuals'], stats: { limits: `${FITS.limitingO2.points.length} published`, source: 'NTRS 20160000593' }, series: series(24, 2, 'decay') },
       5.5,
       7,
-      { 'limit fit': 'R² 0.91 (illustrative)' },
+      { 'limit base': pct(FITS.limitingO2.params.base), 'rms error': `${(FITS.limitingO2.rmsModel * 100).toFixed(1)} → ${(FITS.limitingO2.rmsFit * 100).toFixed(1)} pts O₂` },
     )
     s.wait(0.4).job(
       { id: 'j-acme', agent: 'archivist', kind: 'data', scene: 'acme-frames', node: 'grc-gpu', gpus: 2, title: 'ACME CFI-G 21256C2 · camera event detection (real frames)', dataset: 'PSI-159', size: '1,677 frames', where: 'grc-gpu · 2× A100', steps: ['decode TIFF', 'background σ', 'brightness series', 'detect events'], stats: { frames: '1,677', 'noise σ': '13.69' }, series: series(24, 3, 'peak') },
@@ -153,8 +161,8 @@ export function apollo1({ pkg, model, request, skip = [], labTest = true, decisi
       7,
       { events: `${ev.length} detected`, ...(ign ? { ignition: `T+${ign.t.toFixed(1)} s` } : {}), ...(steady && tr ? { 'steady burn': `${(tr.t - steady.t).toFixed(1)} s` } : {}) },
     )
-    s.wait(5.6).learn('archivist', 'Saffire-I: large cotton-fiberglass sheet spread steadily in µg at 21 % O₂ with forced flow; growth was limited, unlike 1 g', { kind: 'dataset', ref: 'PSI-98' }, 0)
-    s.wait(0.3).learn('archivist', 'BASS-II: thin fuels keep burning below 1 cm/s flow; extinction limit rises steeply as O₂ falls', { kind: 'dataset', ref: 'PSI-25' }, 0)
+    s.wait(5.6).learn('archivist', `Saffire IV–VI (published tables): cotton burned out 50 cm in µg at 20 cm/s; our spread model runs ${(1 / FITS.spread.params.scale).toFixed(1)}× fast, fitted scale ×${FITS.spread.params.scale.toFixed(2)}. Fires stayed 1.5–3.2 kW in 18 m³`, { kind: 'dataset', ref: 'PSI-98' }, 0)
+    s.wait(0.3).learn('archivist', `BASS-II (published): PMMA kept burning at 13.6 % O₂ in 1.4 cm/s µg flow, where our limit model said ${pct(FITS.limitingO2.points.find((p) => p.id === 'BASS-1')!.model, 1)}; the model was non-conservative there and is refitted`, { kind: 'dataset', ref: 'PSI-25' }, 0)
     if (ign) s.wait(0.3).learn('archivist', `ACME 21256C2 (real frames): ignition at T+${ign.t.toFixed(1)} s, ${ev.length} phases detected from brightness alone; ${acme?.evidence ?? 182} evidence rows indexed`, { kind: 'dataset', ref: 'PSI-159' }, 0)
     s.wait(0.3).learn('archivist', 'Nothing in PSI tests nylon or cotton above 40 % O₂: 100 % O₂ is an extrapolation of the fitted limits', { kind: 'tool', ref: 'fit_model' }, 0)
     s.usage('archivist', 0.03, 0.22)
@@ -288,6 +296,21 @@ export function apollo1({ pkg, model, request, skip = [], labTest = true, decisi
     s.wait(0.3).tool('sim', 'pressure_estimate', { volume: pkg.volume, burst: `${pkg.hull?.burstPsia} psia` }, { rupture: secs(asBuilt.rupture), hatch: `${hatch} s` }, 0.8)
     s.wait(1.0).sim({ id: 'cabin-pressure', sim: 'spread', by: 'sim', label: 'Cabin pressure vs hull', params: {}, metrics: { rupture: secs(asBuilt.rupture), hatch: `${hatch} s` } })
     s.learn('sim', `As built: ${burning} zones burn, hull ruptures at ${secs(asBuilt.rupture)}, hatch needs ${hatch} s`, { kind: 'tool', ref: 'sim_run' }, 0)
+    // FDS check: the same three input files as a real NIST FDS case, run on hpc-01 (numbers from the shipped run).
+    const f1 = fdsCase('1g'), fu = fdsCase('ug')
+    if (f1 && fu) {
+      const fs = f1.summary, us = fu.summary
+      const t = (v: number | null) => (v === null ? 'none' : `${v.toFixed(0)} s`)
+      s.wait(0.4).tool('sim', 'write_fds', { inputs: 'cabin.yaml, materials.csv, cabin.model.json' }, { chid: 'apollo_cm012', cells: f1.cells.toLocaleString(), obst: '995' }, 0.5)
+      s.wait(0.5).job(
+        { id: 'j-fds', agent: 'sim', kind: 'sim', scene: 'fds', node: 'hpc-01', title: `FDS · apollo_cm012 · hpc-01 (1 g + µg)`, dataset: 'apollo_cm012.fds', size: `${f1.cells.toLocaleString()} cells × 2`, where: 'hpc-01 · FDS 6.11.1 · 4 OpenMP threads', steps: ['generate .fds', 'run 1 g', 'run µg', 'post'], stats: { solver: 'FDS 6.11.1', mesh: `${f1.ijk.join('×')} · ${f1.dx * 100} cm` } },
+        6.5,
+        8,
+        { '1 g burst': t(fs.burstAt), '1 g alarms': `D1 ${t(fs.alarms.D1)} · D2 ${t(fs.alarms.D2)}`, 'µg spread': us.spreadAt === null ? 'no' : t(us.spreadAt), 'wall clock': `${f1.runtime_s + fu.runtime_s} s` },
+      )
+      s.wait(6.8).learn('sim', `FDS 1 g: fire outgrows the burner at ${t(fs.spreadAt)}, cabin passes ${pkg.hull?.burstPsia ?? 29} psia at ${t(fs.burstAt)}; µg: ${us.spreadAt === null ? 'no spread' : 'spreads'}, no alarm in ${us.tEnd.toFixed(0)} s`, { kind: 'tool', ref: 'fds' }, 0)
+      s.wait(0.3).say('sim', 'flight', 'reply', `FDS check (real NIST FDS, ${f1.cells.toLocaleString()} cells): the net catches at ${t(fs.spreadAt)} and the cabin passes hull burst at ${t(fs.burstAt)}, against ${secs(asBuilt.rupture)} in our quick model. In µg the same burner never spreads and neither detector alarms in ${us.tEnd.toFixed(0)} s.`, undefined, 't-p3')
+    }
     s.wait(0.4).say('sim', 'flight', 'reply', `Front leaves the wiring at T+0, reaches ${burning} zones; hull ruptures at ${secs(asBuilt.rupture)}. Hatch needs ${hatch} s.`, undefined, 't-p3')
     s.wait(0.2).state('t-p3', 'completed').sub('P3', { status: 'done' })
   }
@@ -298,7 +321,7 @@ export function apollo1({ pkg, model, request, skip = [], labTest = true, decisi
     const xo2 = pkg.atmosphere.o2 * (1 - co2)
     s.wait(0.4).sub('PS', { status: 'running' }).task('t-ps', 'flight', 'suppress', 'P-S · Would a CO₂ extinguisher put it out?')
     s.wait(0.4).ask('suppress', 'archivist', 'FLEX: limiting O₂ for a fuel droplet with CO₂ as the diluent?', { tokens: 64_000, instead: 'reading the FLEX droplet archive (18 GB) itself' })
-    s.wait(0.9).say('archivist', 'suppress', 'reply', 'LOI ≈ 15 % in O₂/N₂, ≈ 17 % with CO₂ (FLEX heptane). Large droplets leave a cool flame after the hot flame dies.', [{ id: 'PSI-69', note: 'FLEX' }])
+    s.wait(0.9).say('archivist', 'suppress', 'reply', `LOI ≈ 15 % in O₂/N₂, ≈ 17 % with CO₂ (FLEX heptane); methanol ${pct(FLEX_LOI.methanol, 1)}. Burning rate K ∝ O₂^${FITS.droplet.params.n.toFixed(2)} from FLEX decane (our model had 0.7). Large droplets leave a cool flame after the hot flame dies.`, [{ id: 'PSI-69', note: 'FLEX' }])
     s.learn('suppress', 'FLEX: droplet flames die below ~17 % O₂ with CO₂ diluent', { kind: 'agent', ref: '@archivist' }, 0)
     s.wait(0.3).job(
       { id: 'j-droplet', agent: 'suppress', kind: 'sim', scene: 'droplet', params: { o2: pkg.atmosphere.o2, co2, d0: 2.5 }, node: 'hpc-01', gpus: 1, title: `Droplet with ${Math.round(co2 * 100)} % CO₂ at ${pct(pkg.atmosphere.o2)} O₂`, dataset: 'FLEX model', size: '1 case', where: 'hpc-01 · 1× H100', steps: ['ignite', 'flood CO₂', 'burn'], stats: { co2: `${Math.round(co2 * 100)} %` } },
@@ -402,6 +425,8 @@ export function apollo1({ pkg, model, request, skip = [], labTest = true, decisi
     cites,
   })
   s.wait(0.4).state('t-p5', 'completed').sub('P5', { status: 'done' })
+  // Only a person signs a hazard report. Until then the report says Draft.
+  s.wait(0.4).askHuman(SIGN_GATE, `Sign the hazard report? ${fails} of ${matrix.length} materials fail at ${atm}; open items stay attached.`, SIGN_OPTIONS, 10)
   s.wait(0.4).say('flight', HUMAN, 'reply', `Review done. The cabin fails on materials; ${decision === 'reject' ? 'PR-1 was rejected' : 'PR-1 is in the report'}; the hatch stays an open item.`)
   s.wait(0.3).done('Review complete')
   return s.build()

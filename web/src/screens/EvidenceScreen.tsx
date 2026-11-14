@@ -50,13 +50,16 @@ export function EvidenceScreen() {
   return (
     <div className="flex min-h-0 flex-1">
       <div className="flex min-w-0 flex-1 flex-col px-6 py-5">
-        <div className="label text-ug">evidence explorer</div>
-        <h1 className="sans mt-1 text-[22px] font-semibold text-ink">{rows.length} test points behind the verdict</h1>
-        <div className="mt-1 text-[11.5px] text-muted-foreground">
-          Real ACME Flame Design chamber log (PSI-10) and CFI-G test days (PSI-159). Match = how close the test atmosphere is to this cabin ({pct(target.o2)} O₂ · {(target.kpa / PSI_KPA).toFixed(1)} psia). The highest ambient O₂ ever tested here is <span className="text-warn">{pct(maxO2)}</span>: the cabin sits outside the evidence.
+        <div className="label text-ug">test data</div>
+        <h1 className="sans mt-1 text-[22px] font-semibold text-ink">{rows.length} real NASA burn tests</h1>
+        <p className="sans mt-1 max-w-[760px] text-[13px] leading-snug text-ink">
+          Each row is one real NASA burn test: the air it was in and whether it lit. We use them to see how close any real test is to your cabin. The closest had <span className="text-warn">{pct(maxO2)}</span> O₂; yours has {pct(target.o2)}, so every material verdict here is an extrapolation.
+        </p>
+        <div className="mt-1 text-[11px] text-muted-foreground">
+          Sources: ACME Flame Design chamber log (PSI-10), CFI-G test days (PSI-159), and points read from the published BASS-II, Saffire and FLEX papers (NTRS). Match = how close the test air is to this cabin ({pct(target.o2)} O₂ · {(target.kpa / PSI_KPA).toFixed(1)} psia).
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px]">
-          {(['all', 'Flame Design', 'CFI-G'] as const).map((v) => (
+          {(['all', 'Flame Design', 'CFI-G', 'BASS-II', 'Saffire', 'FLEX'] as const).map((v) => (
             <Chip key={v} on={src === v} onClick={() => setSrc(v)}>
               {v}
             </Chip>
@@ -90,7 +93,7 @@ export function EvidenceScreen() {
                   <th className="py-1 font-normal">test</th>
                   <th className="font-normal">source</th>
                   <th className="font-normal">date</th>
-                  <th className="font-normal">fuel</th>
+                  <th className="font-normal">what burned</th>
                   <th className="font-normal">O₂</th>
                   <th className="font-normal">psia</th>
                   <th className="font-normal">outcome</th>
@@ -104,12 +107,15 @@ export function EvidenceScreen() {
                     <td className="py-1 text-ink">{e.id}</td>
                     <td className="text-muted-foreground">{e.src}</td>
                     <td className="text-faint">{e.date}</td>
-                    <td className="text-muted-foreground">{e.fuel}</td>
+                    <td className="max-w-[220px] truncate text-muted-foreground" title={e.fuel}>
+                      {e.material && !e.fuel.toLowerCase().includes(e.material.toLowerCase()) ? <span className="text-ink">{e.material} </span> : null}
+                      {e.fuel}
+                    </td>
                     <td className="tnum">
                       {pct(e.o2)} <span className="text-faint">{e.o2at === 'burner' ? 'burner' : ''}</span>
                     </td>
                     <td className="tnum">{e.psia}</td>
-                    <td className={e.ign ? 'text-flame' : 'text-faint'}>{e.ign ? 'ignited' : 'none'}</td>
+                    <td className={e.ign ? 'text-flame' : 'text-faint'}>{e.study === 'flame-design' || e.study === 'cfi-g' ? (e.ign ? 'ignited' : 'none') : e.ign ? 'burned' : 'limit'}</td>
                     <td>
                       <div className="flex items-center gap-1.5">
                         <div className="h-1 flex-1 rounded bg-surface-3">
@@ -157,10 +163,11 @@ export function EvidenceScreen() {
                     ['fuel', s.fuel],
                     ['O₂', `${pct(s.o2)} (${s.o2at})`],
                     ['pressure', `${s.psia} psia · ${(s.psia * PSI_KPA).toFixed(0)} kPa`],
-                    ['outcome', s.ign ? 'ignited' : 'no ignition'],
+                    ['outcome', s.study === 'flame-design' || s.study === 'cfi-g' ? (s.ign ? 'ignited' : 'no ignition') : s.ign ? 'burned' : 'limit (flame did not survive beyond it)'],
+                    ...(s.result ? ([['result', s.result]] as const) : []),
                     ['reference', s.ref],
                     ['file', s.file],
-                    ['values', s.nominal ? 'nominal (final report table)' : 'measured (chamber log)'],
+                    ['values', s.study === 'flame-design' ? 'measured (chamber log)' : s.study === 'cfi-g' ? 'nominal (final report table)' : 'published (read from the paper)'],
                   ] as const
                 ).map(([k, v]) => (
                   <div key={k} className="flex gap-3">

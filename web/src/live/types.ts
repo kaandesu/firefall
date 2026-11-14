@@ -105,6 +105,22 @@ export type HumanAsk = {
   positions?: { by: string; text: string }[]
 }
 
+/** Something for a person: a decision to make, a job to run (the technician), or an FYI from an agent. */
+export type InboxItem = {
+  id: string
+  /** Which person it is for (you, or the WSTF technician). */
+  to: string
+  from: string
+  kind: 'decide' | 'task' | 'fyi'
+  text: string
+  options?: string[]
+  positions?: HumanAsk['positions']
+  status: 'open' | 'done'
+  answer?: string
+  at: number
+  doneAt?: number
+}
+
 export type Alarm = { id: string; module: string; detector: string; level: 'caution' | 'warning'; text: string; at: number }
 
 export type CaseItem = { id: string; when: string; text: string; kind: 'event' | 'cause' | 'response' | 'finding'; source?: { label: string; url: string } }
@@ -150,7 +166,7 @@ export type KbEntry = { id: string; agent: string; text: string; source: { kind:
 
 /** A data-processing job an agent runs on its own org's compute (looks only in the demo). */
 /** What a lab tile draws for a job. */
-export type SceneId = 'acme-frames' | 'spread-duct' | 'lim-sweep' | 'gravity-flame' | 'smoke-cfd' | 'sensor-opt' | 'droplet' | 'chamber-test' | 'cabin-fire'
+export type SceneId = 'acme-frames' | 'spread-duct' | 'lim-sweep' | 'gravity-flame' | 'smoke-cfd' | 'sensor-opt' | 'droplet' | 'chamber-test' | 'cabin-fire' | 'fds'
 
 export type Job = {
   id: string

@@ -1,0 +1,97 @@
+{
+  "chid": "apollo_cm012_1g",
+  "cells": 51200,
+  "ijk": [
+    40,
+    40,
+    32
+  ],
+  "xb": [
+    -2,
+    2,
+    -2,
+    2,
+    0,
+    3.2
+  ],
+  "dx": 0.1,
+  "obstCount": 994,
+  "surfs": [
+    {
+      "id": "NYLON",
+      "zone": "netting",
+      "material": "nylon",
+      "hrrpua": 800,
+      "ignitionC": 430
+    },
+    {
+      "id": "NYLON",
+      "zone": "walls",
+      "material": "nylon",
+      "hrrpua": 800,
+      "ignitionC": 430
+    },
+    {
+      "id": "COTTON",
+      "zone": "couches",
+      "material": "cotton",
+      "hrrpua": 200,
+      "ignitionC": 260
+    },
+    {
+      "id": "PMMA",
+      "zone": "floor",
+      "material": "pmma",
+      "hrrpua": 650,
+      "ignitionC": 300
+    },
+    {
+      "id": "TEFLON",
+      "zone": "wiring",
+      "material": "teflon",
+      "hrrpua": 20,
+      "ignitionC": 560
+    },
+    {
+      "id": "SILICONE",
+      "zone": "hatch",
+      "material": "silicone",
+      "hrrpua": 150,
+      "ignitionC": 450
+    },
+    {
+      "id": "COTTON",
+      "zone": "leb",
+      "material": "cotton",
+      "hrrpua": 200,
+      "ignitionC": 260
+    }
+  ],
+  "burner": {
+    "xb": [
+      -0.6,
+      -0.30000000000000004,
+      0.20000000000000004,
+      0.5,
+      0.20000000000000004,
+      0.30000000000000004
+    ],
+    "kw": 75,
+    "offAt": 20,
+    "under": "Debris nets"
+  },
+  "devices": [
+    "D1",
+    "D2",
+    "P_cabin",
+    "O2_cabin",
+    "TC_0.45",
+    "TC_0.85",
+    "TC_1.25",
+    "TC_1.65",
+    "TC_2.05",
+    "TC_2.45",
+    "TC_2.85"
+  ],
+  "g": 1
+}

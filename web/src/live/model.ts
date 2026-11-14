@@ -1,7 +1,7 @@
 // Folds Lagrange activity entries into the mission state the dashboard draws.
 // Pure: reduce(m, e) returns a new model. Demo replay and live SSE share it, so a demo looks exactly like a live run.
-import { CREW, HUB, HUMAN } from '@/demo/crew'
-import type { Job, KbEntry, Proposal, Saving, Alarm, MatrixRow, TestRequest, CaseFile, CaseItem, CommKind, Cite, DossierSection, Entry, HumanAsk, Payload, Plan, Ranked, SimRun, ToolCall, Verdict } from './types'
+import { CREW, HUB, HUMAN, isPerson } from '@/demo/crew'
+import type { Job, KbEntry, Proposal, Saving, Alarm, MatrixRow, TestRequest, CaseFile, CaseItem, CommKind, Cite, DossierSection, Entry, HumanAsk, InboxItem, Payload, Plan, Ranked, SimRun, ToolCall, Verdict } from './types'
 
 export type AgentState = 'idle' | 'working' | 'asking' | 'waiting' | 'done' | 'failed'
 
@@ -40,6 +40,8 @@ export type Model = {
   sims: SimRun[]
   dossier: DossierSection[]
   waiting?: HumanAsk
+  /** Everything that reached a person, open and done (the Inbox). */
+  inbox: InboxItem[]
   alarms: Alarm[]
   caseFile?: CaseFile
   matrix: MatrixRow[]
@@ -59,7 +61,7 @@ const PACKET_MAX = 60
 export function emptyModel(): Model {
   const agents: Record<string, AgentRT> = {}
   for (const a of CREW) agents[a.handle] = { handle: a.handle, state: 'idle', doing: '', model: a.model, cost: 0, ctx: 0, tools: [], notes: [], lastAt: 0 }
-  return { seq: 0, now: 0, agents, tasks: {}, comms: [], packets: [], ranking: [], focusIds: [], sims: [], dossier: [], alarms: [], matrix: [], milestones: [], tests: [], feed: [], done: false, kb: {}, jobs: [], proposals: [], saved: { tokens: 0, asks: 0 } }
+  return { seq: 0, now: 0, agents, tasks: {}, comms: [], packets: [], ranking: [], focusIds: [], sims: [], dossier: [], inbox: [], alarms: [], matrix: [], milestones: [], tests: [], feed: [], done: false, kb: {}, jobs: [], proposals: [], saved: { tokens: 0, asks: 0 } }
 }
 
 const ms = (iso?: string) => (iso ? Date.parse(iso) : 0)
@@ -75,6 +77,15 @@ function touch(m: Model, handle: string | undefined, patch: Partial<AgentRT>, at
 function milestone(m: Model, id: string, at: number, text: string, view: Milestone['view'], by?: string) {
   if (m.milestones.some((x) => x.id === id)) return
   m.milestones = [...m.milestones, { id, at, text, view, by }]
+}
+
+function inboxPut(m: Model, item: InboxItem) {
+  const i = m.inbox.findIndex((x) => x.id === item.id)
+  m.inbox = i >= 0 ? m.inbox.map((x, k) => (k === i ? { ...x, ...item, at: x.at } : x)) : [...m.inbox, item]
+}
+
+function inboxDone(m: Model, id: string, answer: string | undefined, at: number) {
+  m.inbox = m.inbox.map((x) => (x.id === id && x.status === 'open' ? { ...x, status: 'done', answer: answer ?? x.answer, doneAt: at } : x))
 }
 
 function packet(m: Model, from: string | undefined, to: string | undefined, kind: CommKind, at: number, id: string) {
@@ -108,6 +119,8 @@ export function reduce(prev: Model, e: Entry): Model {
         m.comms = [...m.comms, { id: `c${e.seq}`, at, from: t.from, to: t.to, kind: 'task', text: e.summary ?? '', taskId: id }]
         packet(m, t.from, t.to, 'task', at, `p${e.seq}`)
       }
+      // A job for a person (not the run itself, which the person started).
+      if (!old && t.parent && isPerson(t.to) && t.to !== HUMAN) inboxPut(m, { id, to: t.to, from: t.from, kind: 'task', text: t.summary, status: 'open', at })
       if (state === 'working') touch(m, t.to, { state: 'working', doing: e.summary && old ? e.summary : t.summary }, at)
       else if (state === 'completed') {
         touch(m, t.to, { state: 'done', doing: '' }, at)
@@ -116,9 +129,11 @@ export function reduce(prev: Model, e: Entry): Model {
       else if (state === 'input_required') {
         if (t.to === HUMAN || d.awaiting === HUMAN) {
           m.waiting = { taskId: id, from: t.from, question: e.summary ?? '', options: (d.options as string[]) ?? ['Approve'], at, positions: d.positions as HumanAsk['positions'] }
+          inboxPut(m, { id, to: HUMAN, from: t.from, kind: 'decide', text: m.waiting.question, options: m.waiting.options, positions: m.waiting.positions, status: 'open', at })
           touch(m, t.from, { state: 'waiting', doing: 'waiting on you' }, at)
         } else touch(m, t.to, { state: 'asking', doing: e.summary ?? '' }, at)
       }
+      if (state === 'completed' || state === 'failed') inboxDone(m, id, e.summary, at)
       if (state === 'completed' && m.waiting?.taskId === id) m.waiting = undefined
       if (state === 'completed' && t.to === HUMAN) touch(m, t.from, { state: 'working', doing: `you: ${e.summary ?? 'answered'}` }, at)
       if (state === 'completed' && !t.parent && t.from === HUMAN) m.done = true
@@ -132,6 +147,7 @@ export function reduce(prev: Model, e: Entry): Model {
       const saved = d.saved as Saving | undefined
       m.comms = [...m.comms, { id: `c${e.seq}`, at, from, to, kind, text: String(d.text ?? ''), cites: d.cites as Cite[] | undefined, taskId: e.taskId, saved }]
       if (saved) m.saved = { tokens: m.saved.tokens + saved.tokens, asks: m.saved.asks + 1 }
+      if (to === HUMAN && from !== HUMAN && kind !== 'human' && !e.taskId) inboxPut(m, { id: `fyi-${e.seq}`, to, from, kind: 'fyi', text: String(d.text ?? ''), status: 'done', at, doneAt: at })
       packet(m, from, to, kind, at, `p${e.seq}`)
       if (kind === 'ask') touch(m, from, { state: 'asking', doing: `asking ${to}` }, at)
       else if (kind === 'reply' && m.agents[from]?.state === 'asking') touch(m, from, { state: 'working' }, at)

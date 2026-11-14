@@ -1,13 +1,22 @@
 // Evidence rows: the real ACME Flame Design chamber log (143 test points) plus the 39 CFI-G test-day atmospheres
 // from the PSI-159 final report tables (nominal). Ported from flame-in-freefall's evidence explorer.
+// Plus the published BASS-II / Saffire / FLEX points (data/published, each with its NTRS source), so the table is not
+// only ACME gas flames.
+import bass from './published/bass.json'
+import flex from './published/flex.json'
+import saffire from './published/saffire.json'
 import { PSI_KPA, type Target } from './library'
 
 export type TestpointsFile = { columns: string[]; rows: (string | number)[][] }
 
 export type EvidenceRow = {
   id: string
-  src: 'Flame Design' | 'CFI-G'
-  study: 'flame-design' | 'cfi-g'
+  src: 'Flame Design' | 'CFI-G' | 'BASS-II' | 'Saffire' | 'FLEX'
+  study: 'flame-design' | 'cfi-g' | 'bass-ii' | 'saffire' | 'flex'
+  /** What burned, in plain words (gas flames: the fuel gas). */
+  material?: string
+  /** The measured quantity for published rows. */
+  result?: string
   date: string
   cfg: 'normal' | 'inverse'
   fuel: string
@@ -72,7 +81,24 @@ export function buildEvidence(tp: TestpointsFile): EvidenceRow[] {
       nominal: true,
     }
   })
-  return [...fd, ...cf]
+  return [...fd, ...cf, ...publishedEvidence()]
+}
+
+const ntrs = (refs: Record<string, object>, k: string) => `NTRS ${(refs[k] as { ntrs?: string } | undefined)?.ntrs ?? k}`
+
+/** Published flight points that carry an atmosphere (O₂ and pressure). */
+export function publishedEvidence(): EvidenceRow[] {
+  const b: EvidenceRow[] = bass.rows
+    .filter((r) => r.o2 !== null && r.o2 !== undefined)
+    .map((r) => ({ id: r.id, src: 'BASS-II', study: 'bass-ii', date: '2012-2014', cfg: 'normal', fuel: r.fuel, material: r.material, o2: r.o2!, o2at: 'ambient', psia: r.psia, ign: r.burns ? 1 : 0, ref: ntrs(bass.refs, r.ref), file: r.where, nominal: true, result: `${r.quantity} ${r.value} ${r.unit}` }))
+  const s: EvidenceRow[] = saffire.rows.map((r) => ({
+    id: r.id, src: 'Saffire', study: 'saffire', date: r.id.includes('-IV') ? '2019' : r.id.includes('-V-') ? '2020' : '2021', cfg: 'normal', fuel: r.fuel, material: r.material, o2: r.o2, o2at: 'ambient',
+    psia: +(r.kpa / PSI_KPA).toFixed(1), ign: 1, ref: ntrs(saffire.refs, r.ref), file: r.where, nominal: false, result: `burned ${r.burn_s} s${r.avg_w ? ` · ${(r.avg_w / 1000).toFixed(1)} kW avg` : ''}`,
+  }))
+  const f: EvidenceRow[] = flex.rows
+    .filter((r) => r.o2 !== null && r.o2 !== undefined)
+    .map((r) => ({ id: r.id, src: 'FLEX', study: 'flex', date: '2009-2013', cfg: 'normal', fuel: `${r.fuel} droplet`, material: r.fuel, o2: r.o2, o2at: 'ambient', psia: +(r.atm * 14.696).toFixed(1), ign: r.quantity === 'limiting oxygen index' ? 0 : 1, ref: ntrs(flex.refs, r.ref), file: r.where, nominal: false, result: `${r.quantity}${r.value !== null && r.value !== undefined ? ` ${r.value} ${r.unit}` : ''}` }))
+  return [...b, ...s, ...f]
 }
 
 /** How close a test point sits to the cabin atmosphere (0..1). Burner-side O₂ counts half. */

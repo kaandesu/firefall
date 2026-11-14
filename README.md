@@ -34,8 +34,9 @@ that matters.
   chamber test and a technician runs it.
 - **Real data, really processed.** The PSI Archivist runs on the actual ACME files (CFI-G test 21256C2 camera
   series and frames, Flame Design sensor log 19175A4, 143 chamber test points). Ignition, steady flame, transient
-  and glow are *found by code* from the brightness series, not typed in. The evidence explorer scores all 182 test
-  points against your cabin and shows plainly that nothing in the archive was tested above 40 % ambient O₂.
+  and glow are *found by code* from the brightness series, not typed in. The Test data tab scores 206 real burn
+  tests (ACME, CFI-G, and points from the published BASS-II, Saffire and FLEX papers) against your cabin and shows
+  plainly that nothing was tested above 40 % ambient O₂.
 - **Simulations where they run in real life: on GPU farms.** The Lab panel is the review's compute floor. Every
   job an agent starts lands on its org's cluster (Slurm `hpc-01` 8×H100, the archive's 32×A100 Kubernetes pool,
   the WSTF chamber) and plays live: ACME frames being processed, flame-spread ducts, a limiting-O₂ sweep, flames in
@@ -138,10 +139,20 @@ open items, how the review ran, and sources. Every section has an **Ask** button
 from the report and pulls up charts, rows, test points and sections. Exports: `hazard-report.md`, `matrix.csv`,
 print to PDF.
 
-**Library · Evidence · Compute** (tabs in the top bar, the run keeps going behind them):
+**Inbox · Library · Test data · FDS · Compute** (tabs in the top bar, the run keeps going behind them):
+- **Inbox:** everything that reached a person: decisions, lab jobs and FYIs, open and done. Switch between *You*
+  (lead engineer) and the *WSTF technician*, who gets the Test 1 job with a result form (burn length per sample).
+  The last gate is **Sign the hazard report**: the report says *Draft* until a person signs, then *Signed by You · T+…*.
 - **Library:** the 20 PSI studies ranked by fit to this cabin; the ACME studies open their real data (frame
   scrubber against the brightness series, the 10 sensor channels, the test-point scatter with the cabin marked).
-- **Evidence:** 182 test points with filters, sort, match score and a scatter; pin rows into the report.
+  BASS, Saffire and FLEX open **published data**: the rows read from the NTRS papers, with where and how each was
+  read, and our model fitted to them (observed vs model vs fit, rms before and after).
+- **Test data:** 206 real NASA burn tests (ACME chamber log, CFI-G days, and published BASS-II / Saffire / FLEX
+  points) with filters, sort, match score and a scatter; pin rows into the report.
+- **FDS:** a real NIST FDS 6.11.1 run of the Apollo cabin, generated from the same input files, at 1 g and in µg.
+  Input view (the generated `.fds`, its surfaces and obstructions in 3-D) and output view (temperature and soot
+  slices, Smoke3D soot and flame, playback, HRR / pressure / obscuration charts, and a cross-check against the quick
+  model). The report's §4 and §5 carry an "FDS check".
 - **Compute:** every org's servers, GPU pools and chamber, with live use; add a server or GPU farm, or connect an
   MCP server to an agent (handshake, discovered tools). Everything is marked in-house: data never leaves.
 
@@ -150,13 +161,21 @@ print to PDF.
 The demo is a **scripted replay** of the same Lagrange events a live run produces, and it goes through the same fold,
 so the UI is the same in both modes. What is real and what is illustrative:
 
-| Real (computed in the browser from the files) | Illustrative |
+| Real | Illustrative |
 |---|---|
-| Input parsing and cross-checks | Saffire, BASS-II, FLEX fits (catalogue values; no raw data in the archive) |
-| ACME 21256C2 event detection, 19175A4 sensor stats, 182 evidence rows and match scores | Token savings per ask |
+| Input parsing and cross-checks | Token savings per ask |
+| ACME 21256C2 event detection, 19175A4 sensor stats, evidence rows and match scores | Lab burn lengths in the demo (scripted) |
+| NIST FDS 6.11.1 runs of the cabin (1 g and µg), generated from the input files and run locally | |
+| Saffire / BASS-II / FLEX fits: least squares against numbers read from the NTRS papers, residuals shown | |
 | Smoke CFD (2-D stable fluids on the cabin section, Web Worker) and sensor optimisation | Cluster names, GPU counts, job timings |
 | Fire spread / pressure zone model, what-ifs | Agent message wording (scripted) |
 | Report chat (OpenAI, grounded in the report JSON) | Demo-mode chat answers (built from the same report) |
+
+FDS case: `web/src/fds/toFds.ts` voxelises the hull and parts at 10 cm (51,200 cells), sets pure O₂ at the cabin
+pressure in a sealed volume, and puts a 75 kW, 20 s burner under the nearest listed burnable item. At 1 g the
+debris net catches at ≈ 11 s and the background pressure passes the 29 psia burst line at ≈ 22 s; in µg the burner
+puff never spreads. The surface data are air cone-calorimeter values, so in pure O₂ FDS under-predicts: read it
+as a lower bound.
 
 The spread and pressure model is a simple zone model (Dijkstra spread and lumped pressure) tuned to the Apollo 1
 record; the smoke CFD is 2-D. Both are for triage only and do not replace Test 1, FDS or the review panel.
@@ -174,8 +193,15 @@ mates-end/
     src/lab/      smoke CFD + sensor optimiser (worker), lab tiles and three.js sims
     src/data/     ACME loaders + event detection, PSI library and fit, evidence rows
     src/report/   the report as data, the chat's context and scripted answers
+    src/fds/      FDS case generator, readers for .fds/.smv/.sf/.s3d/.csv (ported from fds-viewer, MIT), FDS tab parts
+    src/data/published/   BASS-II, Saffire, FLEX numbers from the NTRS papers (ref, where, how per row)
+    src/sims/fits.ts      least-squares fits of the models to the published rows
+    public/data/fds/apollo-cm012/   the shipped FDS run (1 g + µg) and its manifest
+    scripts/      gen-fds.ts, fds-manifest.ts (run with node + the alias loader)
     server/       dev-server route /api/ask (OpenAI streaming; key stays server-side)
     public/data/acme/   real ACME data extracted from flame-in-freefall (scripts/extract-fif.mjs)
+  scripts/fds/run.sh   generate the case, run FDS (1g, ug), write the manifest
+  docs/mvp-roadmap.md  workflow, data path, architecture, deploy, milestones M1-M4
   data/psi/ public PSI metadata snapshot (+ downloaded datasets, not committed)
   server/   (next) Lagrange proxy, saved reviews
   agents/   (next) one agent per org/department with its own MCP servers, connected via `lagrange tunnel --acp`
@@ -201,8 +227,17 @@ OPENAI_MODEL=gpt-5.4-mini   # optional
 
 Without a key the chat runs in **demo** mode with scripted answers; the `demo` toggle switches between the two.
 
+To re-run FDS (NIST FDS 6.11.1; on macOS the installer's `fds_openmp`, on Linux the `openbcl/fds:6.11.1` image):
+
+```bash
+scripts/fds/run.sh            # both cases; FDS=/path/to/fds, OMP_NUM_THREADS=4, T_END=30
+scripts/fds/run.sh 1g         # one case
+```
+
+Outputs land in `web/public/data/fds/apollo-cm012/` and the FDS tab picks them up.
+
 Deep links: `?example=1` loads the Apollo case, `&start=1` starts the review straight away, `&speed=4` plays faster,
-and `&intro=0` skips the cabin intro.
+`&intro=0` skips the cabin intro, and `?view=fds|inbox|library|evidence|compute` opens a tab.
 Keys on the run screen: `1`–`6` focus a panel, `+`/`-` resize it, `h`/`l` switch agent, `a` answers with the
 default option, and `?` lists the rest.
 
@@ -216,8 +251,12 @@ default option, and `?` lists the rest.
 - [x] Lab panel: per-org clusters, job queue, live sim tiles; compute and MCP setup
 - [x] Real ACME data processing; library and evidence explorer; smoke CFD and sensor placement at µg / Moon / 1 g
 - [x] Report with TOC, sections, exports and an AI chat (OpenAI) that pulls up report items
-- [ ] Live agents on Lagrange (one per org, each with its own MCP servers and provider)
-- [ ] Saffire / BASS / FLEX raw data (not in the public archive)
+- [x] Real FDS run of the cabin (1 g + µg) with an in-app viewer, an FDS job in the run, and an FDS check in the report
+- [x] Published BASS-II / Saffire / FLEX numbers with sources, model fits with residuals
+- [x] Inbox for people (you and the WSTF technician) and a signed hazard report
+- [ ] Live agents on Lagrange (one per org, each with its own MCP servers and provider): M1 in `docs/mvp-roadmap.md`
+- [ ] FDS worker on the server for live re-runs: M2
+- [ ] PSI raw data + spread-rate extraction, surrogate models: M3, M4
 - [ ] Deploy (public demo replay; live mode behind an access key)
 
 ## Sources
@@ -231,3 +270,8 @@ default option, and `?` lists the rest.
 - Lunar-gravity flammability limits (NASA Glenn): https://ntrs.nasa.gov/api/citations/20240015307/downloads/Glenn_2024_ZayacPoster.pdf
 - Flame-retardant textiles for elevated-O₂ habitats (ICES 2026): https://ntrs.nasa.gov/api/citations/20260003042/downloads/301-ICES_Paper_2026-FR-Textiles_Final_04-13-2026.pdf
 - NASA Physical Sciences Informatics: https://psi.nasa.gov
+- NIST Fire Dynamics Simulator (FDS 6.11.1): https://pages.nist.gov/fds-smv/
+- fds-viewer by Prof Rino Lovreglio (MIT licence); the FDS file readers are ported from it
+- BASS-II: Ferkul et al. 2014, NTRS 20160000593; Olson & Ferkul 2015, NTRS 20150008961
+- Saffire: Ruff et al. 2016, NTRS 20170002628; Urban et al. 2024, NTRS 20240002981
+- FLEX: Nayagam et al. 2014, NTRS 20140006750; Nayagam et al. 2013, NTRS 20130014061

@@ -10,6 +10,7 @@ import { BrightnessChart, FrameCanvas, useAcmeFrames } from '@/lab/tiles'
 import { useMission } from '@/live/store'
 import { cn } from '@/lib/utils'
 import { TestpointScatter, useEvidenceRows } from './EvidenceScreen'
+import { PublishedPanel, publishedFor } from './PublishedData'
 
 const PILLARS: (Pillar | 'all')[] = ['all', 'prevention', 'detection', 'suppression', 'supporting']
 const PILLAR_COLOR: Record<Pillar, string> = { prevention: 'var(--flame)', detection: 'var(--k-ask)', suppression: 'var(--k-task)', supporting: 'var(--muted)' }
@@ -99,8 +100,11 @@ export function LibraryScreen() {
 
 function StudyDrawer({ study, target, onClose }: { study: Study; target: ReturnType<typeof targetOf>; onClose: () => void }) {
   const f = fit(study, target)
-  const [tab, setTab] = useState<'about' | 'data'>(study.data ? 'data' : 'about')
-  useEffect(() => setTab(study.data ? 'data' : 'about'), [study.id, study.data])
+  const pub = publishedFor(study.id)
+  const first = study.data ? 'data' : pub ? 'published' : 'about'
+  const [tab, setTab] = useState<'about' | 'data' | 'published'>(first)
+  useEffect(() => setTab(first), [study.id, first])
+  const tabs = [...(study.data ? (['data'] as const) : []), ...(pub ? (['published'] as const) : []), 'about' as const]
   return (
     <aside className="scroll-thin flex w-[520px] shrink-0 flex-col overflow-y-auto border-l border-line bg-surface">
       <header className="flex items-start gap-2 border-b border-line px-4 py-3">
@@ -117,17 +121,19 @@ function StudyDrawer({ study, target, onClose }: { study: Study; target: ReturnT
           <X size={14} />
         </button>
       </header>
-      {study.data && (
+      {tabs.length > 1 && (
         <div className="flex gap-1 border-b border-line px-4 py-1.5 text-[11px]">
-          {(['data', 'about'] as const).map((t) => (
+          {tabs.map((t) => (
             <button key={t} type="button" onClick={() => setTab(t)} className={cn('rounded-sm px-2 py-0.5', tab === t ? 'bg-surface-2 text-ink' : 'text-muted-foreground hover:text-ink')}>
-              {t === 'data' ? 'open test data' : 'about'}
+              {t === 'data' ? 'open test data' : t === 'published' ? 'published data' : 'about'}
             </button>
           ))}
         </div>
       )}
       <div className="space-y-4 px-4 py-3">
-        {tab === 'about' || !study.data ? (
+        {tab === 'published' && pub ? (
+          <PublishedPanel set={pub} />
+        ) : tab === 'about' || !study.data ? (
           <>
             <p className="sans text-[13px] leading-snug text-ink">{study.obj}</p>
             <div className="rounded-sm border-l-2 border-ok bg-surface-2 px-3 py-2">
