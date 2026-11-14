@@ -78,7 +78,7 @@ function PressureChart({ run, t, hatchTime }: { run: FireRun; t: number; hatchTi
   const y = (psi: number) => H - (psi / pMax) * H
   const pts = run.pressure.filter((p) => p.t <= Math.min(t, tMax)).map((p) => `${x(p.t).toFixed(1)},${y(p.psia).toFixed(1)}`)
   return (
-    <div style={{ position: 'absolute', right: 12, top: 12, padding: 8, background: 'rgba(5,7,10,0.82)', border: '1px solid #2f2f2f', borderRadius: 3, fontFamily: 'DM Mono, monospace', fontSize: 10, color: '#9a9a95' }}>
+    <div style={{ position: 'absolute', right: 12, top: 12, padding: 8, background: 'rgba(5,7,10,0.82)', border: '1px solid #2f2f2f', borderRadius: 3, fontFamily: 'var(--font-mono)', fontSize: 10, color: '#9a9a95' }}>
       <div style={{ marginBottom: 4, color: '#f1f1ef', letterSpacing: '0.12em' }}>CABIN PRESSURE · psia</div>
       <svg width={W} height={H} style={{ overflow: 'visible' }}>
         {run.burstPsia > 0 && (
@@ -145,14 +145,14 @@ export function StageComp({ model, run, layer, status, highlight, hatchTime, onP
       </ThreeCanvas>
 
       {fire && (
-        <div style={{ position: 'absolute', left: 14, top: 12, display: 'flex', gap: 22, fontFamily: 'DM Mono, monospace', color: '#f1f1ef', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', left: 14, top: 12, display: 'flex', gap: 22, fontFamily: 'var(--font-mono)', color: '#f1f1ef', pointerEvents: 'none' }}>
           <Readout label="time" value={`T+${t.toFixed(1)} s`} />
           <Readout label="zones burning" value={`${burningAt(run, t)}/${reach}`} color={burningAt(run, t) ? '#ff6a33' : undefined} />
           <Readout label="cabin" value={`${psia.toFixed(1)} psia`} color={ruptured ? '#ff8fb1' : psia > run.variant.psi + 2 ? '#ffc21a' : undefined} />
         </div>
       )}
       {fire && ruptured && (
-        <div style={{ position: 'absolute', left: '50%', top: 14, transform: 'translateX(-50%)', padding: '3px 10px', border: '1px solid #ff8fb1', color: '#ff8fb1', background: 'rgba(40,8,8,0.8)', fontFamily: 'DM Mono, monospace', fontSize: 12, letterSpacing: '0.12em' }}>
+        <div style={{ position: 'absolute', left: '50%', top: 14, transform: 'translateX(-50%)', padding: '3px 10px', border: '1px solid #ff8fb1', color: '#ff8fb1', background: 'rgba(40,8,8,0.8)', fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '0.12em' }}>
           HULL RUPTURE · T+{run.rupture!.toFixed(0)} s
         </div>
       )}
@@ -230,7 +230,7 @@ function SmokeReadout({ smoke, t }: { smoke: NonNullable<StageProps['smoke']>; t
   const cases = (smoke.layout === 'proposed' ? study.proposedCases : study.cases).filter((x) => x.g === smoke.g)
   const sensors = smoke.layout === 'proposed' ? study.proposed : study.designed
   return (
-    <div style={{ position: 'absolute', left: 14, top: 12, fontFamily: 'DM Mono, monospace', color: '#f1f1ef', pointerEvents: 'none', fontSize: 10.5 }}>
+    <div style={{ position: 'absolute', left: 14, top: 12, fontFamily: 'var(--font-mono)', color: '#f1f1ef', pointerEvents: 'none', fontSize: 10.5 }}>
       <div style={{ display: 'flex', gap: 22 }}>
         <Readout label="time" value={`T+${t.toFixed(1)} s`} />
         <Readout label="gravity" value={c.gLabel} />

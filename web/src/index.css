@@ -1,6 +1,18 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
 
+/* Every digit in the app is a dot-matrix digit, like a display readout. This face covers 0–9 only and sits first
+   in the sans stack, so numbers anywhere (labels, tables, sentences) switch over with no markup. */
+@font-face {
+  font-family: "FF Digits";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/doto/v3/t5tJIRMbNJ6TQG7Il_EKPqP9zTnvqqGNcuvLMt1JIphFuOWuyE-T.woff2) format("woff2");
+  unicode-range: U+0030-0039;
+  size-adjust: 112%;
+}
+
 /* FIREFALL · FF-1 hardware look.
    Existing UI elements are restyled as hardware parts: the page is the chassis, panels are modules,
    buttons are keycaps, status dots are LEDs and the clock is a black display. Labels are lowercase and printed next to the
@@ -49,6 +61,7 @@
   --plum: #8a3c6a;
   /* the orb: your logo's blue-to-pink glow. It marks one thing only: your move */
   --you: #3a2fd8;
+  --you-key: #3b3fe6;
   --pink: #cf4b78;
 }
 
@@ -83,6 +96,7 @@
   --steel: #8fb0d4;
   --plum: #e07bb6;
   --you: #8f84ff;
+  --you-key: #4b4ff0;
   --pink: #ff8fb1;
 }
 
@@ -143,8 +157,8 @@
   --text-headline--line-height: 1.15;
   --text-display: 34px;
   --text-display--line-height: 1.05;
-  --font-sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "FF Digits", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "FF Digits", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-lcd: "Doto", "JetBrains Mono", monospace;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -553,17 +567,18 @@
 
 /* ── the orb key: every "your move" control (approve, answer, adopt, continue) ── */
 .key-you {
-  border-color: #1d27c4;
-  background: linear-gradient(180deg, #f39ab6 0%, #8a4fe6 46%, #2a3cff 100%);
+  border-color: color-mix(in oklab, var(--you-key) 70%, black);
+  background: var(--you-key);
   color: #fff;
-  text-shadow: 0 1px 1px rgba(10, 10, 80, 0.35);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 2px 0 #141c9c,
-    0 0 18px -4px rgba(52, 72, 255, 0.75);
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 2px 0 color-mix(in oklab, var(--you-key) 55%, black);
+}
+.key-you:hover:not(:disabled) {
+  filter: brightness(1.08);
 }
 .key-you:active:not(:disabled) {
-  box-shadow: inset 0 2px 4px rgba(10, 10, 80, 0.45), 0 0 10px -4px rgba(52, 72, 255, 0.6);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.3);
 }
 .key-you:disabled {
   opacity: 1;
@@ -578,12 +593,6 @@
   border: 1px solid color-mix(in oklab, var(--you) 55%, transparent);
   background: color-mix(in oklab, var(--you) 7%, var(--surface));
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--you) 12%, transparent), 0 0 32px -10px color-mix(in oklab, var(--you) 70%, transparent);
-}
-.text-you-grad {
-  background: linear-gradient(90deg, var(--pink), var(--you));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 /* ── shortcut legend printed on a key ── */

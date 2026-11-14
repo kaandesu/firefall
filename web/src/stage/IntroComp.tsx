@@ -77,7 +77,7 @@ export function IntroComp({ model, pkg }: IntroProps) {
   const cardIn = idx >= 0 && !closing ? interpolate(local, [0.35, 0.75], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) : 0
 
   return (
-    <AbsoluteFill style={{ background: 'radial-gradient(ellipse at 50% 40%, #0c0c0c 0%, #050505 70%)', fontFamily: 'DM Mono, monospace', color: '#f1f1ef' }}>
+    <AbsoluteFill style={{ background: 'radial-gradient(ellipse at 50% 40%, #0c0c0c 0%, #050505 70%)', fontFamily: 'var(--font-mono)', color: '#f1f1ef' }}>
       <ThreeCanvas width={width} height={height} camera={{ position: OVERVIEW.pos, fov: 36 }}>
         <Rig pos={pos} look={look} />
         <ambientLight intensity={0.55} />
@@ -102,7 +102,7 @@ export function IntroComp({ model, pkg }: IntroProps) {
       {idx < 0 && (
         <div style={{ position: 'absolute', left: 40, top: 36, opacity: fadeIn }}>
           <div style={{ fontSize: 12, letterSpacing: '0.2em', color: '#6d8bff' }}>BEFORE THE AGENTS START · THE CABIN</div>
-          <div style={{ fontSize: 30, fontFamily: 'Inter, sans-serif', fontWeight: 600, marginTop: 6 }}>{pkg.vehicle}</div>
+          <div style={{ fontSize: 30, fontFamily: 'var(--font-sans)', fontWeight: 600, marginTop: 6 }}>{pkg.vehicle}</div>
           <div style={{ fontSize: 13, color: '#9a9a95', marginTop: 4 }}>
             {pkg.volume} · crew {pkg.crew} · {stops.length} zones · {pkg.bom.length} listed materials · {(pkg.sensors ?? []).length} smoke detectors
           </div>
@@ -117,7 +117,7 @@ export function IntroComp({ model, pkg }: IntroProps) {
             <span style={{ fontSize: 11, color: '#6b6b66' }}>
               {idx + 1}/{stops.length}
             </span>
-            <span style={{ fontSize: 20, fontFamily: 'Inter, sans-serif', fontWeight: 600, textTransform: 'capitalize' }}>{cur.zone}</span>
+            <span style={{ fontSize: 20, fontFamily: 'var(--font-sans)', fontWeight: 600, textTransform: 'capitalize' }}>{cur.zone}</span>
             <span style={{ marginLeft: 'auto', fontSize: 10.5, color: '#6b6b66' }}>
               at ({cur.at.map((v) => v.toFixed(1)).join(', ')}) m
             </span>
@@ -127,7 +127,7 @@ export function IntroComp({ model, pkg }: IntroProps) {
             {cur.parts.length ? (
               cur.parts.map((b) => (
                 <div key={b.id} style={{ display: 'flex', gap: 10, fontSize: 12 }}>
-                  <span style={{ fontFamily: 'Inter, sans-serif', color: '#f1f1ef', flex: 1 }}>{b.item}</span>
+                  <span style={{ fontFamily: 'var(--font-sans)', color: '#f1f1ef', flex: 1 }}>{b.item}</span>
                   <span style={{ color: '#ffc21a' }}>{b.material}</span>
                   <span style={{ color: '#9a9a95' }}>{b.qty}</span>
                   {b.rating && <span style={{ color: b.rating === 'A' ? '#3fd17f' : b.rating === 'X' ? '#ff8fb1' : '#ffc21a' }}>{b.rating}</span>}
@@ -150,7 +150,7 @@ export function IntroComp({ model, pkg }: IntroProps) {
       {closing && (
         <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', textAlign: 'center', opacity: interpolate(t, [OPEN + stops.length * PER + 0.4, OPEN + stops.length * PER + 1.1], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) }}>
           <div style={{ fontSize: 12, letterSpacing: '0.2em', color: '#ff6a33' }}>AND THE AIR THEY SIT IN</div>
-          <div style={{ fontSize: 44, fontFamily: 'Inter, sans-serif', fontWeight: 600, marginTop: 8 }}>
+          <div style={{ fontSize: 44, fontFamily: 'var(--font-sans)', fontWeight: 600, marginTop: 8 }}>
             {Math.round(pkg.atmosphere.o2 * 100)} % O₂ · {pkg.atmosphere.psi} psia · {pkg.gravity.g} g
           </div>
           <div style={{ fontSize: 13, color: '#9a9a95', marginTop: 8 }}>

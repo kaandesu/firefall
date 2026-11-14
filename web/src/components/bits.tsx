@@ -7,12 +7,12 @@ import type { CommKind } from '@/live/types'
 import { cn } from '@/lib/utils'
 
 export const KIND_COLOR: Record<CommKind, string> = {
-  task: 'var(--faint)',
-  ask: 'var(--muted)',
-  reply: 'var(--muted)',
-  review: 'var(--muted)',
-  fail: 'var(--red)',
-  hub: 'var(--faint)',
+  task: 'var(--k-task)',
+  ask: 'var(--k-ask)',
+  reply: 'var(--k-reply)',
+  review: 'var(--k-review)',
+  fail: 'var(--k-fail)',
+  hub: 'var(--k-hub)',
   human: 'var(--you)',
 }
 
