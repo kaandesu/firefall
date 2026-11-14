@@ -63,7 +63,7 @@ export function SimView() {
       </div>
       <div className="relative min-h-0 flex-1">
         <Canvas key={tab} camera={camFor(tab)} dpr={[1, 2]}>
-          <color attach="background" args={['#04060a']} />
+          <color attach="background" args={['#0b0f14']} />
           <ambientLight intensity={0.35} />
           <directionalLight position={[3, 5, 4]} intensity={0.8} />
           {tab === 'flame' && <GravityFlameScene g={p.g} o2={p.o2} flow={p.flow} />}
@@ -77,7 +77,7 @@ export function SimView() {
         </Canvas>
 
         {driver && driver.sim === tab && (
-          <div className="glow-ug absolute left-2 top-2 flex items-center gap-1.5 rounded-md bg-surface/90 px-2 py-1 text-[11px]">
+          <div className="absolute left-2 top-2 border border-line flex items-center gap-1.5 rounded-md bg-surface/90 px-2 py-1 text-[11px]">
             <Bot size={12} className="text-ug" />
             <AgentTag handle={driver.by} /> <span className="text-muted-foreground">driving</span>
             {!compact && <span className="max-w-[240px] truncate">· {driver.label}</span>}
@@ -88,7 +88,7 @@ export function SimView() {
           <Metrics tab={tab} smoke={smoke} drop={drop} />
           {lastRun?.metrics && !compact && (
             <div className="rounded-md border border-ug/30 bg-surface/85 px-2 py-1.5">
-              <div className="mono text-[9px] uppercase tracking-widest text-ug">SIM result · {lastRun.label}</div>
+              <div className="text-[11px] font-medium text-ug">Result · {lastRun.label}</div>
               <div className="mt-0.5 grid grid-cols-2 gap-x-3 text-[10.5px]">
                 {Object.entries(lastRun.metrics).map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-2">

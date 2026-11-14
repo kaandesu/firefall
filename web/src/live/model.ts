@@ -1,7 +1,7 @@
 // Folds Lagrange activity entries into the mission state the dashboard draws.
 // Pure: reduce(m, e) returns a new model. Demo replay and live SSE share it, so a demo looks exactly like a live run.
 import { CREW, HUB, HUMAN } from '@/demo/crew'
-import type { Alarm, CaseFile, CaseItem, CommKind, Cite, DossierSection, Entry, HumanAsk, Payload, Plan, Ranked, SimRun, ToolCall, Verdict } from './types'
+import type { Alarm, MatrixRow, TestRequest, CaseFile, CaseItem, CommKind, Cite, DossierSection, Entry, HumanAsk, Payload, Plan, Ranked, SimRun, ToolCall, Verdict } from './types'
 
 export type AgentState = 'idle' | 'working' | 'asking' | 'waiting' | 'done' | 'failed'
 
@@ -18,6 +18,9 @@ export type AgentRT = {
 }
 
 export type Comm = { id: string; at: number; from: string; to: string; kind: CommKind; text: string; cites?: Cite[]; taskId?: string }
+
+/** Readable progress for the chat: things a lead engineer cares about, not every message. */
+export type Milestone = { id: string; at: number; text: string; view: 'overview' | 'materials' | 'evidence' | 'sim' | 'report' | 'case'; by?: string }
 
 export type Packet = { id: string; from: string; to: string; kind: CommKind; at: number }
 
@@ -39,6 +42,9 @@ export type Model = {
   waiting?: HumanAsk
   alarms: Alarm[]
   caseFile?: CaseFile
+  matrix: MatrixRow[]
+  milestones: Milestone[]
+  tests: TestRequest[]
   feed: Entry[]
   done: boolean
 }
@@ -49,7 +55,7 @@ const PACKET_MAX = 60
 export function emptyModel(): Model {
   const agents: Record<string, AgentRT> = {}
   for (const a of CREW) agents[a.handle] = { handle: a.handle, state: 'idle', doing: '', model: a.model, cost: 0, ctx: 0, tools: [], notes: [], lastAt: 0 }
-  return { seq: 0, now: 0, agents, tasks: {}, comms: [], packets: [], ranking: [], focusIds: [], sims: [], dossier: [], alarms: [], feed: [], done: false }
+  return { seq: 0, now: 0, agents, tasks: {}, comms: [], packets: [], ranking: [], focusIds: [], sims: [], dossier: [], alarms: [], matrix: [], milestones: [], tests: [], feed: [], done: false }
 }
 
 const ms = (iso?: string) => (iso ? Date.parse(iso) : 0)
@@ -60,6 +66,11 @@ function touch(m: Model, handle: string | undefined, patch: Partial<AgentRT>, at
   const prev = m.agents[handle]
   if (!prev) return
   m.agents = { ...m.agents, [handle]: { ...prev, ...patch, lastAt: at } }
+}
+
+function milestone(m: Model, id: string, at: number, text: string, view: Milestone['view'], by?: string) {
+  if (m.milestones.some((x) => x.id === id)) return
+  m.milestones = [...m.milestones, { id, at, text, view, by }]
 }
 
 function packet(m: Model, from: string | undefined, to: string | undefined, kind: CommKind, at: number, id: string) {
@@ -126,9 +137,13 @@ export function reduce(prev: Model, e: Entry): Model {
         case 'fc.run':
           m.run = { title: String(d.title), scenario: String(d.scenario), spec: (d.spec as Record<string, string | number>) ?? {}, at }
           return m
-        case 'fc.plan':
-          m.plan = d.plan as Plan
+        case 'fc.plan': {
+          const plan = d.plan as Plan
+          if (!m.plan) milestone(m, 'plan', at, `published a plan: ${plan.subtasks.length} subtasks across ${new Set(plan.subtasks.map((x) => x.agent)).size} departments`, 'overview', e.sender)
+          if (plan.approved && !m.plan?.approved) milestone(m, 'plan-ok', at, 'plan approved, work started', 'overview', e.sender)
+          m.plan = plan
           return m
+        }
         case 'fc.tool': {
           const call = d.call as ToolCall
           const a = m.agents[call.agent]
@@ -146,19 +161,38 @@ export function reduce(prev: Model, e: Entry): Model {
           return m
         }
         case 'fc.evidence':
+          milestone(m, 'evidence', at, `ranked ${(d.ranking as Ranked[]).length} PSI investigations against the design`, 'evidence', e.sender)
           m.ranking = (d.ranking as Ranked[]) ?? m.ranking
           m.focusIds = (d.focus as string[]) ?? m.focusIds
           return m
         case 'fc.sim': {
           const run = { ...(d.run as SimRun), at }
           const i = m.sims.findIndex((s) => s.id === run.id)
+          if (run.metrics) milestone(m, `sim-${run.id}`, at, `finished: ${run.label}`, 'sim', run.by)
           m.sims = i >= 0 ? m.sims.map((s, j) => (j === i ? { ...s, ...run } : s)) : [...m.sims, run]
           return m
         }
         case 'fc.dossier': {
           const s = d.section as DossierSection
+          if (!m.dossier.length) milestone(m, 'report', at, 'started writing the report', 'report', e.sender)
           const i = m.dossier.findIndex((x) => x.id === s.id)
           m.dossier = i >= 0 ? m.dossier.map((x, j) => (j === i ? s : x)) : [...m.dossier, s]
+          return m
+        }
+        case 'fc.matrix': {
+          const rows = d.rows as MatrixRow[]
+          const byId = new Map(m.matrix.map((r) => [r.id, r]))
+          for (const r of rows) byId.set(r.id, r)
+          m.matrix = [...byId.values()]
+          const c = (st: string) => m.matrix.filter((r) => r.status === st).length
+          milestone(m, 'matrix', at, `finished the materials matrix: ${c('pass')} pass, ${c('retest')} need a retest, ${c('fail')} fail at the target atmosphere`, 'materials', e.sender)
+          return m
+        }
+        case 'fc.testreq': {
+          const r = d.request as TestRequest
+          const i = m.tests.findIndex((x) => x.id === r.id)
+          m.tests = i >= 0 ? m.tests.map((x, j) => (j === i ? { ...x, ...r } : x)) : [...m.tests, r]
+          milestone(m, `${r.id}-${r.status}`, at, `test request ${r.id} ${r.status}: ${r.material} at ${r.atmosphere}${r.eta ? ` (${r.eta})` : ''}`, 'materials', e.sender)
           return m
         }
         case 'fc.alarm':
@@ -169,6 +203,7 @@ export function reduce(prev: Model, e: Entry): Model {
           const file = d.file as Omit<CaseFile, 'items' | 'verdict'> | undefined
           const item = d.item as CaseItem | undefined
           const verdict = d.verdict as Verdict | undefined
+          if (verdict) milestone(m, 'verdict', at, `verdict: ${verdict.headline}`, 'case', e.sender)
           m.caseFile = { ...cf, ...file, items: item ? [...cf.items, item] : cf.items, verdict: verdict ?? cf.verdict }
           return m
         }

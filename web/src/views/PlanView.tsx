@@ -16,7 +16,7 @@ const COLUMNS: { id: string; label: string; has: SubtaskStatus[]; color: string 
 
 export function PlanView() {
   const plan = useMission((s) => s.model.plan)
-  if (!plan) return <Empty icon={<ListTodo size={28} />} title="No plan yet" hint="FLIGHT publishes the plan as an fc.plan artifact on the run's root task." />
+  if (!plan) return <Empty icon={<ListTodo size={28} />} title="No plan yet" hint="Start the review: the Review Lead turns your request into a plan and asks you to approve it." />
   const done = plan.subtasks.filter((s) => s.status === 'done').length
   return (
     <div className="@container flex h-full flex-col gap-3 p-3">
@@ -41,10 +41,10 @@ export function PlanView() {
             return (
               <div key={col.id} className="flex min-h-0 flex-col rounded-lg border border-line bg-surface/60">
                 <div className="flex items-center justify-between border-b border-line px-2 py-1.5">
-                  <span className="mono text-[10px] uppercase tracking-widest" style={{ color: col.color }}>
+                  <span className="text-[12px] font-medium" style={{ color: col.color }}>
                     {col.label}
                   </span>
-                  <span className="mono text-[10px] text-faint">{items.length}</span>
+                  <span className="tnum text-[11px] text-faint">{items.length}</span>
                 </div>
                 <div className="scroll-thin flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-1.5">
                   {items.map((s) => (
@@ -62,7 +62,6 @@ export function PlanView() {
 
 function Card({ s }: { s: Subtask }) {
   const selectAgent = useMission((st) => st.selectAgent)
-  const directTo = useMission((st) => st.directTo)
   const live = s.status === 'running' || s.status === 'asking'
   return (
     <motion.button
@@ -70,8 +69,7 @@ function Card({ s }: { s: Subtask }) {
       layoutId={s.id}
       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
       onClick={() => {
-        selectAgent(s.agent)
-        directTo('workspace', true)
+        selectAgent(s.agent, true)
       }}
       className={cn(
         'group relative w-full rounded-md border bg-surface-2 p-2 text-left transition hover:border-line-2',
@@ -96,7 +94,7 @@ function Card({ s }: { s: Subtask }) {
       <div className="mt-1.5 flex items-center justify-between gap-1">
         <div className="flex items-center gap-1.5">
           <Avatar handle={s.agent} size={16} />
-          <AgentTag handle={s.agent} className="text-[10px]" />
+          <AgentTag handle={s.agent} className="text-[11px]" />
         </div>
         <span className="mono text-[9px]" style={{ color: MODEL_COLOR[s.model] }}>
           {s.model}

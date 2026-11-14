@@ -32,12 +32,12 @@ export function EvidenceView() {
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-1 border-b border-line px-2 py-1.5">
         {(['ranked', 'compare', 'coverage'] as Tab[]).map((t) => (
-          <button key={t} type="button" onClick={() => setTab(t)} className={cn('mono rounded px-2 py-0.5 text-[10.5px] capitalize', tab === t ? 'bg-surface-3 text-ink' : 'text-muted-foreground hover:text-ink')}>
+          <button key={t} type="button" onClick={() => setTab(t)} className={cn('rounded px-2 py-0.5 text-[12px] capitalize', tab === t ? 'bg-surface-3 text-ink' : 'text-muted-foreground hover:text-ink')}>
             {t}
           </button>
         ))}
         <span className="mono ml-auto text-[9.5px] text-faint">
-          {ranking.length ? 'ranked by ARCHIVIST' : 'base relevance'} · PSI snapshot {PSI_FETCHED_AT.slice(0, 10)}
+          {ranking.length ? 'ranked by Research' : 'base relevance'} · PSI snapshot {PSI_FETCHED_AT.slice(0, 10)}
         </span>
       </div>
       <div className="scroll-thin min-h-0 flex-1 overflow-auto">
@@ -62,7 +62,7 @@ function RankCard({ r, i, focus, onOpen }: { r: Ranked & { inv: Investigation };
       layout
       type="button"
       onClick={onOpen}
-      className={cn('flex flex-col gap-1.5 rounded-lg border bg-surface-2/70 p-2.5 text-left transition hover:border-line-2', focus ? 'border-ug/50 glow-ug' : 'border-line')}
+      className={cn('flex flex-col gap-1.5 rounded-lg border bg-surface-2/70 p-2.5 text-left transition hover:border-line-2', focus ? 'border-ug/50 ring-1 ring-ug/40' : 'border-line')}
     >
       <div className="flex items-center gap-2">
         <span className="mono text-[10px] text-faint">#{i + 1}</span>

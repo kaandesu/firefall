@@ -4,6 +4,7 @@
 import { Script } from '@/live/script'
 import { MATERIALS, limitingO2, pct, spreadRate, spreadVsEarth } from '@/sims/models'
 import { HUMAN } from './crew'
+import { PACKAGES, computeMatrix } from './packages'
 
 const BOARD = { label: 'Apollo 204 Review Board', url: 'https://www.nasa.gov/missions/apollo/apollo-1/apollo-204-review-board-summary/' }
 const ROUNDUP = { label: 'JSC Roundup, 3 Mar 1967', url: 'https://historycollection.jsc.nasa.gov/JSCHistoryPortal/history/roundups/issues/67-03-03.pdf' }
@@ -66,6 +67,7 @@ export function apollo1() {
   s.wait(0.6).tool('prevent', 'flammability_map', { atmosphere: '100 % O₂ · 16.7 psia', g: 1, materials: CABIN }, { sustainFlame: `${burns.apollo.length}/${CABIN.length}`, list: burns.apollo }, 1.8)
   s.wait(0.3).tool('prevent', 'flammability_map', { atmosphere: '21 % O₂ · 14.7 psia', g: 1, materials: CABIN }, { sustainFlame: `${burns.iss.length}/${CABIN.length}`, list: burns.iss }, 1.6)
   s.usage('prevent', 0.04, 0.3)
+  s.wait(0.2).matrix(computeMatrix(PACKAGES.apollo1, [{ id: 'PSI-159' }, { id: 'PSI-20' }]))
   s.wait(2.2).note('prevent', `At 100 % O₂ every material on the list exceeds its limiting O₂ — even Teflon (≈ 95 %) is marginal. Cotton spreads ≈ ${cottonX.toFixed(0)}× faster than in air.`)
   s.wait(0.6).say('prevent', 'sim', 'ask', 'Show it: flame at 100 % O₂ / 16.7 psia / 1 g next to normal air. Then cotton spread.')
   s.wait(0.4).say('prevent', 'flight', 'reply', `${burns.apollo.length} of ${CABIN.length} cabin materials sustain flame at 100 % O₂, vs ${burns.iss.length} of ${CABIN.length} in air. A design-review check flags this before the first test.`, undefined, 't-c2')
@@ -103,7 +105,7 @@ export function apollo1() {
     would: [
       `${burns.apollo.length}/${CABIN.length} listed cabin materials exceed their limiting O₂ at 100 % O₂ / 16.7 psia — the check fails outright.`,
       'It points to the two levers the Board pulled: change the atmosphere, and restrict combustibles near ignition sources.',
-      'It would not have fixed the hatch. Egress design sits outside combustion data, and SKEPTIC says so.',
+      'It would not have fixed the hatch. Egress design sits outside combustion data, and Safety Assurance says so.',
     ],
     bridge: `The same check on base camp: ${burns.base.length}/${CABIN.length} materials burn at 34 % O₂, vs ${burns.iss.length}/${CABIN.length} on ISS. Nomex, Apollo's fix, burns again. Apollo 1's lesson, measured against Artemis.`,
   })
@@ -137,7 +139,7 @@ export function apollo1() {
     cites: [{ id: 'PSI-20' }, { id: 'PSI-98' }, { id: 'PSI-25' }, { id: 'PSI-22' }],
   })
   s.wait(0.4).state('t-c5', 'completed').sub('C5', { status: 'done' })
-  s.wait(0.4).say('flight', HUMAN, 'reply', 'Case closed: prevented at design review; the hatch was outside our scope. Bridge result is in the dossier.')
+  s.wait(0.4).say('flight', HUMAN, 'reply', 'Case closed: prevented at design review; the hatch was outside our scope. Bridge result is in the report.')
   s.wait(0.3).done('Case file closed')
   return s.build()
 }

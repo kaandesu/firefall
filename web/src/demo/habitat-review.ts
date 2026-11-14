@@ -2,7 +2,8 @@
 // Numbers come from the same models the sims run (src/sims/models.ts), so the story and the visuals agree.
 import { Script } from '@/live/script'
 import { MATERIALS, detectorEfficiency, droplet, flameShape, limitingO2, pct, spreadRate, spreadVsEarth } from '@/sims/models'
-import { HUMAN } from './crew'
+import { HUMAN, LAB } from './crew'
+import { PACKAGES, computeMatrix } from './packages'
 
 const O2 = 0.34
 const PSI = 8.2
@@ -43,7 +44,7 @@ export function habitatReview() {
       { id: 'S4', title: 'Suppression at 8.2 psia: CO₂ vs water mist', agent: 'suppress', model: 'sonnet', deps: ['S1'], status: 'pending', pillar: 'suppression' },
       { id: 'S5', title: 'Run flame, spread, smoke and droplet sims', agent: 'sim', model: 'haiku', deps: ['S2', 'S3', 'S4'], status: 'pending', pillar: 'cross' },
       { id: 'S6', title: 'Review every claim; bound partial-g', agent: 'skeptic', model: 'opus', deps: ['S2', 'S3', 'S4', 'S5'], status: 'pending', pillar: 'cross' },
-      { id: 'S7', title: 'Assemble the Fire Safety Dossier', agent: 'scribe', model: 'sonnet', deps: ['S6'], status: 'pending', pillar: 'cross' },
+      { id: 'S7', title: 'Draft the fire hazard report', agent: 'scribe', model: 'sonnet', deps: ['S6'], status: 'pending', pillar: 'cross' },
     ],
   })
   s.wait(1.6).askHuman('ask-plan', 'Plan ready: 7 subtasks across 6 agents, bounded by µg + 1 g data. Approve?', ['Approve plan', 'Approve, but skip the droplet sim'], 9)
@@ -105,10 +106,29 @@ export function habitatReview() {
   s.wait(2.0).note('prevent', `Nomex limiting O₂ ≈ ${pct(nomexLim, 1)} at ${FLOW} cm/s. Cabin is ${pct(O2)}. Self-extinguishing on ISS (21 %), burning in PR-2.`)
   s.wait(0.6).say('prevent', 'archivist', 'ask', 'Did any PSI flight actually burn Nomex in µg? I only have the 1 g LOI (~28–30 %).')
   s.wait(1.6).say('archivist', 'prevent', 'reply', 'Saffire-II (PSI-99) flew nine spacecraft material samples — the sample list is in its dataset, not the public metadata. Flagging for the team download.', [{ id: 'PSI-99' }])
+  // Materials asks the test lab: a human outside the vehicle team, reached over the same network.
+  const tr = {
+    id: 'TR-1',
+    material: 'Nomex HT90-40 · stowage bags',
+    test: 'NASA-STD-6001 Test 1 (upward flammability)',
+    atmosphere: '34 % O₂ · 8.2 psia',
+    lab: 'WSTF materials lab',
+    reason: `Model limit ≈ ${pct(nomexLim, 1)} vs 34 % cabin, inside model uncertainty; only data at 21 % / 14.7 psia`,
+    status: 'requested' as const,
+  }
+  s.wait(0.6).tool('prevent', 'request_test', { lab: 'WSTF', material: 'Nomex HT90-40', atmosphere: '34 % / 8.2 psia' }, { delivered: true }, 0.6)
+  s.wait(0.2).say('prevent', LAB, 'ask', `Do you have Test 1 results for Nomex HT90-40 at 34 % O₂ / 8.2 psia? We only have 21 % / 14.7 psia, and our model puts its limit at ≈ ${pct(nomexLim, 1)} — too close to call.`)
+  s.testRequest(tr)
+  s.wait(3.2).say(LAB, 'prevent', 'reply', 'Not on file at 34 % / 8.2 psia. We can run five samples at that atmosphere; next chamber slot is in about two weeks. Send the material lot number.')
+  s.testRequest({ ...tr, status: 'scheduled', eta: '≈ 2 weeks' })
   s.wait(0.8).say('detect', 'prevent', 'ask', 'What overheats first in a wiring fault — and does it burn at 34 %?')
   s.wait(1.6).say('prevent', 'detect', 'reply', 'Kapton (LOI ≈ 37 %) and PTFE (≈ 95 %) won’t sustain flame even at 34 % — but they smoke. That smoke is your early warning, before any Nomex ignites.')
   s.wait(0.8).note('detect', `Kapton smoke median ≈ ${MATERIALS.kapton.smokeD} µm. Photoelectric response ≈ ${pct(photo)}, ionization ≈ ${pct(ion)}. Same blind spot SAME found on ISS.`)
   s.wait(0.6).note('suppress', `To drop 34 % O₂ below LOI 0.17 you must dilute ≈ ${pct(co2Needed)} of the local atmosphere with CO₂ — vs ≈ ${pct(co2Earth)} in an Earth cabin.`)
+
+  s.wait(0.4).tool('prevent', 'flammability_map', { bom: PACKAGES.habitat.bom.length, atmosphere: '34 % / 8.2 psia', g: MOON }, { pass: 2, retest: 1, fail: 4 }, 1.4)
+  s.wait(1.6).matrix(computeMatrix(PACKAGES.habitat, [{ id: 'PSI-20' }, { id: 'PSI-25' }, { id: 'PSI-98' }]))
+  s.wait(0.3).note('prevent', 'Materials matrix: 2 pass, 1 needs a retest (Nomex, asked WSTF), 4 predicted to burn at 34 % — cotton and PMMA already fail on Earth; silicone seals and nylon pass at 21 % but not here.')
 
   // SIM runs requested by each pillar.
   s.wait(1.0).say('prevent', 'sim', 'ask', `Run spread: Nomex, ${pct(O2)} O₂, ${PSI} psia, ${FLOW} cm/s, Moon g.`)
@@ -161,7 +181,7 @@ export function habitatReview() {
   )
 
   // SCRIBE assembles the dossier.
-  s.wait(0.6).sub('S7', { status: 'running' }).task('t-s7', 'flight', 'scribe', 'S7 · Assemble the Fire Safety Dossier')
+  s.wait(0.6).sub('S7', { status: 'running' }).task('t-s7', 'flight', 'scribe', 'S7 · Draft the fire hazard report')
   s.wait(0.6).tool('scribe', 'chart_make', { kind: 'limiting-O₂ vs material', atmospheres: ['21 %', '26.5 %', '30 %', '34 %'] }, { ok: true }, 1.2)
   s.wait(1.0).dossier({
     id: 'summary',
@@ -252,8 +272,8 @@ export function habitatReview() {
       'The same physics drives oxygen-enriched hospital rooms, submarines and hyperbaric chambers. NASA fire work already gave Earth fine water-mist extinguishers, smoke detectors that tell smoke from dust, firefighter air tanks and protective clothing.',
     ],
   })
-  s.wait(0.6).state('t-s7', 'completed', 'dossier assembled').sub('S7', { status: 'done' })
-  s.wait(0.6).say('flight', HUMAN, 'reply', 'Dossier ready: NOT certifiable as specified; four changes listed, each traced to PSI evidence.')
-  s.wait(0.3).done('Fire Safety Dossier delivered')
+  s.wait(0.6).state('t-s7', 'completed', 'hazard report drafted').sub('S7', { status: 'done' })
+  s.wait(0.6).say('flight', HUMAN, 'reply', 'Draft hazard report is ready for your sign-off: NOT certifiable as specified. Four changes and one lab retest, each traced to evidence.')
+  s.wait(0.3).done('Draft hazard report delivered')
   return s.build()
 }

@@ -1,7 +1,7 @@
 // A tiny DSL for writing demo runs as timelines of Lagrange entries.
 // Times are script seconds at 1×. Anyone on the team can edit a scenario without touching the UI.
 import { HUMAN } from '@/demo/crew'
-import type { Alarm, CaseFile, CaseItem, CommKind, Cite, DossierSection, Entry, Plan, Ranked, SimRun, Subtask, Verdict } from './types'
+import type { Alarm, MatrixRow, TestRequest, CaseFile, CaseItem, CommKind, Cite, DossierSection, Entry, Plan, Ranked, SimRun, Subtask, Verdict } from './types'
 
 export type Beat = { t: number; e: Omit<Entry, 'seq' | 'at'>; gate?: { auto: number } }
 
@@ -92,6 +92,14 @@ export class Script {
 
   dossier(section: DossierSection) {
     return this.push({ kind: 'artifact', sender: section.author, data: { name: 'fc.dossier', section } })
+  }
+
+  matrix(rows: MatrixRow[], by = 'prevent') {
+    return this.push({ kind: 'artifact', sender: by, data: { name: 'fc.matrix', rows } })
+  }
+
+  testRequest(request: TestRequest, by = 'prevent') {
+    return this.push({ kind: 'artifact', sender: by, data: { name: 'fc.testreq', request } })
   }
 
   alarm(alarm: Omit<Alarm, 'at'>) {

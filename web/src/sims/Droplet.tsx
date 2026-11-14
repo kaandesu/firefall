@@ -73,7 +73,7 @@ export function DropletScene({ o2, co2, d0, showCool, onState }: { o2: number; c
         <shaderMaterial vertexShader={shellVert} fragmentShader={shellFrag} uniforms={coolU} transparent depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
       {!m.burns && (
-        <Html center position={[0, -1.3, 0]} className="pointer-events-none">
+        <Html zIndexRange={[20, 0]} center position={[0, -1.3, 0]} className="pointer-events-none">
           <div className="mono whitespace-nowrap rounded bg-k-reply/15 px-1.5 py-0.5 text-[10px] text-k-reply">no sustained flame — below LOI</div>
         </Html>
       )}

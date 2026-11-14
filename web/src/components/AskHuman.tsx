@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useMission } from '@/live/store'
 import { AgentTag, Avatar } from './bits'
 
-/** FLIGHT's ask_human: the run is INPUT_REQUIRED until you answer (the demo answers itself after a few seconds). */
+/** The Review Lead's ask_human: the run is INPUT_REQUIRED until you answer (the demo answers itself after a few seconds). */
 export function AskHuman({ compact = false }: { compact?: boolean }) {
   const w = useMission((s) => s.model.waiting)
   const answer = useMission((s) => s.answer)
@@ -22,11 +22,11 @@ export function AskHuman({ compact = false }: { compact?: boolean }) {
     <motion.div
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glow-flame rounded-lg border border-k-ask/50 bg-[color-mix(in_oklab,var(--k-ask)_8%,var(--surface-2))] p-3"
+      className="rounded-lg border border-warn/40 bg-warn/5 p-3"
     >
       <div className="flex items-center gap-2">
-        <Hand size={14} className="text-k-ask" />
-        <span className="mono text-[10px] uppercase tracking-widest text-k-ask">Input required</span>
+        <Hand size={14} className="text-warn" />
+        <span className="text-[12px] font-medium text-warn">Your decision is needed</span>
         <span className="ml-auto flex items-center gap-1.5">
           <Avatar handle={w.from} size={16} />
           <AgentTag handle={w.from} />
@@ -39,7 +39,7 @@ export function AskHuman({ compact = false }: { compact?: boolean }) {
             {o}
           </Button>
         ))}
-        {holding && <span className="mono ml-auto text-[10px] text-faint">auto in {left}s</span>}
+        {holding && <span className="ml-auto text-[11px] text-faint">demo picks the first option in {left}s</span>}
       </div>
     </motion.div>
   )

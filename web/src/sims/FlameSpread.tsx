@@ -122,10 +122,10 @@ export function FlameSpreadScene({ o2, psi, g, flow, material, onState }: { o2: 
           <shaderMaterial vertexShader={sheetVert} fragmentShader={flameFrag} uniforms={flameU} transparent depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
         </mesh>
       </group>
-      <Html position={[-LEN / 2 - 0.1, 1.2, 0]} className="pointer-events-none">
+      <Html zIndexRange={[20, 0]} position={[-LEN / 2 - 0.1, 1.2, 0]} className="pointer-events-none">
         <div className="mono whitespace-nowrap text-[9px] text-k-task">flow {flow.toFixed(0)} cm/s →</div>
       </Html>
-      <Html position={[LEN / 2 - 0.2, -0.25, WID / 2 + 0.2]} className="pointer-events-none">
+      <Html zIndexRange={[20, 0]} position={[LEN / 2 - 0.2, -0.25, WID / 2 + 0.2]} className="pointer-events-none">
         <div className="mono whitespace-nowrap text-[9px] text-white/50">igniter</div>
       </Html>
     </group>

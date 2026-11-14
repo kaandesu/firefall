@@ -2,38 +2,42 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* FIREFALL: dark mission-control. Space-black panels, µg-blue for science, flame-orange for hazard.
-   Message kinds follow Halo (task cyan, ask amber, reply green, review violet, fail red, hub gold). */
+/* FIREFALL: an engineering review tool. Light by default, restrained dark mode.
+   Colour is reserved for meaning: status (pass / retest / fail), message kind, and department identity. */
 :root {
-  --bg: #05070a;
-  --surface: #0a0e13;
-  --surface-2: #0f141b;
-  --surface-3: #151c25;
-  --line: #1b2430;
-  --line-2: #263242;
-  --ink: #e6edf3;
-  --muted: #7d8a99;
-  --faint: #4a5665;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f8f9fb;
+  --surface-3: #eef0f4;
+  --line: #e3e6eb;
+  --line-2: #d3d8df;
+  --ink: #16191d;
+  --muted: #5d6673;
+  --faint: #8e96a2;
 
-  --ug: #5aa9ff; /* microgravity blue */
-  --flame: #ff7a3d; /* hazard / flame */
-  --gold: #ffcf6b; /* lagrange hub */
-  --k-task: #56d4ef;
-  --k-ask: #ffb547;
-  --k-reply: #7ee787;
-  --k-review: #c9a2ff;
-  --k-fail: #ff6b6b;
-  --k-hub: #ffcf6b;
+  --ug: #2f6fd6; /* primary / science */
+  --flame: #d4541f; /* hazard */
+  --gold: #a16207;
+  --k-task: #0e7490;
+  --k-ask: #b45309;
+  --k-reply: #15803d;
+  --k-review: #7c3aed;
+  --k-fail: #dc2626;
+  --k-hub: #a16207;
+  --ok: #15803d;
+  --warn: #b45309;
+  --bad: #dc2626;
+  --viewport: #0b0f14; /* 3D viewports stay dark in both themes, like a CAD viewport */
 
-  --radius: 0.6rem;
+  --radius: 0.5rem;
   --background: var(--bg);
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
-  --popover: var(--surface-2);
+  --popover: var(--surface);
   --popover-foreground: var(--ink);
   --primary: var(--ug);
-  --primary-foreground: #04101e;
+  --primary-foreground: #ffffff;
   --secondary: var(--surface-3);
   --secondary-foreground: var(--ink);
   --muted-foreground: var(--muted);
@@ -45,9 +49,35 @@
   --ring: var(--ug);
 }
 
+.dark {
+  --bg: #0e1013;
+  --surface: #15181c;
+  --surface-2: #1a1e23;
+  --surface-3: #22272d;
+  --line: #2a3037;
+  --line-2: #363d46;
+  --ink: #e7eaee;
+  --muted: #9aa3ae;
+  --faint: #69727d;
+
+  --ug: #6aa2f5;
+  --flame: #f0824f;
+  --gold: #e3b341;
+  --k-task: #4fb8d1;
+  --k-ask: #e9a23b;
+  --k-reply: #4cc47a;
+  --k-review: #a78bfa;
+  --k-fail: #f26d6d;
+  --k-hub: #e3b341;
+  --ok: #4cc47a;
+  --warn: #e9a23b;
+  --bad: #f26d6d;
+  --primary-foreground: #0b1220;
+}
+
 @theme inline {
-  --font-sans: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -64,6 +94,10 @@
   --color-k-reply: var(--k-reply);
   --color-k-review: var(--k-review);
   --color-k-fail: var(--k-fail);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-viewport: var(--viewport);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -100,50 +134,42 @@
   }
   body {
     @apply bg-bg text-ink font-sans antialiased;
-    background:
-      radial-gradient(1200px 600px at 70% -10%, color-mix(in oklab, var(--ug) 7%, transparent), transparent 60%),
-      radial-gradient(900px 500px at -10% 110%, color-mix(in oklab, var(--flame) 6%, transparent), transparent 60%),
-      var(--bg);
+    font-feature-settings: "cv11", "ss01";
     overflow: hidden;
   }
   ::selection {
-    background: color-mix(in oklab, var(--ug) 35%, transparent);
+    background: color-mix(in oklab, var(--ug) 25%, transparent);
   }
 }
 
 @layer utilities {
   .mono {
     font-family: var(--font-mono);
+    font-feature-settings: "zero";
+  }
+  .tnum {
+    font-variant-numeric: tabular-nums;
   }
   .scroll-thin {
     scrollbar-width: thin;
     scrollbar-color: var(--line-2) transparent;
   }
-  .glow-ug {
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--ug) 40%, transparent), 0 0 24px -6px color-mix(in oklab, var(--ug) 60%, transparent);
-  }
-  .glow-flame {
-    box-shadow: 0 0 0 1px color-mix(in oklab, var(--flame) 45%, transparent), 0 0 28px -6px color-mix(in oklab, var(--flame) 70%, transparent);
-  }
-  .grid-bg {
-    background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--line) 55%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--line) 55%, transparent) 1px, transparent 1px);
-    background-size: 28px 28px;
+  .label {
+    @apply text-[11px] font-medium uppercase tracking-wide text-muted-foreground;
   }
 }
 
 @keyframes pulse-ring {
-  0% { transform: scale(0.9); opacity: 0.9; }
-  100% { transform: scale(1.6); opacity: 0; }
+  0% { transform: scale(0.9); opacity: 0.8; }
+  100% { transform: scale(1.8); opacity: 0; }
 }
 .pulse-ring::after {
   content: "";
   position: absolute;
-  inset: -3px;
+  inset: -2px;
   border-radius: inherit;
   border: 1.5px solid currentColor;
-  animation: pulse-ring 1.4s ease-out infinite;
+  animation: pulse-ring 1.6s ease-out infinite;
 }
 
 @media print {

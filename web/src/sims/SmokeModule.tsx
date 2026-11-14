@@ -164,7 +164,7 @@ export function SmokeModuleScene({ g, flow, material, onReadout, running = true 
         <boxGeometry args={[0.35, 0.25, 0.5]} />
         <meshStandardMaterial color="#3a1a10" emissive="#ff5a1f" emissiveIntensity={1.4} />
       </mesh>
-      <Html position={[SOURCE.x, SOURCE.y - 0.35, SOURCE.z]} center className="pointer-events-none">
+      <Html zIndexRange={[20, 0]} position={[SOURCE.x, SOURCE.y - 0.35, SOURCE.z]} center className="pointer-events-none">
         <div className="mono whitespace-nowrap text-[9px] text-flame">{mat.label.split(' (')[0]} · overheating</div>
       </Html>
       {/* crew station + return vent */}
@@ -172,7 +172,7 @@ export function SmokeModuleScene({ g, flow, material, onReadout, running = true 
         <capsuleGeometry args={[0.14, 0.45, 6, 12]} />
         <meshStandardMaterial color="#e6edf3" emissive="#5aa9ff" emissiveIntensity={0.2} />
       </mesh>
-      <Html position={[CREW.x, CREW.y - 0.55, CREW.z]} center className="pointer-events-none">
+      <Html zIndexRange={[20, 0]} position={[CREW.x, CREW.y - 0.55, CREW.z]} center className="pointer-events-none">
         <div className="mono whitespace-nowrap text-[9px] text-white/60">crew station</div>
       </Html>
       <mesh position={[-L + 0.02, 0.55, 0]} rotation={[0, Math.PI / 2, 0]}>
@@ -217,7 +217,7 @@ function DetectorMesh({ d, level }: { d: Detector; level: () => number }) {
         <cylinderGeometry args={[0.11, 0.11, 0.05, 20]} />
         <meshStandardMaterial ref={m} color="#7ee787" />
       </mesh>
-      <Html center position={[0, 0.2, 0]} className="pointer-events-none">
+      <Html zIndexRange={[20, 0]} center position={[0, 0.2, 0]} className="pointer-events-none">
         <div ref={label} className="mono whitespace-nowrap rounded bg-black/55 px-1 text-[9px] text-white/80" />
       </Html>
     </group>

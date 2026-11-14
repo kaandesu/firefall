@@ -3,14 +3,13 @@ import { ChevronRight, Loader2, StickyNote, Wrench, XCircle } from 'lucide-react
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { AgentTag, Avatar, StateDot, fmtTime } from '@/components/bits'
-import { AGENT, CREW, MODEL_COLOR } from '@/demo/crew'
+import { AGENT, MODEL_COLOR } from '@/demo/crew'
 import { useMission } from '@/live/store'
 import type { ToolCall } from '@/live/types'
 import { cn } from '@/lib/utils'
 
 export function WorkspaceView() {
   const handle = useMission((s) => s.selectedAgent)
-  const selectAgent = useMission((s) => s.selectAgent)
   const agents = useMission((s) => s.model.agents)
   const sims = useMission((s) => s.model.sims)
   const dossier = useMission((s) => s.model.dossier)
@@ -26,34 +25,20 @@ export function WorkspaceView() {
   const counts: Record<string, number> = {}
   for (const c of rt.tools) counts[c.tool] = (counts[c.tool] ?? 0) + 1
   const running = new Set(rt.tools.filter((c) => c.status === 'running').map((c) => c.tool))
-  const produced = [...sims.filter((s) => s.by === handle).map((s) => `sim · ${s.label}`), ...dossier.filter((d) => d.author === handle).map((d) => `dossier · ${d.title}`)]
+  const produced = [...sims.filter((s) => s.by === handle).map((s) => `sim · ${s.label}`), ...dossier.filter((d) => d.author === handle).map((d) => `report · ${d.title}`)]
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center gap-1 border-b border-line px-2 py-1.5">
-        {CREW.map((a) => (
-          <button
-            key={a.handle}
-            type="button"
-            onClick={() => selectAgent(a.handle)}
-            className={cn('relative rounded-lg p-0.5 transition', handle === a.handle ? 'bg-surface-3 ring-1 ring-line-2' : 'opacity-55 hover:opacity-100')}
-            title={a.name}
-          >
-            <Avatar handle={a.handle} size={20} />
-            {agents[a.handle]?.state !== 'idle' && <StateDot state={agents[a.handle].state} className="absolute -right-0.5 -top-0.5 size-1.5" />}
-          </button>
-        ))}
-      </div>
       <div className="flex min-h-0 flex-1">
         <aside className="scroll-thin flex w-[38%] min-w-[170px] max-w-[260px] flex-col gap-3 overflow-y-auto border-r border-line p-3">
           <div className="flex items-center gap-2.5">
             <Avatar handle={handle} size={40} />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <AgentTag handle={handle} className="text-[13px]" />
+                <AgentTag handle={handle} className="text-[14px] font-semibold" />
                 <StateDot state={rt.state} />
               </div>
-              <div className="truncate text-[11px] text-muted-foreground">{def.role}</div>
+              <div className="truncate text-[11.5px] text-muted-foreground">{def.dept}</div>
             </div>
           </div>
           <p className="text-[11.5px] leading-snug text-muted-foreground">{def.blurb}</p>
@@ -71,8 +56,8 @@ export function WorkspaceView() {
             <Stat label="calls" value={rt.tools.length} />
           </div>
           <div>
-            <div className="mono mb-1 flex items-center gap-1 text-[10px] uppercase tracking-widest text-faint">
-              <Wrench size={10} /> tools · fire-tools MCP
+            <div className="label mb-1 flex items-center gap-1">
+              <Wrench size={10} /> tools (fire-tools MCP)
             </div>
             <div className="flex flex-col gap-1">
               {def.tools.map((t) => (
@@ -90,7 +75,7 @@ export function WorkspaceView() {
           </div>
           {produced.length > 0 && (
             <div>
-              <div className="mono mb-1 text-[10px] uppercase tracking-widest text-faint">artifacts</div>
+              <div className="label mb-1">produced</div>
               {produced.map((p) => (
                 <div key={p} className="truncate text-[11px] text-muted-foreground">
                   {p}
@@ -112,8 +97,8 @@ export function WorkspaceView() {
               <Call key={x.c.callId} c={x.c} color={def.color} />
             ) : 'n' in x && x.n ? (
               <motion.div key={`n${x.at}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-1.5 flex gap-2 rounded-md border border-dashed border-line-2 bg-surface/40 px-2 py-1.5">
-                <StickyNote size={12} className="mt-0.5 shrink-0 text-gold" />
-                <div className="text-[12px] italic leading-snug text-ink/90">{x.n.text}</div>
+                <StickyNote size={12} className="mt-0.5 shrink-0 text-warn" />
+                <div className="text-[12.5px] leading-snug">{x.n.text}</div>
               </motion.div>
             ) : null,
           )}
@@ -127,7 +112,7 @@ export function WorkspaceView() {
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-md bg-surface-2 px-1.5 py-1">
-      <div className="mono text-[9px] uppercase tracking-wider text-faint">{label}</div>
+      <div className="text-[10px] text-muted-foreground">{label}</div>
       <div className="mono text-[11px]">{value}</div>
     </div>
   )

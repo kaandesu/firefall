@@ -111,6 +111,32 @@ export type Verdict = {
 
 export type CaseFile = { title: string; when: string; where: string; atmosphere: string; summary: string; items: CaseItem[]; verdict?: Verdict }
 
+/** One line of the materials matrix: a bill-of-materials item judged at the target atmosphere and gravity. */
+export type MatrixRow = {
+  id: string
+  item: string
+  material: string
+  location: string
+  qty: string
+  test1: 'pass' | 'fail' | 'none' // NASA-STD-6001 Test 1 at 21 % O₂ / 14.7 psia, 1 g (illustrative MAPTIS-style)
+  limitO2: number // predicted limiting O₂ at the target conditions
+  targetO2: number
+  status: 'pass' | 'retest' | 'fail'
+  action: string
+  cites?: Cite[]
+}
+
+export type TestRequest = {
+  id: string
+  material: string
+  test: string
+  atmosphere: string
+  lab: string
+  reason: string
+  status: 'draft' | 'requested' | 'scheduled'
+  eta?: string
+}
+
 // Payload shapes carried in Entry.data (data.name discriminates).
 export type Payload =
   | { name: 'fc.plan'; plan: Plan }
@@ -122,4 +148,6 @@ export type Payload =
   | { name: 'fc.alarm'; alarm: Alarm }
   | { name: 'fc.comm'; kind: CommKind; text: string; cites?: Cite[] }
   | { name: 'fc.run'; title: string; scenario: string; spec: Record<string, string | number> }
+  | { name: 'fc.matrix'; rows: MatrixRow[] }
+  | { name: 'fc.testreq'; request: TestRequest }
   | { name: 'fc.case'; file?: Omit<CaseFile, 'items' | 'verdict'>; item?: CaseItem; verdict?: Verdict }
