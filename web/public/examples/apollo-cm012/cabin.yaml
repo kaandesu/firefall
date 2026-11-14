@@ -1,0 +1,26 @@
+# Cabin spec · Apollo Command Module CM-012 as configured for the AS-204 plugs-out test, 27 Jan 1967.
+# Sources: Apollo 204 Review Board report (NASA, 1967). Values a review team would pull from the vehicle spec.
+vehicle: Apollo Command Module CM-012
+program: Apollo 1 (AS-204)
+phase: Plugs-out countdown test, Launch Complex 34
+
+atmosphere:
+  o2_pct: 100
+  pressure_psia: 16.7
+
+gravity_g: 1            # on the pad
+volume_m3: 6.2          # habitable volume
+vent_flow_cms: 10       # cabin fans, typical air speed at the materials
+crew: 3
+
+ignition_sources:
+  - id: ecu-wiring
+    zone: wiring
+    note: Damaged wiring near the environmental control unit (most probable source)
+
+hatch:
+  type: inward-opening plug hatch
+  open_time_s: 90       # nominal time to open the inner hatch from the inside
+
+hull:
+  burst_psia: 29        # cabin pressure at which the hull ruptured

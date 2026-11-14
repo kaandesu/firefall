@@ -4,7 +4,19 @@
 import type { Cite, MatrixRow } from '@/live/types'
 import { MATERIALS, limitingO2 } from '@/sims/models'
 
-export type BomItem = { id: string; item: string; material: keyof typeof MATERIALS; location: string; qty: string }
+export type BomItem = {
+  id: string
+  item: string
+  material: keyof typeof MATERIALS
+  location: string
+  qty: string
+  /** The cabin-model zone the part sits in (intake: materials.csv `zone`). */
+  zone?: string
+  /** Metres to the nearest listed ignition source. */
+  distance?: number
+  /** MAPTIS-style rating as supplied (A acceptable, B configuration-dependent, X not tested). */
+  rating?: string
+}
 
 export type DesignPackage = {
   vehicle: string
@@ -19,6 +31,11 @@ export type DesignPackage = {
   ignition: string[]
   existingTests: string[]
   layout: string
+  /** Intake-only extras: where ignition is expected, the hatch and the hull limit. */
+  ignitionZones?: string[]
+  hatch?: { type: string; openTime: number }
+  hull?: { burstPsia: number }
+  volumeM3?: number
 }
 
 const PR2_BOM: BomItem[] = [
@@ -109,6 +126,7 @@ export function computeMatrix(pkg: DesignPackage, cites: Cite[] = [{ id: 'PSI-20
       material: mat.label,
       location: b.location,
       qty: b.qty,
+      zone: b.zone,
       test1,
       limitO2: lim,
       targetO2: pkg.atmosphere.o2,

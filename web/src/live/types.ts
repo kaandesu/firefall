@@ -20,7 +20,7 @@ export type Entry = {
 
 export type CommKind = 'task' | 'ask' | 'reply' | 'review' | 'fail' | 'hub' | 'human'
 
-export type SubtaskStatus = 'pending' | 'running' | 'asking' | 'review' | 'changes' | 'done' | 'failed'
+export type SubtaskStatus = 'pending' | 'running' | 'asking' | 'review' | 'changes' | 'done' | 'failed' | 'skipped'
 
 export type Subtask = {
   id: string
@@ -32,6 +32,11 @@ export type Subtask = {
   round?: number
   escalated?: boolean
   pillar?: Pillar
+  /** Intake files the subtask reads, and what it hands back. */
+  reads?: string[]
+  produces?: string
+  /** The lead will not run without it. */
+  required?: boolean
 }
 
 export type Plan = {
@@ -118,6 +123,7 @@ export type MatrixRow = {
   material: string
   location: string
   qty: string
+  zone?: string
   test1: 'pass' | 'fail' | 'none' // NASA-STD-6001 Test 1 at 21 % O₂ / 14.7 psia, 1 g (illustrative MAPTIS-style)
   limitO2: number // predicted limiting O₂ at the target conditions
   targetO2: number

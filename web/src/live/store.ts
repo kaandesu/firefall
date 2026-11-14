@@ -1,247 +1,306 @@
+// App state: the phase you are in (intake → plan → run → done), the intake files, the run model folded
+// from Lagrange entries, and the Halo-style panel layout (focus + size per panel).
 import { create } from 'zustand'
-import { HUMAN, type PersonDef } from '@/demo/crew'
-import { SCENARIOS, type ScenarioId } from '@/demo/scenarios'
+import { HUMAN } from '@/demo/crew'
+import { apollo1, PLAN_GATE, WHATIF_GATE, type ReviewInput } from '@/demo/apollo1'
+import type { DesignPackage } from '@/demo/packages'
+import { IntakeError, parseCabin, parseMaterials, parseModel, toPackage, type CabinModel, type CabinSpec, type MaterialRow, type Slot } from '@/intake/parse'
+import type { Variant } from '@/stage/physics'
 import { emptyModel, reduce, type Model } from './model'
 import { Replay, type ReplayStatus } from './replay'
 import { LagrangeSource } from './lagrange'
-import type { Entry, SimKind, SimParams, SimRun } from './types'
+import type { Entry, SimRun } from './types'
 
-export type ViewId = 'guide' | 'overview' | 'materials' | 'evidence' | 'sim' | 'report' | 'case' | 'agent'
+export type Phase = 'intake' | 'plan' | 'run' | 'done'
 
-export const VIEWS: { id: ViewId; label: string }[] = [
-  { id: 'guide', label: 'How it works' },
-  { id: 'overview', label: 'Overview' },
-  { id: 'case', label: 'Case file' },
-  { id: 'materials', label: 'Materials' },
-  { id: 'evidence', label: 'Evidence' },
-  { id: 'sim', label: 'Simulations' },
-  { id: 'report', label: 'Hazard report' },
-  { id: 'agent', label: 'Agent' },
+export type SlotState<T> = { name: string; text: string; value?: T; error?: string }
+
+export type Intake = { cabin?: SlotState<CabinSpec>; materials?: SlotState<MaterialRow[]>; model?: SlotState<CabinModel> }
+
+/** Halo's panel ladder: a one-line bar, the default, the whole column, the whole screen. */
+export type Size = 'bar' | 'normal' | 'column' | 'full'
+export const LADDER: Size[] = ['bar', 'normal', 'column', 'full']
+
+export type PanelId = 1 | 2 | 3 | 4 | 5 | 6
+export const PANELS: { id: PanelId; name: string }[] = [
+  { id: 1, name: 'network' },
+  { id: 2, name: 'stage' },
+  { id: 3, name: 'agent' },
+  { id: 4, name: 'plan' },
+  { id: 5, name: 'findings' },
+  { id: 6, name: 'comms' },
 ]
+const DEFAULT_SIZES: Record<PanelId, Size> = { 1: 'normal', 2: 'normal', 3: 'normal', 4: 'bar', 5: 'bar', 6: 'normal' }
 
-/** How much content a tab has, used to show a "new" dot on tabs you are not looking at. */
-export function tabCount(m: Model, v: ViewId): number {
-  switch (v) {
-    case 'overview':
-      return (m.plan?.subtasks.filter((s) => s.status === 'done').length ?? 0) + (m.plan ? 1 : 0)
-    case 'materials':
-      return m.matrix.length + m.tests.length * 10 + m.tests.filter((t) => t.status === 'scheduled').length
-    case 'evidence':
-      return m.ranking.length
-    case 'sim':
-      return m.sims.filter((s) => s.metrics).length
-    case 'report':
-      return m.dossier.length
-    case 'case':
-      return (m.caseFile?.items.length ?? 0) + (m.caseFile?.verdict ? 1 : 0)
-    default:
-      return 0
-  }
-}
+export type Layer = 'materials' | 'spread' | 'pressure' | 'whatif'
 
-export type Params = SimParams & { material: string }
-export type Theme = 'light' | 'dark'
+export const EXAMPLE_DIR = '/examples/apollo-cm012'
+export const EXAMPLE_FILES: Record<Slot, string> = { cabin: 'cabin.yaml', materials: 'materials.csv', model: 'cabin.model.json' }
+export const DEFAULT_REQUEST = 'Would a materials review have caught this cabin before the plugs-out test?'
 
 type State = {
-  scenario: ScenarioId
+  phase: Phase
+  intake: Intake
+  request: string
+  /** Frozen at start: what the run is reviewing. */
+  pkg?: DesignPackage
+  cabin?: CabinModel
+  skip: string[]
   mode: 'demo' | 'live'
-  liveUrl: string
   liveError?: string
   model: Model
   status: ReplayStatus
   speed: number
-  tab: ViewId
-  follow: boolean
-  lastDirect: number
-  seen: Partial<Record<ViewId, number>>
-  chatOpen: boolean
-  theme: Theme
-  people: PersonDef[]
-  params: Params
-  simTab: SimKind
-  simDriver?: SimRun
-  selectedAgent: string
-  selectedInv?: string
+  startedAt?: number
 
-  load: (s: ScenarioId, autoplay?: boolean) => void
+  focus: PanelId
+  sizes: Record<PanelId, Size>
+  help: boolean
+  selectedAgent: string
+  followAgent: boolean
+  openRow?: string
+  hoverZone?: string
+  layer: Layer
+  variant: Variant['id']
+  /** Bumped when an agent asks the stage to play from T+0. */
+  stagePlay: number
+
+  setSlot: (slot: Slot, name: string, text: string) => void
+  clearSlot: (slot: Slot) => void
+  loadExample: () => Promise<void>
+  setRequest: (r: string) => void
+  start: () => void
+  toggleSkip: (id: string) => void
+  approve: () => void
+  answer: (text: string) => void
+  ask: (text: string) => void
   play: () => void
   pause: () => void
   setSpeed: (s: number) => void
-  answer: (text: string) => void
+  reset: () => void
+  showVerdict: (on: boolean) => void
   goLive: (url: string) => void
-  goDemo: () => void
   ingest: (e: Entry) => void
-  setTab: (v: ViewId) => void
-  directTo: (v: ViewId, force?: boolean) => void
-  setFollow: (on: boolean) => void
-  setChatOpen: (on: boolean) => void
-  setTheme: (t: Theme) => void
-  addPerson: (p: Omit<PersonDef, 'handle' | 'added'>) => void
-  removePerson: (handle: string) => void
-  setParams: (p: Partial<Params>) => void
-  setSimTab: (k: SimKind) => void
-  selectAgent: (h: string, open?: boolean) => void
-  selectInv: (id?: string) => void
+
+  focusPanel: (id: PanelId) => void
+  grow: (d: 1 | -1, id?: PanelId) => void
+  setHelp: (on: boolean) => void
+  selectAgent: (h: string) => void
+  cycleAgent: (d: 1 | -1) => void
+  toggleRow: (id?: string) => void
+  setHoverZone: (z?: string) => void
+  setLayer: (l: Layer) => void
+  setVariant: (v: Variant['id']) => void
 }
 
 let replay: Replay | null = null
 let live: LagrangeSource | null = null
+let doneTimer: ReturnType<typeof setTimeout> | null = null
 
 const idleStatus: ReplayStatus = { playing: false, t: 0, total: 0, holding: false, finished: false }
 
-const DEFAULT_PARAMS: Params = { o2: 0.34, psi: 8.2, g: 0.165, flow: 8, material: 'nomex', co2: 0, diameter: 2.5 }
-
-function savedTheme(): Theme {
+function parseSlot(slot: Slot, text: string): { value?: unknown; error?: string } {
   try {
-    return localStorage.getItem('firefall-theme') === 'dark' ? 'dark' : 'light'
-  } catch {
-    return 'light'
+    const value = slot === 'cabin' ? parseCabin(text) : slot === 'materials' ? parseMaterials(text) : parseModel(text)
+    return { value }
+  } catch (e) {
+    return { error: e instanceof IntakeError ? e.message : `Could not read the file: ${(e as Error).message}` }
   }
 }
 
+/** The handles the run involves, in the order the network shows them. */
+export function runAgents(m: Model): string[] {
+  const hs = ['flight', ...(m.plan?.subtasks.map((s) => s.agent) ?? [])]
+  return [...new Set(hs)]
+}
+
 export const useMission = create<State>((set, get) => ({
-  scenario: 'habitat',
+  phase: 'intake',
+  intake: {},
+  request: DEFAULT_REQUEST,
+  skip: [],
   mode: 'demo',
-  liveUrl: '/api/lagrange',
   model: emptyModel(),
   status: idleStatus,
   speed: 1,
-  tab: 'guide',
-  follow: true,
-  lastDirect: 0,
-  seen: {},
-  chatOpen: true,
-  theme: savedTheme(),
-  people: [],
-  params: DEFAULT_PARAMS,
-  simTab: 'flame',
+  focus: 2,
+  sizes: { ...DEFAULT_SIZES },
+  help: false,
   selectedAgent: 'flight',
+  followAgent: true,
+  layer: 'materials',
+  variant: 'as-built',
+  stagePlay: 0,
 
-  load: (scenario, autoplay = false) => {
+  setSlot: (slot, name, text) => set((s) => ({ intake: { ...s.intake, [slot]: { name, text, ...parseSlot(slot, text) } } })),
+  clearSlot: (slot) => set((s) => ({ intake: { ...s.intake, [slot]: undefined } })),
+  loadExample: async () => {
+    const entries = await Promise.all(
+      (Object.entries(EXAMPLE_FILES) as [Slot, string][]).map(async ([slot, f]) => {
+        const res = await fetch(`${EXAMPLE_DIR}/${f}`)
+        return [slot, f, await res.text()] as const
+      }),
+    )
+    for (const [slot, f, text] of entries) get().setSlot(slot, f, text)
+    set({ request: DEFAULT_REQUEST })
+  },
+  setRequest: (request) => set({ request }),
+
+  start: () => {
+    const { intake } = get()
+    const spec = intake.cabin?.value
+    const rows = intake.materials?.value
+    const cabin = intake.model?.value
+    if (!spec || !rows || !cabin) return
+    const pkg = toPackage(spec, rows)
     replay?.dispose()
     live?.close()
     live = null
-    const sc = SCENARIOS[scenario]
-    const keepGuide = get().tab === 'guide' && !autoplay
     set({
-      scenario,
+      phase: 'plan',
       mode: 'demo',
+      pkg,
+      cabin,
+      skip: [],
       model: emptyModel(),
       status: idleStatus,
-      params: { ...DEFAULT_PARAMS, ...sc.params },
-      simTab: sc.simTab,
-      simDriver: undefined,
+      startedAt: Date.now(),
+      sizes: { ...DEFAULT_SIZES },
+      focus: 2,
       selectedAgent: 'flight',
-      selectedInv: undefined,
-      seen: {},
-      tab: keepGuide ? 'guide' : sc.kind === 'case' ? 'case' : 'overview',
+      followAgent: true,
+      openRow: undefined,
+      layer: 'materials',
+      variant: 'as-built',
     })
-    replay = new Replay(sc.build(), (e) => get().ingest(e), (status) => set({ status }))
+    replay = new Replay(apollo1(input(get())), (e) => get().ingest(e), (status) => set({ status }))
     replay.setSpeed(get().speed)
-    if (autoplay) replay.play()
+    replay.play()
   },
-  play: () => {
-    if (!replay) get().load(get().scenario)
-    if (get().status.finished) get().load(get().scenario)
-    if (get().tab === 'guide') set({ tab: SCENARIOS[get().scenario].kind === 'case' ? 'case' : 'overview' })
-    replay?.play()
+  toggleSkip: (id) => {
+    const sub = get().model.plan?.subtasks.find((s) => s.id === id)
+    if (!sub || sub.required || get().model.plan?.approved) return
+    set((s) => ({ skip: s.skip.includes(id) ? s.skip.filter((x) => x !== id) : [...s.skip, id] }))
   },
+  approve: () => {
+    const s = get()
+    if (s.model.waiting?.taskId !== PLAN_GATE) return
+    if (s.mode === 'live') {
+      live?.answer(PLAN_GATE, 'Approve plan')
+      return
+    }
+    // The skipped subtasks change what comes after the gate.
+    replay?.swap(apollo1(input(s)))
+    const off = s.skip.length ? ` (switched off: ${s.skip.join(', ')})` : ''
+    replay?.answer(`Approve plan${off}`)
+    set({ phase: 'run', startedAt: Date.now() })
+  },
+  answer: (text) => {
+    const s = get()
+    const w = s.model.waiting
+    if (!w) return
+    if (w.taskId === PLAN_GATE) return s.approve()
+    if (s.mode === 'live') {
+      live?.answer(w.taskId, text)
+      return
+    }
+    if (w.taskId === WHATIF_GATE) replay?.swap(apollo1({ ...input(s), whatIf: !/skip/i.test(text) }))
+    replay?.answer(text)
+  },
+  ask: (text) => {
+    const t = text.trim()
+    if (!t || !replay) return
+    replay.inject({ kind: 'message', sender: HUMAN, recipient: 'flight', data: { name: 'fc.comm', kind: 'human', text: t } })
+    const m = get().model
+    const reply = leadReply(t, m)
+    setTimeout(() => replay?.inject({ kind: 'message', sender: 'flight', recipient: HUMAN, data: { name: 'fc.comm', kind: 'reply', text: reply } }), 1100)
+  },
+  play: () => replay?.play(),
   pause: () => replay?.pause(),
   setSpeed: (speed) => {
     replay?.setSpeed(speed)
     set({ speed })
   },
-  answer: (text) => {
-    if (get().mode === 'live') {
-      const w = get().model.waiting
-      if (w) live?.answer(w.taskId, text)
-      return
-    }
-    replay?.answer(text)
+  reset: () => {
+    replay?.dispose()
+    replay = null
+    live?.close()
+    live = null
+    if (doneTimer) clearTimeout(doneTimer)
+    set({ phase: 'intake', model: emptyModel(), status: idleStatus, pkg: undefined, cabin: undefined, skip: [] })
   },
+  showVerdict: (on) => set({ phase: on ? 'done' : 'run' }),
   goLive: (url) => {
     replay?.dispose()
     replay = null
     live?.close()
-    set({ mode: 'live', liveUrl: url, liveError: undefined, model: emptyModel(), status: idleStatus })
+    set({ mode: 'live', phase: 'plan', liveError: undefined, model: emptyModel(), status: idleStatus })
     live = new LagrangeSource(url, (e) => get().ingest(e), (err) => set({ liveError: err }))
-    live.open()
+    void live.open()
   },
-  goDemo: () => get().load(get().scenario),
 
   ingest: (e) => {
-    const s = get()
-    const model = reduce(s.model, e)
+    const prev = get().model
+    const model = reduce(prev, e)
+    if (model === prev) return
     set({ model })
-    // Keep the tab you are looking at marked as read.
-    set((st) => ({ seen: { ...st.seen, [st.tab]: tabCount(model, st.tab) } }))
     const d = e.data ?? {}
-    if (e.kind === 'task' && e.recipient === HUMAN && /INPUT_REQUIRED/.test(e.state ?? '')) set({ chatOpen: true })
-    if (e.kind !== 'artifact') return
-    switch (d.name) {
-      case 'fc.plan':
-        if (!s.model.plan) s.directTo('overview')
-        break
-      case 'fc.matrix':
-        s.directTo('materials', true)
-        break
-      case 'fc.evidence':
-        s.directTo('evidence')
-        break
-      case 'fc.sim': {
-        const run = d.run as SimRun
-        if (!run.metrics) {
-          set({ simDriver: run, simTab: run.sim, params: { ...get().params, ...(run.params as Partial<Params>) } })
-          s.directTo('sim', true)
-        }
-        break
-      }
-      case 'fc.alarm':
-        set({ simTab: 'smoke' })
-        s.directTo('sim', true)
-        break
-      case 'fc.case':
-        if (d.verdict || !s.model.caseFile) s.directTo('case', true)
-        break
-      case 'fc.dossier':
-        if (s.model.dossier.length === 0) s.directTo('report', true)
-        break
-      case 'fc.tool': {
-        const call = d.call as { agent: string; status: string }
-        if (s.follow && call.status === 'running') set({ selectedAgent: call.agent })
-        break
-      }
+    const s = get()
+    if (model.plan?.approved && s.phase === 'plan') set({ phase: 'run' })
+    if (model.done && !prev.done) {
+      if (doneTimer) clearTimeout(doneTimer)
+      doneTimer = setTimeout(() => get().phase === 'run' && set({ phase: 'done' }), 2200)
+    }
+    if (e.kind === 'artifact' && d.name === 'fc.tool') {
+      const call = d.call as { agent: string; status: string }
+      if (s.followAgent && call.status === 'running') set({ selectedAgent: call.agent })
+    }
+    if (e.kind === 'artifact' && d.name === 'fc.matrix') set({ sizes: { ...get().sizes, 5: get().sizes[5] === 'bar' ? 'normal' : get().sizes[5] } })
+    if (e.kind === 'artifact' && d.name === 'fc.sim') {
+      const run = d.run as SimRun
+      if (run.id === 'cabin-spread' && !run.metrics) set({ layer: 'spread', variant: 'as-built', stagePlay: get().stagePlay + 1 })
+      if (run.id === 'cabin-pressure') set({ layer: 'pressure' })
+      if (run.id === 'cabin-whatif') set({ layer: 'whatif', variant: '60-40', stagePlay: get().stagePlay + 1 })
     }
   },
 
-  setTab: (tab) => set((s) => ({ tab, seen: { ...s.seen, [tab]: tabCount(s.model, tab) } })),
-  directTo: (v, force = false) => {
-    const s = get()
-    // Event-driven navigation: only while following the run. Clicks use setTab.
-    if (!s.follow) return
-    if (s.tab === 'guide' && !s.status.playing) return
-    const now = Date.now()
-    if (!force && now - s.lastDirect < 3000) return
-    set({ tab: v, lastDirect: now, seen: { ...s.seen, [v]: tabCount(s.model, v) } })
+  focusPanel: (id) =>
+    set((s) => {
+      // Like Halo: moving the focus puts grown panels back to normal; bars stay bars.
+      const sizes = { ...s.sizes }
+      for (const p of PANELS) if (LADDER.indexOf(sizes[p.id]) > 1) sizes[p.id] = 'normal'
+      return { focus: id, sizes }
+    }),
+  grow: (d, id) =>
+    set((s) => {
+      const p = id ?? s.focus
+      const i = Math.max(0, Math.min(LADDER.length - 1, LADDER.indexOf(s.sizes[p]) + d))
+      const sizes = { ...s.sizes, [p]: LADDER[i] }
+      if (LADDER[i] === 'full' || LADDER[i] === 'column') for (const q of PANELS) if (q.id !== p && LADDER.indexOf(sizes[q.id]) > 1) sizes[q.id] = 'normal'
+      return { sizes, focus: p }
+    }),
+  setHelp: (help) => set({ help }),
+  selectAgent: (selectedAgent) => set({ selectedAgent, followAgent: false }),
+  cycleAgent: (d) => {
+    const hs = runAgents(get().model)
+    const i = hs.indexOf(get().selectedAgent)
+    set({ selectedAgent: hs[(i + d + hs.length) % hs.length], followAgent: false })
   },
-  setFollow: (follow) => set({ follow }),
-  setChatOpen: (chatOpen) => set({ chatOpen }),
-  setTheme: (theme) => {
-    try {
-      localStorage.setItem('firefall-theme', theme)
-    } catch {
-      /* private mode: theme still applies for this session */
-    }
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    set({ theme })
-  },
-  addPerson: (p) => set((s) => ({ people: [...s.people, { ...p, handle: `p-${Date.now().toString(36)}`, added: true }] })),
-  removePerson: (handle) => set((s) => ({ people: s.people.filter((p) => p.handle !== handle) })),
-  setParams: (p) => set((s) => ({ params: { ...s.params, ...p }, simDriver: undefined })),
-  setSimTab: (simTab) => set({ simTab }),
-  selectAgent: (selectedAgent, open = false) => {
-    set({ selectedAgent })
-    if (open) get().setTab('agent')
-  },
-  selectInv: (selectedInv) => set({ selectedInv }),
+  toggleRow: (id) => set((s) => ({ openRow: s.openRow === id ? undefined : id })),
+  setHoverZone: (hoverZone) => set({ hoverZone }),
+  setLayer: (layer) => set({ layer }),
+  setVariant: (variant) => set({ variant, stagePlay: get().stagePlay + 1 }),
 }))
+
+function input(s: State): ReviewInput {
+  return { pkg: s.pkg!, model: s.cabin!, request: s.request, skip: s.skip }
+}
+
+/** Demo stand-in for the lead's answer when you type into "ask the lead". */
+function leadReply(q: string, m: Model): string {
+  const fails = m.matrix.filter((r) => r.status === 'fail').length
+  if (/hatch|egress|escape|door/i.test(q)) return 'The hatch is outside what combustion data can judge. Safety Assurance flagged it; it stays in the verdict as a known gap.'
+  if (/why|burn|o2|oxygen|material/i.test(q)) return m.matrix.length ? `${fails} of ${m.matrix.length} materials are below their limiting O₂ here. Open a row in Findings for the margin and the source.` : 'Materials is still on it. The matrix lands in Findings when it is done.'
+  if (/micro|µg|orbit|moon|base/i.test(q)) return 'The what-if step re-runs this cabin in µg and at base camp. It comes after the scope check.'
+  return 'Noted. I will fold that into the review; ask me about materials, the spread, or the hatch.'
+}

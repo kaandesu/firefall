@@ -1,0 +1,8 @@
+part,material,rating,zone,quantity,distance_to_ignition_m
+Debris nets,nylon,X,netting,several,0.4
+Velcro patches,nylon,X,walls,≈ 3 m²,0.9
+Crew garments and couch pads,cotton,X,couches,3 sets,1.0
+Polyurethane foam pads,pmma,X,floor,several,0.6
+Wiring insulation,teflon,A,wiring,several km,0.0
+Hatch seals,silicone,A,hatch,2.2 m,2.5
+Flight data file (paper),cotton,X,leb,1 set,0.8

@@ -14,7 +14,7 @@ export class Replay {
   private last = 0
   private hold: { beat: Beat; since: number } | null = null
   speed = 1
-  readonly total: number
+  total: number
 
   constructor(
     private beats: Beat[],
@@ -49,6 +49,23 @@ export class Replay {
     this.pause()
   }
 
+  /** Replace the beats still to come (the answer to a gate changed the rest of the run). The beats already played must match. */
+  swap(beats: Beat[]) {
+    this.beats = beats
+    this.total = beats.length ? beats[beats.length - 1].t : 0
+    this.status()
+  }
+
+  /** The id of the task the replay is holding on, if any. */
+  get holdingOn() {
+    return this.hold?.beat.e.taskId
+  }
+
+  /** Emit an entry now, outside the timeline (things the human does: chat, an answer). */
+  inject(e: Beat['e']) {
+    this.out(e)
+  }
+
   /** The human answered the held question. */
   answer(text: string) {
     if (!this.hold) return
@@ -69,7 +86,8 @@ export class Replay {
     this.last = now
     if (this.hold) {
       const options = (this.hold.beat.e.data?.options as string[]) ?? ['Approve']
-      if ((now - this.hold.since) / 1000 >= (this.hold.beat.gate?.auto ?? 9) / Math.max(1, this.speed / 2)) this.answer(`${options[0]} (auto)`)
+      const auto = this.hold.beat.gate?.auto ?? 9
+      if (Number.isFinite(auto) && (now - this.hold.since) / 1000 >= auto / Math.max(1, this.speed / 2)) this.answer(`${options[0]} (auto)`)
       return
     }
     this.t = Math.min(this.total, this.t + dt * this.speed)

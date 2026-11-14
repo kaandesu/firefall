@@ -1,19 +1,19 @@
+// The earlier rover scenarios. Hidden from the UI (v3 runs one case, Apollo CM-012, from intake files),
+// kept so they can come back once the intake supports rover cabins.
 import type { Beat } from '@/live/script'
-import type { SimKind } from '@/live/types'
-import type { Params } from '@/live/store'
-import { apollo1 } from './apollo1'
+import type { SimKind, SimParams } from '@/live/types'
 import { habitatReview } from './habitat-review'
 import { roverIncident } from './rover-incident'
 
-export type ScenarioId = 'habitat' | 'incident' | 'apollo1'
+export type ScenarioId = 'habitat' | 'incident'
 
 export type Scenario = {
   id: ScenarioId
   title: string
   tagline: string
-  kind: 'review' | 'incident' | 'case'
+  kind: 'review' | 'incident'
   build: () => Beat[]
-  params: Partial<Params>
+  params: Partial<SimParams>
   simTab: SimKind
 }
 
@@ -35,14 +35,5 @@ export const SCENARIOS: Record<ScenarioId, Scenario> = {
     build: roverIncident,
     params: { o2: 0.34, psi: 8.2, g: 0.165, flow: 0, material: 'kapton' },
     simTab: 'smoke',
-  },
-  apollo1: {
-    id: 'apollo1',
-    title: 'Apollo 1 · case file',
-    kind: 'case',
-    tagline: '1967 pad fire — would a materials review have caught it?',
-    build: apollo1,
-    params: { o2: 1, psi: 16.7, g: 1, flow: 10, material: 'cotton' },
-    simTab: 'flame',
   },
 }

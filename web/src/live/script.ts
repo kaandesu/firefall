@@ -76,9 +76,11 @@ export class Script {
     return this.push({ kind: 'artifact', taskId: this.root, sender: 'flight', data: { name: 'fc.plan', plan: structuredClone(this.plan) } })
   }
 
-  approve() {
+  /** The human approved the plan; subtasks they switched off are marked skipped. */
+  approve(skip: string[] = []) {
     if (!this.plan) throw new Error('no plan')
     this.plan.approved = true
+    this.plan.subtasks = this.plan.subtasks.map((s) => (skip.includes(s.id) ? { ...s, status: 'skipped' } : s))
     return this.push({ kind: 'artifact', taskId: this.root, sender: 'flight', data: { name: 'fc.plan', plan: structuredClone(this.plan) } })
   }
 
@@ -118,7 +120,7 @@ export class Script {
     return this.push({ kind: 'artifact', sender: 'flight', data: { name: 'fc.case', verdict } })
   }
 
-  /** FLIGHT asks you something. The replay holds here until you answer (or `auto` seconds pass). */
+  /** FLIGHT asks you something. The replay holds here until you answer (or `auto` seconds pass; Infinity waits for you). */
   askHuman(id: string, question: string, options: string[], auto = 9) {
     this.push({ kind: 'task', taskId: id, parentTaskId: this.root, sender: 'flight', recipient: HUMAN, state: 'TASK_STATE_SUBMITTED', summary: question })
     return this.push(

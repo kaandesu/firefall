@@ -1,43 +1,44 @@
 @import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
 
-@custom-variant dark (&:is(.dark *));
-
-/* FIREFALL: an engineering review tool. Light by default, restrained dark mode.
-   Colour is reserved for meaning: status (pass / retest / fail), message kind, and department identity. */
+/* FIREFALL v3: Halo terminal style. Space-black, box-frame panels, mono type.
+   Colour carries meaning only: message kind (task cyan, ask amber, reply green, review violet, fail red, hub gold),
+   material status (pass green, retest amber, fail red) and department identity. */
 :root {
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --surface-2: #f8f9fb;
-  --surface-3: #eef0f4;
-  --line: #e3e6eb;
-  --line-2: #d3d8df;
-  --ink: #16191d;
-  --muted: #5d6673;
-  --faint: #8e96a2;
+  color-scheme: dark;
+  --bg: #05070a;
+  --surface: #0a0e13;
+  --surface-2: #0f141b;
+  --surface-3: #151c25;
+  --line: #1b2430;
+  --line-2: #263242;
+  --ink: #e6edf3;
+  --muted: #7d8a99;
+  --faint: #4a5665;
 
-  --ug: #2f6fd6; /* primary / science */
-  --flame: #d4541f; /* hazard */
-  --gold: #a16207;
-  --k-task: #0e7490;
-  --k-ask: #b45309;
-  --k-reply: #15803d;
-  --k-review: #7c3aed;
-  --k-fail: #dc2626;
-  --k-hub: #a16207;
-  --ok: #15803d;
-  --warn: #b45309;
-  --bad: #dc2626;
-  --viewport: #0b0f14; /* 3D viewports stay dark in both themes, like a CAD viewport */
+  --ug: #5aa9ff; /* microgravity blue: focus, science */
+  --flame: #ff7a3d; /* hazard */
+  --gold: #ffcf6b; /* lagrange hub */
+  --k-task: #56d4ef;
+  --k-ask: #ffb547;
+  --k-reply: #7ee787;
+  --k-review: #c9a2ff;
+  --k-fail: #ff6b6b;
+  --k-hub: #ffcf6b;
+  --ok: #7ee787;
+  --warn: #ffb547;
+  --bad: #ff6b6b;
+  --viewport: #030508;
 
-  --radius: 0.5rem;
+  --radius: 0.25rem;
   --background: var(--bg);
   --foreground: var(--ink);
   --card: var(--surface);
   --card-foreground: var(--ink);
-  --popover: var(--surface);
+  --popover: var(--surface-2);
   --popover-foreground: var(--ink);
   --primary: var(--ug);
-  --primary-foreground: #ffffff;
+  --primary-foreground: #04101e;
   --secondary: var(--surface-3);
   --secondary-foreground: var(--ink);
   --muted-foreground: var(--muted);
@@ -49,35 +50,9 @@
   --ring: var(--ug);
 }
 
-.dark {
-  --bg: #0e1013;
-  --surface: #15181c;
-  --surface-2: #1a1e23;
-  --surface-3: #22272d;
-  --line: #2a3037;
-  --line-2: #363d46;
-  --ink: #e7eaee;
-  --muted: #9aa3ae;
-  --faint: #69727d;
-
-  --ug: #6aa2f5;
-  --flame: #f0824f;
-  --gold: #e3b341;
-  --k-task: #4fb8d1;
-  --k-ask: #e9a23b;
-  --k-reply: #4cc47a;
-  --k-review: #a78bfa;
-  --k-fail: #f26d6d;
-  --k-hub: #e3b341;
-  --ok: #4cc47a;
-  --warn: #e9a23b;
-  --bad: #f26d6d;
-  --primary-foreground: #0b1220;
-}
-
 @theme inline {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Schibsted Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "DM Mono", ui-monospace, SFMono-Regular, monospace;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -117,9 +92,9 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  --radius-sm: calc(var(--radius) - 1px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
 }
 
@@ -133,19 +108,29 @@
     height: 100%;
   }
   body {
-    @apply bg-bg text-ink font-sans antialiased;
-    font-feature-settings: "cv11", "ss01";
+    @apply bg-bg text-ink antialiased;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background:
+      radial-gradient(1200px 600px at 70% -10%, color-mix(in oklab, var(--ug) 6%, transparent), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, color-mix(in oklab, var(--flame) 5%, transparent), transparent 60%),
+      var(--bg);
     overflow: hidden;
   }
   ::selection {
-    background: color-mix(in oklab, var(--ug) 25%, transparent);
+    background: color-mix(in oklab, var(--ug) 35%, transparent);
+  }
+  button {
+    cursor: pointer;
   }
 }
 
 @layer utilities {
   .mono {
     font-family: var(--font-mono);
-    font-feature-settings: "zero";
+  }
+  .sans {
+    font-family: var(--font-sans);
   }
   .tnum {
     font-variant-numeric: tabular-nums;
@@ -155,21 +140,128 @@
     scrollbar-color: var(--line-2) transparent;
   }
   .label {
-    @apply text-[11px] font-medium uppercase tracking-wide text-muted-foreground;
+    @apply text-[10.5px] uppercase tracking-[0.12em] text-faint;
+  }
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, color-mix(in oklab, var(--line) 55%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in oklab, var(--line) 55%, transparent) 1px, transparent 1px);
+    background-size: 28px 28px;
   }
 }
 
+@layer components {
+/* ── box-frame panel: the title sits on the top border, like Halo's ┌ 1 PLAN ───┐ ── */
+.pane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--surface) 82%, transparent);
+}
+.pane[data-focus="true"] {
+  border-color: color-mix(in oklab, var(--ug) 70%, var(--line-2));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--ug) 18%, transparent), 0 0 28px -10px color-mix(in oklab, var(--ug) 55%, transparent);
+}
+.pane-head {
+  position: absolute;
+  top: -0.62em;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.2;
+  pointer-events: none;
+  z-index: 5;
+}
+.pane-head > * {
+  pointer-events: auto;
+  background: var(--bg);
+  padding: 0 5px;
+}
+
+}
+
+/* ── network graph ── */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-edge-stroke: var(--line-2);
+  --xy-node-background-color: transparent;
+  --xy-node-border: none;
+  --xy-controls-button-background-color: var(--surface-2);
+  --xy-controls-button-color: var(--ink);
+  --xy-controls-button-border-color: var(--line);
+}
+.react-flow__node {
+  font-family: var(--font-mono);
+}
+.react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+}
+.react-flow__attribution {
+  display: none;
+}
+
+@property --halo-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+.work-halo {
+  position: absolute;
+  inset: -3px;
+  border-radius: 6px;
+  padding: 1.5px;
+  background: conic-gradient(from var(--halo-angle), transparent 0 65%, color-mix(in oklab, var(--k-task) 45%, transparent) 82%, var(--k-task) 96%, transparent 100%);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: halo-spin 1.6s linear infinite;
+  pointer-events: none;
+}
+@keyframes halo-spin {
+  to {
+    --halo-angle: 360deg;
+  }
+}
+
+@keyframes comet {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.edge-comet {
+  stroke-dasharray: 60 940;
+  animation: comet 1s ease-out 1 forwards;
+}
+
 @keyframes pulse-ring {
-  0% { transform: scale(0.9); opacity: 0.8; }
-  100% { transform: scale(1.8); opacity: 0; }
+  0% { transform: scale(0.9); opacity: 0.9; }
+  100% { transform: scale(1.6); opacity: 0; }
 }
 .pulse-ring::after {
   content: "";
   position: absolute;
-  inset: -2px;
+  inset: -3px;
   border-radius: inherit;
   border: 1.5px solid currentColor;
-  animation: pulse-ring 1.6s ease-out infinite;
+  animation: pulse-ring 1.4s ease-out infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+.blink {
+  animation: blink 1s steps(1) infinite;
 }
 
 @media print {

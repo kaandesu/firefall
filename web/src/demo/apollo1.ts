@@ -1,145 +1,164 @@
-// Case file: Apollo 1 (AS-204), 27 January 1967. Replays the fire, runs the materials-vs-atmosphere
-// analysis the crew would have run at design review, then applies the same check to Artemis base camp.
-// Sources: Apollo 204 Review Board (NASA), JSC Roundup 1967, Space.com retrospective.
+// Apollo CM-012 (AS-204), reviewed from the files the team handed over: cabin.yaml, materials.csv, cabin.model.json.
+// The lead reads the inputs, publishes a plan and waits for your approval. Nothing runs before that.
+// Everything the agents report (matrix, spread, pressure, what-ifs) is computed from the parsed inputs.
+// Sources for the narrative: Apollo 204 Review Board (NASA), JSC Roundup 1967.
+import type { CabinModel } from '@/intake/parse'
 import { Script } from '@/live/script'
-import { MATERIALS, limitingO2, pct, spreadRate, spreadVsEarth } from '@/sims/models'
+import type { Cite, Subtask } from '@/live/types'
+import { simulateFire, variantsFor, type FireRun } from '@/stage/physics'
+import { MATERIALS, limitingO2, pct } from '@/sims/models'
 import { HUMAN } from './crew'
-import { PACKAGES, computeMatrix } from './packages'
+import { computeMatrix, type DesignPackage } from './packages'
 
-const BOARD = { label: 'Apollo 204 Review Board', url: 'https://www.nasa.gov/missions/apollo/apollo-1/apollo-204-review-board-summary/' }
-const ROUNDUP = { label: 'JSC Roundup, 3 Mar 1967', url: 'https://historycollection.jsc.nasa.gov/JSCHistoryPortal/history/roundups/issues/67-03-03.pdf' }
-const SPACECOM = { label: 'Space.com retrospective', url: 'https://www.space.com/nasa-apollo-1-fire-55-years-orion-moon-return' }
+export type ReviewInput = {
+  pkg: DesignPackage
+  model: CabinModel
+  request: string
+  /** Subtasks the human switched off before approving. */
+  skip?: string[]
+  /** The answer to the what-if question; false skips the what-if runs. */
+  whatIf?: boolean
+}
 
-const CABIN = ['cotton', 'nylon', 'pmma', 'nomex', 'silicone', 'kapton', 'teflon'] as const
-const ATMS = [
-  { id: 'apollo', label: 'Apollo 1 pad', o2: 1, psi: 16.7, g: 1 },
-  { id: 'iss', label: 'ISS / Orion', o2: 0.21, psi: 14.7, g: 0 },
-  { id: 'base', label: 'Base camp', o2: 0.34, psi: 8.2, g: 0.165 },
-]
+export const PLAN_GATE = 'ask-plan'
+export const WHATIF_GATE = 'ask-whatif'
 
-export function apollo1() {
+export function reviewPlan(): Subtask[] {
+  return [
+    { id: 'P1', title: 'Find PSI evidence for this cabin', agent: 'archivist', model: 'haiku', status: 'pending', reads: ['cabin.yaml'], produces: 'citations' },
+    { id: 'P2', title: 'Judge every material at the cabin atmosphere', agent: 'prevent', model: 'sonnet', deps: ['P1'], status: 'pending', reads: ['materials.csv', 'cabin.yaml'], produces: 'materials matrix' },
+    { id: 'P3', title: 'Fire spread and cabin pressure', agent: 'sim', model: 'haiku', deps: ['P2'], status: 'pending', reads: ['cabin.model.json', 'materials.csv', 'cabin.yaml'], produces: 'spread + pressure layers' },
+    { id: 'P4', title: 'Scope check: what the data can and cannot say', agent: 'skeptic', model: 'opus', deps: ['P2', 'P3'], status: 'pending', reads: ['all findings'], produces: 'flags' },
+    { id: 'P5', title: 'Verdict and hazard report', agent: 'scribe', model: 'sonnet', deps: ['P4'], status: 'pending', reads: ['all findings'], produces: 'verdict + report', required: true },
+  ]
+}
+
+const secs = (n?: number) => (n === undefined ? 'none in 30 s' : `T+${n.toFixed(0)} s`)
+
+export function fireRuns(pkg: DesignPackage, model: CabinModel): FireRun[] {
+  return variantsFor(pkg).map((v) => simulateFire(model, pkg, v))
+}
+
+export function apollo1({ pkg, model, request, skip = [], whatIf = true }: ReviewInput) {
   const s = new Script('run-a1')
-  const burns = Object.fromEntries(ATMS.map((a) => [a.id, CABIN.filter((m) => spreadRate(a.o2, 10, a.g, a.psi, MATERIALS[m]) > 0)])) as Record<string, string[]>
-  const cottonX = spreadVsEarth(1, 10, 1, 16.7, MATERIALS.cotton)
-  const nomexLimBase = limitingO2(10, 0.165, 8.2, MATERIALS.nomex)
+  const on = (id: string) => !skip.includes(id)
+  const [asBuilt, ...whatIfs] = fireRuns(pkg, model)
+  const cites: Cite[] = on('P1') ? [{ id: 'PSI-25', note: 'BASS-II: thin fuels spread at very low flow' }, { id: 'PSI-98', note: 'Saffire-I: large-sample spread' }] : []
+  const matrix = computeMatrix(pkg, cites)
+  const count = (st: string) => matrix.filter((r) => r.status === st).length
+  const fails = count('fail')
+  const atm = pkg.atmosphere.label
+  const hatch = pkg.hatch?.openTime ?? 0
+  const burning = asBuilt.zones.filter((z) => z.burns).length
 
   s.start(
-    'Case file · Apollo 1 (AS-204)',
-    'case',
-    { mission: 'Apollo 1 · AS-204', date: '27 Jan 1967', atmosphere: '100 % O₂ · 16.7 psia', gravity: '1 g (launch pad)' },
-    'Open case file: Apollo 1. Reconstruct what happened, show whether a materials-vs-atmosphere review would have caught it, and apply the lesson to Artemis base camp.',
+    pkg.vehicle,
+    'apollo-cm012',
+    { vehicle: pkg.vehicle, atmosphere: atm, gravity: pkg.gravity.label, volume: pkg.volume, crew: pkg.crew, materials: pkg.bom.length },
+    request,
   )
-  s.wait(0.4).caseFile({
-    title: 'Apollo 1 (AS-204) cabin fire',
-    when: '27 January 1967',
-    where: 'Launch Complex 34 · plugs-out countdown test',
-    atmosphere: '100 % O₂ at 16.7 psia — about 5× the O₂ partial pressure of sea-level air',
-    summary: 'A fire broke out during a ground test and killed Gus Grissom, Ed White and Roger Chaffee. It led NASA to rethink cabin atmospheres, materials and hatches.',
-  })
-  s.wait(1.0).tool('flight', 'publish_plan', { subtasks: 5 }, { ok: true }, 0.5)
-  s.wait(0.3).publishPlan({
-    goal: 'Apollo 1: reconstruct, test the materials-vs-atmosphere check, bridge to base camp',
-    approved: true,
-    subtasks: [
-      { id: 'C1', title: 'Reconstruct the timeline from the Review Board', agent: 'archivist', model: 'haiku', status: 'pending', pillar: 'cross' },
-      { id: 'C2', title: 'Which cabin materials burn at 100 % O₂?', agent: 'prevent', model: 'sonnet', deps: ['C1'], status: 'pending', pillar: 'prevention' },
-      { id: 'C3', title: 'Show the flame: 100 % O₂ vs air', agent: 'sim', model: 'haiku', deps: ['C2'], status: 'pending', pillar: 'cross' },
-      { id: 'C4', title: 'Scope check: what PSI can and cannot say', agent: 'skeptic', model: 'opus', deps: ['C2', 'C3'], status: 'pending', pillar: 'cross' },
-      { id: 'C5', title: 'Verdict + base-camp bridge', agent: 'scribe', model: 'sonnet', deps: ['C4'], status: 'pending', pillar: 'cross' },
-    ],
-  })
+  s.wait(0.3).tool('flight', 'read_inputs', { files: ['cabin.yaml', 'materials.csv', 'cabin.model.json'] }, { atmosphere: atm, materials: pkg.bom.length, zones: asBuilt.zones.length }, 0.9)
+  s.wait(1.1).note('flight', `${pkg.bom.length} materials in ${new Set(pkg.bom.map((b) => b.zone)).size} zones, ${atm}, ignition at ${pkg.ignitionZones?.join(', ') || 'unknown'}.`)
+  s.wait(0.4).tool('flight', 'publish_plan', { subtasks: 5 }, { ok: true }, 0.4)
+  s.wait(0.5).publishPlan({ goal: request, approved: false, subtasks: reviewPlan() })
+  s.wait(0.3).askHuman(PLAN_GATE, 'Approve the plan? Nothing runs until you do.', ['Approve plan'], Infinity)
 
-  // C1: timeline
-  s.wait(0.5).sub('C1', { status: 'running' }).task('t-c1', 'flight', 'archivist', 'C1 · Reconstruct the timeline from the Review Board')
-  s.wait(0.6).tool('archivist', 'psi_search', { q: 'Apollo 204 review board findings', scope: 'NASA history' }, { hits: 3, primary: 'Apollo 204 Review Board report' }, 1.0)
-  s.wait(1.2).caseItem({ id: 'e1', when: 'Test setup', kind: 'event', text: 'Plugs-out countdown test on the pad. Cabin filled with 100 % O₂ at 16.7 psia — slightly above ambient, to keep air out.', source: BOARD })
-  s.wait(1.2).caseItem({ id: 'e2', when: 'Ignition', kind: 'cause', text: 'Most probable ignition source: an electrical arc near cabin wiring.', source: BOARD })
-  s.wait(1.2).caseItem({ id: 'e3', when: 'Fuel', kind: 'cause', text: 'Many combustibles sat next to ignition sources — nylon netting, Velcro patches, foam pads.', source: ROUNDUP })
-  s.wait(1.2).caseItem({ id: 'e4', when: 'Seconds', kind: 'event', text: 'In pure O₂ the fire spread through the cabin within seconds; internal pressure rose until the hull ruptured.', source: BOARD })
-  s.wait(1.2).caseItem({ id: 'e5', when: 'Egress', kind: 'event', text: 'The inward-opening inner hatch could not be opened against cabin pressure before rupture. Emergency egress was impossible.', source: BOARD })
-  s.wait(1.2).caseItem({ id: 'e6', when: 'Aftermath', kind: 'response', text: 'Board: severely restrict and control combustibles. NASA redesigned the hatch to open outward quickly, swapped in self-extinguishing materials and ended pure-O₂ cabins on the pad.', source: SPACECOM })
-  s.usage('archivist', 0.02, 0.28)
-  s.wait(0.6).say('archivist', 'flight', 'reply', 'Timeline rebuilt: 6 entries from the Review Board and NASA history. Root combination = pure O₂ + combustibles + ignition + no egress.', undefined, 't-c1')
-  s.wait(0.2).state('t-c1', 'completed').sub('C1', { status: 'done' })
+  // ── after approval ──
+  s.wait(0.2).approve(skip)
 
-  // C2: materials vs atmosphere
-  s.wait(0.6).sub('C2', { status: 'running' }).task('t-c2', 'flight', 'prevent', 'C2 · Which cabin materials burn at 100 % O₂?')
-  s.wait(0.6).tool('prevent', 'flammability_map', { atmosphere: '100 % O₂ · 16.7 psia', g: 1, materials: CABIN }, { sustainFlame: `${burns.apollo.length}/${CABIN.length}`, list: burns.apollo }, 1.8)
-  s.wait(0.3).tool('prevent', 'flammability_map', { atmosphere: '21 % O₂ · 14.7 psia', g: 1, materials: CABIN }, { sustainFlame: `${burns.iss.length}/${CABIN.length}`, list: burns.iss }, 1.6)
-  s.usage('prevent', 0.04, 0.3)
-  s.wait(0.2).matrix(computeMatrix(PACKAGES.apollo1, [{ id: 'PSI-159' }, { id: 'PSI-20' }]))
-  s.wait(2.2).note('prevent', `At 100 % O₂ every material on the list exceeds its limiting O₂ — even Teflon (≈ 95 %) is marginal. Cotton spreads ≈ ${cottonX.toFixed(0)}× faster than in air.`)
-  s.wait(0.6).say('prevent', 'sim', 'ask', 'Show it: flame at 100 % O₂ / 16.7 psia / 1 g next to normal air. Then cotton spread.')
-  s.wait(0.4).say('prevent', 'flight', 'reply', `${burns.apollo.length} of ${CABIN.length} cabin materials sustain flame at 100 % O₂, vs ${burns.iss.length} of ${CABIN.length} in air. A design-review check flags this before the first test.`, undefined, 't-c2')
-  s.wait(0.2).state('t-c2', 'completed').sub('C2', { status: 'done' })
+  if (on('P1')) {
+    s.wait(0.5).sub('P1', { status: 'running' }).task('t-p1', 'flight', 'archivist', 'P1 · Find PSI evidence for this cabin')
+    s.wait(0.6).tool('archivist', 'psi_search', { atmosphere: atm, fuels: ['nylon', 'cotton', 'polyurethane foam'], g: pkg.gravity.g }, { hits: 14 }, 1.0)
+    s.wait(1.1).tool('archivist', 'rank_investigations', { against: 'cabin.yaml' }, { top: ['PSI-25 BASS-II', 'PSI-98 Saffire-I', 'PSI-20 BRE'] }, 0.9)
+    s.usage('archivist', 0.02, 0.24)
+    s.wait(1.0).say('archivist', 'flight', 'reply', 'Closest evidence: BASS-II and Saffire-I for thin fabrics. Ground LOI data covers 1 g on the pad.', cites, 't-p1')
+    s.wait(0.2).state('t-p1', 'completed').sub('P1', { status: 'done' })
+  }
 
-  // C3: sims
-  s.wait(0.4).sub('C3', { status: 'running' }).task('t-c3', 'flight', 'sim', 'C3 · Show the flame: 100 % O₂ vs air')
-  s.wait(0.5).tool('sim', 'sim_run', { sim: 'flame', o2: 1, psi: 16.7, g: 1 }, { ok: true }, 0.5)
-  s.wait(0.2).sim({ id: 'a1-flame', sim: 'flame', by: 'sim', label: 'Pure O₂ · 16.7 psia · 1 g', params: { o2: 1, psi: 16.7, g: 1, flow: 0 } })
-  s.wait(5.0).sim({ id: 'a1-flame', sim: 'flame', by: 'sim', label: 'Pure O₂ · 16.7 psia · 1 g', params: { o2: 1, psi: 16.7, g: 1, flow: 0 }, metrics: { 'flame size vs air': '≈ 2.3×', 'T ad (K, est.)': '≈ 3000 (capped)', note: 'violent, sooty' } })
-  s.wait(0.4).tool('sim', 'sim_run', { sim: 'spread', material: 'cotton', o2: 1, psi: 16.7, g: 1, flow: 10 }, { ok: true }, 0.5)
-  s.wait(0.2).sim({ id: 'a1-spread', sim: 'spread', by: 'sim', label: 'Cotton · pure O₂ · 1 g', params: { o2: 1, psi: 16.7, g: 1, flow: 10, material: 'cotton' } })
-  s.wait(5.0).sim({ id: 'a1-spread', sim: 'spread', by: 'sim', label: 'Cotton · pure O₂ · 1 g', params: { o2: 1, psi: 16.7, g: 1, flow: 10, material: 'cotton' }, metrics: { 'spread vs air': `${cottonX.toFixed(0)}×`, 'verdict': 'whole cabin in seconds' } })
-  s.wait(0.3).state('t-c3', 'completed').sub('C3', { status: 'done' })
+  if (on('P2')) {
+    s.wait(0.5).sub('P2', { status: 'running' }).task('t-p2', 'flight', 'prevent', 'P2 · Judge every material at the cabin atmosphere')
+    s.wait(0.6).tool('prevent', 'flammability_map', { atmosphere: atm, g: pkg.gravity.g, flow: pkg.ventFlow, materials: pkg.bom.map((b) => b.material) }, { burn: `${fails + count('retest')}/${matrix.length}` }, 1.6)
+    s.wait(0.8).say('prevent', 'archivist', 'ask', 'Any data for nylon netting above 40 % O₂?')
+    s.wait(1.0).say('archivist', 'prevent', 'reply', 'Only 1 g LOI (≈ 24 %). Nothing at 100 %; treat it as burning.', [{ id: 'PSI-25' }])
+    s.usage('prevent', 0.04, 0.31)
+    s.wait(0.6).matrix(matrix)
+    s.wait(1.2).note('prevent', `${fails} of ${matrix.length} fail at ${atm}, ${count('retest')} need a retest, ${count('pass')} pass. Margins are in the matrix.`)
+    s.wait(0.5).say('prevent', 'flight', 'reply', `${fails} of ${matrix.length} materials burn at ${atm}. The check fails before any test.`, cites, 't-p2')
+    s.wait(0.2).state('t-p2', 'completed').sub('P2', { status: 'done' })
+  }
 
-  // C4: SKEPTIC scope check
-  s.wait(0.4).sub('C4', { status: 'running' }).task('t-c4', 'flight', 'skeptic', 'C4 · Scope check')
-  s.wait(0.8).tool('skeptic', 'check_citations', { claims: 9 }, { verified: 8, flagged: 1 }, 1.4)
-  s.wait(1.6).say('skeptic', 'flight', 'review', 'Apollo 1 burned at 1 g on the pad — PSI’s µg data is not the evidence here; ground LOI data and the Board are. What PSI adds is the warning that 1 g screening alone is NOT conservative for spacecraft.', [{ id: 'PSI-98' }, { id: 'PSI-25' }])
-  s.wait(0.3).say('skeptic', 'flight', 'review', 'Hatch and egress were as deadly as the fuel. Our tool would flag the atmosphere and materials; it would not have redesigned the hatch.')
-  s.wait(0.3).state('t-c4', 'completed').sub('C4', { status: 'done' })
+  if (on('P3')) {
+    s.wait(0.5).sub('P3', { status: 'running' }).task('t-p3', 'flight', 'sim', 'P3 · Fire spread and cabin pressure')
+    s.wait(0.5).tool('sim', 'build_cabin', { model: 'cabin.model.json' }, { primitives: model.primitives.length, zones: asBuilt.zones.length }, 0.6)
+    s.wait(0.8).tool('sim', 'sim_run', { sim: 'spread', ignition: pkg.ignitionZones, variant: 'as-built' }, { zonesBurning: burning, fullCabin: secs(asBuilt.fullAt) }, 1.2)
+    s.wait(0.3).sim({ id: 'cabin-spread', sim: 'spread', by: 'sim', label: 'Spread through the cabin · as built', params: { o2: pkg.atmosphere.o2, psi: pkg.atmosphere.psi, g: pkg.gravity.g, flow: pkg.ventFlow } })
+    s.wait(4.0).sim({
+      id: 'cabin-spread',
+      sim: 'spread',
+      by: 'sim',
+      label: 'Spread through the cabin · as built',
+      params: { o2: pkg.atmosphere.o2, psi: pkg.atmosphere.psi, g: pkg.gravity.g, flow: pkg.ventFlow },
+      metrics: { zones: `${burning}/${asBuilt.zones.length}`, rupture: secs(asBuilt.rupture) },
+    })
+    s.wait(0.4).tool('sim', 'pressure_estimate', { volume: pkg.volume, burst: `${pkg.hull?.burstPsia} psia` }, { rupture: secs(asBuilt.rupture), hatch: `${hatch} s` }, 1.0)
+    s.wait(1.2).sim({ id: 'cabin-pressure', sim: 'spread', by: 'sim', label: 'Cabin pressure vs hull', params: {}, metrics: { rupture: secs(asBuilt.rupture), hatch: `${hatch} s` } })
+    s.wait(0.4).say('sim', 'flight', 'reply', `Front leaves the wiring at T+0 and reaches ${burning} zones; hull ruptures at ${secs(asBuilt.rupture)}. The hatch needs ${hatch} s.`, undefined, 't-p3')
+    s.wait(0.2).state('t-p3', 'completed').sub('P3', { status: 'done' })
+  }
 
-  // The human decides whether to run the bridge.
-  s.wait(0.6).askHuman('ask-bridge', 'Apply the same check to Artemis base camp (8.2 psia / 34 % O₂, Moon g)?', ['Run the bridge check', 'Skip'], 8)
-  s.wait(0.3).task('t-bridge', 'flight', 'prevent', 'Bridge · same check at base camp (8.2 psia / 34 % O₂, Moon g)')
-  s.wait(0.5).tool('prevent', 'flammability_map', { atmosphere: '34 % O₂ · 8.2 psia', g: 0.165, materials: CABIN }, { sustainFlame: `${burns.base.length}/${CABIN.length}`, list: burns.base, nomexLimitingO2: pct(nomexLimBase, 1) }, 1.8)
-  s.wait(2.0).say('prevent', 'flight', 'reply', `Base camp: ${burns.base.length} of ${CABIN.length} materials sustain flame (vs ${burns.iss.length} on ISS). Nomex — Apollo’s fix — burns again above ≈ ${pct(nomexLimBase)} O₂.`, [{ id: 'PSI-20' }, { id: 'PSI-98' }], 't-bridge')
-  s.wait(0.2).state('t-bridge', 'completed')
+  if (on('P4')) {
+    s.wait(0.5).sub('P4', { status: 'running' }).task('t-p4', 'flight', 'skeptic', 'P4 · Scope check')
+    s.wait(0.7).tool('skeptic', 'check_citations', { claims: 7 }, { verified: 6, flagged: 1 }, 1.2)
+    s.wait(1.4).say('skeptic', 'flight', 'review', 'This fire was at 1 g on the pad. PSI µg data is not the evidence; ground LOI data is. Say so in the report.', [{ id: 'PSI-98' }])
+    s.wait(0.4).say('skeptic', 'flight', 'review', `The hatch (${pkg.hatch?.type ?? 'unknown'}, ${hatch} s) killed the crew as surely as the fuel. Combustion data would not have fixed it.`)
+    s.wait(0.3).state('t-p4', 'completed').sub('P4', { status: 'done' })
+  }
 
-  // C5: verdict
-  s.wait(0.4).sub('C5', { status: 'running' }).task('t-c5', 'flight', 'scribe', 'C5 · Verdict + base-camp bridge')
-  s.wait(1.2).verdict({
+  s.wait(0.6).askHuman(WHATIF_GATE, 'Re-run this cabin at 60/40 O₂/N₂, in orbit and at base camp?', ['Run the what-ifs', 'Skip'], 10)
+  if (whatIf) {
+    s.wait(0.3).task('t-whatif', 'flight', 'sim', 'What-if · same cabin, three atmospheres')
+    s.wait(0.5).tool('sim', 'sim_run', { sim: 'spread', variants: whatIfs.map((r) => r.variant.id) }, Object.fromEntries(whatIfs.map((r) => [r.variant.id, secs(r.rupture)])), 1.6)
+    s.wait(1.8).sim({
+      id: 'cabin-whatif',
+      sim: 'spread',
+      by: 'sim',
+      label: 'What-if · 60/40, µg, base camp',
+      params: {},
+      metrics: Object.fromEntries(whatIfs.map((r) => [r.variant.short, r.rupture === undefined ? 'no rupture' : secs(r.rupture)])),
+    })
+    const base = whatIfs.find((r) => r.variant.id === 'base')!
+    s.wait(0.4).say('sim', 'prevent', 'ask', `Base camp: ${base.zones.filter((z) => z.burns).length} zones still burn at 34 % O₂ / Moon g. Is that in your matrix?`)
+    s.wait(0.9).say('prevent', 'sim', 'reply', `Yes: cotton's limit there is ≈ ${pct(limitingO2(base.variant.flow, base.variant.g, base.variant.psi, MATERIALS.cotton))}, below 34 %. Retest at 34 % before flight.`, [{ id: 'PSI-20' }])
+    s.wait(0.3).state('t-whatif', 'completed')
+  }
+
+  s.wait(0.5).sub('P5', { status: 'running' }).task('t-p5', 'flight', 'scribe', 'P5 · Verdict and hazard report')
+  s.wait(0.8).tool('scribe', 'report_write', { sections: ['verdict', 'matrix', 'spread', 'limits'] }, { ok: true }, 1.2)
+  s.wait(1.4).verdict({
     outcome: 'prevented',
-    headline: 'A materials-vs-atmosphere review would have flagged the cabin before the test.',
+    headline: 'A materials-vs-atmosphere review fails this cabin before the test.',
     would: [
-      `${burns.apollo.length}/${CABIN.length} listed cabin materials exceed their limiting O₂ at 100 % O₂ / 16.7 psia — the check fails outright.`,
-      'It points to the two levers the Board pulled: change the atmosphere, and restrict combustibles near ignition sources.',
-      'It would not have fixed the hatch. Egress design sits outside combustion data, and Safety Assurance says so.',
+      `${fails} of ${matrix.length} listed materials burn at ${atm}.`,
+      `The fire reaches ${burning} zones and ruptures the hull at ${secs(asBuilt.rupture)}.`,
+      `It would not have fixed the hatch: ${hatch} s to open, from the inside, against cabin pressure.`,
     ],
-    bridge: `The same check on base camp: ${burns.base.length}/${CABIN.length} materials burn at 34 % O₂, vs ${burns.iss.length}/${CABIN.length} on ISS. Nomex, Apollo's fix, burns again. Apollo 1's lesson, measured against Artemis.`,
+    bridge: whatIf ? whatIfs.map((r) => `${r.variant.short}: ${r.rupture === undefined ? 'no rupture' : `rupture ${secs(r.rupture)}`}`).join(' · ') : undefined,
   })
-  s.wait(0.6).dossier({
+  s.wait(0.4).dossier({
     id: 'summary',
-    title: 'Verdict · Apollo 1',
+    title: 'Verdict',
     pillar: 'summary',
     author: 'scribe',
     risk: 'critical',
     body: [
-      'Pure O₂ at above-ambient pressure turned every combustible into fuel. The Board found combustibles next to ignition sources and a hatch that could not open in time.',
-      'FIREFALL’s prevention check (material limiting O₂ vs cabin atmosphere) fails this cabin outright. That is the analysis the redesign later encoded in materials screening.',
+      `${pkg.vehicle} at ${atm}, ${pkg.gravity.label}: ${fails} of ${matrix.length} listed materials sustain flame. The prevention check fails outright.`,
+      `Modelled spread from the ignition zone reaches ${burning} zones; the lumped pressure estimate ruptures the hull at ${secs(asBuilt.rupture)}, against a ${hatch} s hatch opening.`,
+      'Out of scope: egress. The hatch design sits outside combustion data.',
     ],
-    metrics: [
-      { label: 'Burn at 100 % O₂', value: `${burns.apollo.length}/${CABIN.length}` },
-      { label: 'Burn in ISS air', value: `${burns.iss.length}/${CABIN.length}` },
-      { label: 'Burn at base camp', value: `${burns.base.length}/${CABIN.length}` },
-      { label: 'Cotton spread vs air', value: `${cottonX.toFixed(0)}×` },
-    ],
+    cites,
   })
-  s.wait(0.6).dossier({
-    id: 'bridge',
-    title: 'Bridge to Artemis base camp',
-    pillar: 'prevention',
-    author: 'prevent',
-    risk: 'high',
-    body: [
-      'Base camp moves back toward oxygen enrichment to cut prebreathe time. It is nowhere near Apollo 1, but far enough that Nomex, a post-Apollo standard, crosses its limit again.',
-      'BRE (PSI-20) already burned at 8.2 psia / 34 % O₂ in µg. Saffire showed that 1 g screening is not conservative in space. Partial g is bounded until LUCI / FM2 fly.',
-    ],
-    cites: [{ id: 'PSI-20' }, { id: 'PSI-98' }, { id: 'PSI-25' }, { id: 'PSI-22' }],
-  })
-  s.wait(0.4).state('t-c5', 'completed').sub('C5', { status: 'done' })
-  s.wait(0.4).say('flight', HUMAN, 'reply', 'Case closed: prevented at design review; the hatch was outside our scope. Bridge result is in the report.')
-  s.wait(0.3).done('Case file closed')
+  s.wait(0.4).state('t-p5', 'completed').sub('P5', { status: 'done' })
+  s.wait(0.4).say('flight', HUMAN, 'reply', 'Review done: the cabin fails on materials. The hatch is outside what this tool checks.')
+  s.wait(0.3).done('Review complete')
   return s.build()
 }

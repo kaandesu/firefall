@@ -1,7 +1,7 @@
 import { BookOpenText, Box, ClipboardCheck, Crown, FileText, FlaskConical, Radar, ShieldCheck, SprayCan, User, Network } from 'lucide-react'
 import { AGENT, HUB, agentColor, agentName, isPerson, type AgentDef } from '@/demo/crew'
 import { BY_ID, label } from '@/data/psi'
-import { useMission } from '@/live/store'
+import { Popover } from 'radix-ui'
 import type { AgentState } from '@/live/model'
 import type { CommKind } from '@/live/types'
 import { cn } from '@/lib/utils'
@@ -121,27 +121,43 @@ export function StatusPill({ status, className }: { status: 'pass' | 'retest' | 
   )
 }
 
-export function CiteChip({ id, className }: { id: string; className?: string }) {
-  const selectInv = useMission((s) => s.selectInv)
-  const setTab = useMission((s) => s.setTab)
-  const known = !!BY_ID[id]
+/** A citation hangs on the claim it supports: click for the investigation, its finding and the source. */
+export function CiteChip({ id, note, className }: { id: string; note?: string; className?: string }) {
+  const inv = BY_ID[id]
   return (
-    <button
-      type="button"
-      onClick={() => {
-        selectInv(id)
-        setTab('evidence')
-      }}
-      title={BY_ID[id]?.title ?? id}
-      className={cn(
-        'inline-flex items-center gap-1 rounded border border-line bg-surface-2 px-1.5 py-px text-[10.5px] text-ug transition hover:border-ug/50 hover:bg-ug/5',
-        !known && 'text-muted-foreground',
-        className,
-      )}
-    >
-      <span className="mono">{id}</span>
-      <span className="text-muted-foreground">{label(id)}</span>
-    </button>
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className={cn('inline-flex items-center gap-1 rounded-sm border border-ug/30 bg-ug/5 px-1.5 py-px text-[10.5px] text-ug transition hover:border-ug/70 hover:bg-ug/10', !inv && 'text-muted-foreground', className)}
+        >
+          <span>{id}</span>
+          <span className="text-muted-foreground">{label(id)}</span>
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content side="top" align="start" sideOffset={6} className="z-50 w-[320px] rounded border border-line-2 bg-surface-2 p-3 text-[11.5px] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-baseline gap-2">
+            <span className="text-ug">{id}</span>
+            <span className="font-medium text-ink">{label(id)}</span>
+          </div>
+          {inv && <div className="sans mt-1 text-[12px] leading-snug text-ink">{inv.title}</div>}
+          {note && <div className="mt-2 text-muted-foreground">used for: {note}</div>}
+          {inv?.c.finding && <div className="sans mt-2 leading-snug text-muted-foreground">{inv.c.finding}</div>}
+          <div className="mt-2 flex flex-wrap gap-x-3 text-[10.5px] text-faint">
+            {inv?.c.platform && <span>{inv.c.platform}</span>}
+            {inv?.c.o2 && <span>O₂ {inv.c.o2}</span>}
+          </div>
+          {(inv?.c.source?.url || inv?.url) && (
+            <a href={inv.c.source?.url ?? inv.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-ug underline-offset-2 hover:underline">
+              {inv.c.source?.label ?? 'PSI record'} ↗
+            </a>
+          )}
+          <Popover.Arrow className="fill-line-2" />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   )
 }
 
