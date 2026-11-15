@@ -13,12 +13,21 @@ import { OBSCURATION_ALARM, PA_PER_PSI } from './summary'
 
 export function FdsTile({ job, live = true }: { job: Job; live?: boolean }) {
   const [caseId, setCaseId] = useState<'1g' | 'ug'>('1g')
-  const c = fdsCase(caseId)
+  // A run an agent started (job.params.run): its files appear in /data/fds/runs/<id>/ when FDS finishes.
+  const own = typeof job.params?.run === 'string' ? job.params.run : undefined
+  const [mine, setMine] = useState<{ id: string; chid: string; dir: string; cells: number; g: number }>()
+  useEffect(() => {
+    if (!own || !job.done) return
+    void fetch(`/data/fds/runs/${own}/run.json`)
+      .then((r) => (r.ok ? r.json() : undefined))
+      .then(setMine, () => undefined)
+  }, [own, job.done])
+  const c = own ? mine : fdsCase(caseId)
   const setView = useMission((s) => s.setView)
   const [run, setRun] = useState<FdsRun>()
   useEffect(() => {
-    if (c) void loadRun(c.id, c.chid).then(setRun, () => undefined)
-  }, [c])
+    if (c) void loadRun(c.id, c.chid, mine?.dir).then(setRun, () => undefined)
+  }, [c, mine])
   const slice = run?.slices.find((s) => s.quantity === 'TEMPERATURE' && s.dims[1] === 1)
   const last = slice ? slice.frames.length - 1 : 0
   // While the job runs, its progress drives the frame; afterwards the run loops.
@@ -52,13 +61,13 @@ export function FdsTile({ job, live = true }: { job: Job; live?: boolean }) {
   const psia = run ? at(run.devc.cols.Time, run.devc.cols.P_cabin) / PA_PER_PSI : 0
   return (
     <div className="relative h-full min-h-0">
-      {run && run.id === caseId ? (
+      {run && run.id === (own ?? caseId) ? (
         <FdsScene input={run.input} mode="output" slice={view} smoke={run.smoke} fire={run.fire} time={t} alarmed={alarmed} compact />
       ) : (
-        <div className="flex h-full items-center justify-center text-[10.5px] text-faint">loading FDS output…</div>
+        <div className="flex h-full items-center justify-center text-[10.5px] text-faint">{own && !job.done ? `FDS is solving ${own} on this machine…` : 'loading FDS output…'}</div>
       )}
       <div className="pointer-events-none absolute left-1 top-1 space-y-0.5 text-[9px]">
-        <div className="text-muted-foreground">NIST FDS 6.11 · {c?.cells.toLocaleString()} cells · {caseId === 'ug' ? 'µg' : '1 g'}</div>
+        <div className="text-muted-foreground">NIST FDS 6.11 · {c?.cells.toLocaleString()} cells · {own ? (mine ? (mine.g === 0 ? 'µg' : `${mine.g} g`) : own) : caseId === 'ug' ? 'µg' : '1 g'}</div>
         {run && (
           <div className="flex flex-wrap gap-x-2">
             <span className="bg-bg/70 px-0.5 text-muted-foreground">
@@ -75,12 +84,12 @@ export function FdsTile({ job, live = true }: { job: Job; live?: boolean }) {
         )}
       </div>
       <div className="absolute bottom-1 right-1 flex gap-1 text-[9px]">
-        {(['1g', 'ug'] as const).map((k) => (
+        {(own ? [] : (['1g', 'ug'] as const)).map((k) => (
           <button key={k} type="button" onClick={() => setCaseId(k)} className={cn('rounded-sm border px-1', caseId === k ? 'border-ug/60 text-ink' : 'border-line text-faint hover:text-ink')}>
             {k === 'ug' ? 'µg' : '1 g'}
           </button>
         ))}
-        <button type="button" onClick={() => setView('fds')} className="rounded-sm border border-line px-1 text-muted-foreground hover:text-ink">
+        <button type="button" onClick={() => (own ? window.open(`?view=fds&run=${own}`, '_blank') : setView('fds'))} className="rounded-sm border border-line px-1 text-muted-foreground hover:text-ink">
           open →
         </button>
       </div>

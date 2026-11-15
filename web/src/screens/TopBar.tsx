@@ -57,11 +57,14 @@ export function TopBar() {
   const nYou = openFor(inbox, HUMAN), nLab = openFor(inbox, LAB)
   const setView = useMission((s) => s.setView)
   const net = useRoster((s) => s.net)
+  const mode = useMission((s) => s.mode)
+  const realAgent = useMission((s) => s.realAgent)
+  const real = !!realAgent && (mode === 'agents' || phase === 'intake')
   const clock = useClock(startedAt, phase === 'run' && !done)
-  const idx = phase === 'live' ? 0 : STEPS.findIndex((s) => s.id === phase)
+  const idx = STEPS.findIndex((s) => s.id === phase)
   const subs = plan?.subtasks.filter((s) => s.status !== 'skipped') ?? []
   const nDone = subs.filter((s) => s.status === 'done').length
-  const pre = phase === 'start' || phase === 'setup' || phase === 'live' || phase === 'intake'
+  const pre = phase === 'start' || phase === 'setup' || phase === 'intake'
   const online = pre ? 0 : 9
   const working = Object.values(agents).filter((a) => a.state === 'working' || a.state === 'asking').length
   const state = done ? 'done' : waiting ? 'waiting on you' : status.playing ? 'running' : pre ? 'idle' : 'paused'
@@ -116,7 +119,7 @@ export function TopBar() {
         </>
       )}
       <span className="ml-auto flex items-center gap-4 text-muted-foreground">
-        {!pre && !done && (
+        {!pre && !done && mode !== 'agents' && (
           <span className="flex items-center gap-1.5">
             <button type="button" onClick={() => (status.playing ? pause() : play())} className="hover:text-ink" title="pause / resume the demo (space)">
               {status.playing ? <Pause size={12} /> : <Play size={12} />}
@@ -135,12 +138,12 @@ export function TopBar() {
         )}
         {online > 0 && (
           <span>
-            <b className="font-normal text-ink">{online}</b> agents · 4 orgs · <b className="font-normal text-k-task">{working}</b> working
+            <b className="font-normal text-ink">{online}</b> {mode === 'agents' ? 'roles' : 'agents · 4 orgs'} · <b className="font-normal text-k-task">{working}</b> working
           </span>
         )}
         <span className="tnum text-ink">{clock}</span>
-        <span className={phase === 'live' ? 'text-ok' : net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'text-gold' : 'text-faint'} title={net === 'lagrange' ? 'The team is read from your Lagrange server. The review is the scripted replay.' : 'A scripted replay'}>
-          {phase === 'live' ? 'live review' : net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'lagrange' : 'demo'}
+        <span className={real ? 'text-ok' : net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'text-gold' : 'text-faint'} title={real ? 'Real agents on your Lagrange server do the work. The plan and their briefs are fixed.' : 'A scripted replay'}>
+          {real ? `real · @${realAgent}` : net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'lagrange' : 'demo'}
         </span>
       </span>
     </header>

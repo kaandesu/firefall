@@ -41,6 +41,7 @@ export function StartScreen() {
 
   const demo = () => {
     useRoster.getState().useDemo()
+    useMission.getState().setRealAgent(undefined)
     setPhase('setup')
   }
   const open = () => {

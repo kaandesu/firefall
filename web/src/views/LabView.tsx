@@ -22,7 +22,8 @@ export function LabView() {
   const showPlan = useMission((s) => s.setPlanOpen)
   const { study, progress } = useSmokeStudy(pkg, cabin)
   const [focus, setFocus] = useState<string>()
-  const nodes = [...NODES, ...extra]
+  const real = useMission((s) => s.mode === 'agents')
+  const nodes = real ? [] : [...NODES, ...extra]
 
   const scened = jobs.filter((j) => j.scene)
   const running = scened.filter((j) => !j.done)
@@ -56,7 +57,8 @@ export function LabView() {
       </div>
 
       {/* clusters */}
-      <div className="flex shrink-0 gap-1.5 overflow-x-auto px-2 pb-1.5 scroll-thin">
+      {real && <div className="shrink-0 px-2 pb-1.5 text-[9.5px] text-faint">real review · every job is a tool call an agent made; the models and FDS run on this machine (firefall-tools)</div>}
+      <div className={cn('flex shrink-0 gap-1.5 overflow-x-auto px-2 pb-1.5 scroll-thin', real && 'hidden')}>
         {nodes.map((n) => {
           const used = busy.get(n.id) ?? 0
           const org = ORGS[n.org]
@@ -93,7 +95,7 @@ export function LabView() {
         {/* queue */}
         <div className="scroll-thin w-[190px] shrink-0 overflow-y-auto border-r border-line pr-1.5 text-[9.5px]">
           <div className="label mb-1">queue · {running.length} running</div>
-          {!jobs.length && <div className="text-faint">No jobs yet. Agents submit them to their own org's cluster once the plan is approved.</div>}
+          {!jobs.length && <div className="text-faint">No jobs yet. They appear when the plan is approved and the agents start work.</div>}
           {[...jobs].reverse().map((j) => (
             <button key={j.id} type="button" onClick={() => j.scene && setFocus(j.id)} className={cn('mb-1 block w-full rounded-sm px-1 py-0.5 text-left hover:bg-surface-2', focus === j.id && 'bg-surface-2')}>
               <div className="flex items-center gap-1">
@@ -125,7 +127,7 @@ export function LabView() {
                   <span className="ml-auto shrink-0" style={{ color: agentColor(j.agent) }}>
                     {agentName(j.agent)}
                   </span>
-                  <span className="shrink-0 text-faint">{ORGS[AGENT[j.agent]?.org ?? 'prime'].id}</span>
+                  {!real && <span className="shrink-0 text-faint">{ORGS[AGENT[j.agent]?.org ?? 'prime'].id}</span>}
                   <button type="button" onClick={() => setFocus(big ? undefined : j.id)} className="shrink-0 text-faint hover:text-ink" title={big ? 'shrink' : 'enlarge'}>
                     {big ? <Minimize2 size={10} /> : <Maximize2 size={10} />}
                   </button>

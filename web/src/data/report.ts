@@ -8,6 +8,8 @@ export function searchPages(pages: ReportPage[], query: string, n = 3, span = 12
   const terms = [...new Set(query.toLowerCase().match(/[a-z0-9.%-]{3,}/g) ?? [])]
   if (!terms.length) return []
   return pages
+    // Contents pages and reference lists match everything and say nothing.
+    .filter((pg) => (pg.text.match(/\.{5,}/g)?.length ?? 0) < 4 && (pg.text.match(/\bpp?\. ?\d+|\bvol\. ?\d+/g)?.length ?? 0) < 5)
     .map((pg) => {
       const low = pg.text.toLowerCase()
       let score = 0

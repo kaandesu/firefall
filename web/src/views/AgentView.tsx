@@ -30,6 +30,8 @@ export function AgentView() {
   const cycle = useMission((s) => s.cycleAgent)
   const [tab, setTab] = useState<'work' | 'knowledge'>('work')
   const def = AGENT[handle]
+  const real = useMission((s) => s.mode === 'agents')
+  const filledBy = (kb ?? []).find((f) => f.source.ref === 'team')?.text.match(/@[\w-]+/)?.[0]
   const end = useRef<HTMLDivElement>(null)
   const mine = jobs.filter((j) => j.agent === handle)
   const items = [...(rt?.tools ?? []).map((c) => ({ at: c.at, c })), ...(rt?.notes ?? []).map((n) => ({ at: n.at, n }))].sort((a, b) => a.at - b.at)
@@ -52,8 +54,8 @@ export function AgentView() {
         <div className="min-w-0 flex-1 leading-tight">
           <div className="flex items-center gap-1.5 text-[12px]" style={{ color: def.color }}>
             {def.name}
-            <span className="text-[9.5px] uppercase tracking-wider" style={{ color: MODEL_COLOR[def.model] }}>
-              {def.model}
+            <span className="text-[9.5px] uppercase tracking-wider" style={{ color: real ? 'var(--ok)' : MODEL_COLOR[def.model] }}>
+              {real ? (filledBy ?? 'real agent') : def.model}
             </span>
           </div>
           <div className="flex items-center gap-1 truncate text-[10px] text-muted-foreground">
@@ -68,11 +70,13 @@ export function AgentView() {
         </button>
       </div>
       <div className="flex shrink-0 items-center gap-1.5 border-b border-line px-2 pb-1.5 text-[9.5px] text-faint">
-        <span className="shrink-0 whitespace-nowrap rounded-sm border px-1" style={{ borderColor: org.color, color: org.color }}>
-          {org.name}
-        </span>
-        <span className="truncate">{org.provider}</span>
-        <span className="ml-auto truncate">mcp: {def.mcp.join(', ')}</span>
+        {!real && (
+          <span className="shrink-0 whitespace-nowrap rounded-sm border px-1" style={{ borderColor: org.color, color: org.color }}>
+            {org.name}
+          </span>
+        )}
+        <span className="truncate">{real ? 'a real agent on your Lagrange server' : org.provider}</span>
+        <span className="ml-auto truncate">mcp: {real ? 'firefall-tools' : def.mcp.join(', ')}</span>
       </div>
       <div className="flex shrink-0 gap-3 px-2 pt-1 text-[10.5px]">
         {(['work', 'knowledge'] as const).map((t) => (

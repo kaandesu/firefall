@@ -401,6 +401,77 @@ function ChamberTile({ job }: { job: Job }) {
 
 // ── shared ───────────────────────────────────────────────────────────────────────────
 
+function useJsonFile<T>(url: string) {
+  const [d, setD] = useState<T>()
+  useEffect(() => {
+    let on = true
+    fetch(url)
+      .then((r) => (r.ok ? (r.json() as Promise<T>) : undefined))
+      .then((x) => on && setD(x))
+      .catch(() => undefined)
+    return () => {
+      on = false
+    }
+  }, [url])
+  return d
+}
+
+/** Real Saffire-I frames (PSI-98, series F1C2) playing while the studies are ranked, with the ranking the tool returned. */
+function SaffireTile({ job }: { job: Job }) {
+  const d = useJsonFile<{ frames: { t: number; src: string }[] }>('/data/psi-98/index.json')
+  const [loop, setLoop] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setLoop((x) => x + 1), 180)
+    return () => clearInterval(t)
+  }, [])
+  const n = d?.frames.length ?? 0
+  const f = d && n ? d.frames[job.done ? loop % n : Math.min(n - 1, Math.floor(job.progress * n))] : undefined
+  return (
+    <div className="flex h-full min-h-0 gap-2">
+      <div className="relative min-h-0 min-w-0 flex-1">
+        {f ? <img src={`/data/psi-98/${f.src}`} alt="Saffire-I flow visualisation frame" className="h-full w-full rounded-sm object-contain" /> : <Wait text="Saffire-I frames" />}
+        <div className="absolute left-1 top-1 bg-bg/70 px-0.5 text-[9px] text-muted-foreground">Saffire-I · PSI-98 · F1C2 pre-test flow {f && <span className="text-ink">T+{f.t.toFixed(1)} s</span>}</div>
+      </div>
+      <div className="flex w-[42%] shrink-0 flex-col justify-center gap-1 text-[9.5px]">
+        <div className="label">coverage of this atmosphere</div>
+        {Object.entries(job.stats).map(([k, v]) => (
+          <div key={k} className="flex items-center gap-1.5">
+            <span className="w-24 truncate text-ink">{k}</span>
+            <div className="h-1 flex-1 rounded bg-surface-3">
+              <div className="h-full rounded bg-ug" style={{ width: `${Math.min(100, num(v, 0) * 100 * job.progress)}%` }} />
+            </div>
+            <span className="w-7 text-right text-muted-foreground tnum">{v}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Real BASS-II crew stills (PSI-25) beside the report passage the search returned. */
+function BassTile({ job }: { job: Job }) {
+  const d = useJsonFile<{ stills: { id: string; src: string }[] }>('/data/psi-25/index.json')
+  const [loop, setLoop] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setLoop((x) => x + 1), 1400)
+    return () => clearInterval(t)
+  }, [])
+  const s = d?.stills.length ? d.stills[(Math.floor(job.progress * 6) + loop) % d.stills.length] : undefined
+  const text = job.stats.passage ?? ''
+  return (
+    <div className="flex h-full min-h-0 gap-2">
+      <div className="relative min-h-0 w-[45%] shrink-0">
+        {s ? <img src={`/data/psi-25/${s.src}`} alt={`BASS-II still ${s.id}`} className="h-full w-full rounded-sm object-cover" /> : <Wait text="BASS-II stills" />}
+        <div className="absolute left-1 top-1 bg-bg/70 px-0.5 text-[9px] text-muted-foreground">BASS-II · PSI-25 · {s?.id}</div>
+      </div>
+      <div className="scroll-thin min-w-0 flex-1 overflow-y-auto text-[10px] leading-snug">
+        <div className="text-k-ask">summary report · {job.stats.page}</div>
+        <div className="sans text-muted-foreground">{text.slice(0, Math.max(40, Math.floor(text.length * (job.done ? 1 : job.progress))))}</div>
+      </div>
+    </div>
+  )
+}
+
 function Wait({ text }: { text: string }) {
   return <div className="flex h-full items-center justify-center text-[10.5px] text-faint">{text}</div>
 }
@@ -437,6 +508,10 @@ export function JobScene({ job, study, studyProgress, live }: { job: Job; study?
       return <ChamberTile job={job} />
     case 'fds':
       return <FdsTile job={job} live={live} />
+    case 'saffire-frames':
+      return <SaffireTile job={job} />
+    case 'bass-stills':
+      return <BassTile job={job} />
     default:
       return <Wait text={job.title} />
   }

@@ -12,9 +12,9 @@ a Lagrange server, FIREFALL connected to it, and an agent that can call FIREFALL
  Step 6  More FDS                  ask for a longer run; it opens in the FDS tab
 ```
 
-**What is real here.** The agent, its tool calls, the FDS run and the report it writes. Only the brief it is sent
-is scripted (`web/src/live/brief.ts`: its role, a short knowledge base, the cabin files, the steps). The
-multi-agent demo (plan, run and report screens with nine agents) is still a scripted replay.
+**What is real here.** The agents, their tool calls, the FDS run, the reviews and the report. The plan and the
+brief each role is sent are fixed (`web/src/live/brief.ts`). *Watch the demo* on the start screen is still the
+scripted replay.
 
 [Lagrange](https://lagrange.3agents.dev) is the server every message goes through
 ([source](https://github.com/three-agent-problem/lagrange)). There is no hosted instance to sign up for yet, so
@@ -166,15 +166,36 @@ the tool calls it made: `limiting_o2`, `spread_rate`, `fire_spread`.
 
 ## Step 5 · Run a real review
 
-On the Team screen, in the **REAL REVIEW** panel, pick the online agent and press **start the review**.
+On the Team screen, in the **REAL REVIEW** panel, pick the online agent and press **continue to intake**.
+Then it is the same flow as the demo, with real work behind it:
 
-The agent gets the brief and works through it: every material's limiting O₂ and spread rate, the nearest real
-tests, the cabin fire model as built and with a fix it chooses, smoke detection, suppression, a 5-second FDS
-run, and a passage from the BASS-II report. With Haiku this takes about 2 minutes and 20 or so tool calls.
+1. **Intake.** Drop your `cabin.yaml`, `materials.csv` and `cabin.model.json` (or *load example*), and type the
+   question the review should answer.
+2. **Plan.** Seven steps, one per department. Switch optional ones off, then approve.
+3. **Run.** Each step is a real task sent to the agent that fills that role (the one you picked, or the agent
+   you assigned to the role on the Team screen). As it calls tools, the screens fill in:
+   - **Lab:** a tile per job. Saffire-I frames while studies are ranked, real ACME frames for the nearest
+     tests, BASS-II stills beside the report passage, the limiting-O₂ map, flame spread, smoke CFD and sensor
+     placement, the droplet, and the agent's own FDS run in 3-D when it finishes.
+   - **Stage:** the cabin with the materials, spread, pressure, smoke and what-if layers, unlocking as the
+     results arrive. The what-if is the fix the Simulation agent tried.
+   - **Findings:** the matrix row by row, then PR-1 and PR-2 built from the tool results, with Safety
+     Assurance's real endorse or object.
+   - You decide on each proposal when asked.
+4. **Report.** The Report agent's own hazard report at the top, then the charts, maps and tables.
 
-✅ **You should see** the tool calls tick off on the left as they happen, then a hazard report on the right
-(verdict, materials table, eight sections). Ask follow-ups in the box under it; they continue the same
-conversation. **download .md** saves the report.
+With one Haiku agent this takes about 4 minutes and 25 or so tool calls.
+
+✅ **You should see** `real · @sim` in the top bar, tiles appearing in the Lab within 30 seconds, and a report
+whose header says *real review · N tool calls by agents*.
+
+What is fixed and what is not: the plan and each role's brief (`web/src/live/brief.ts`) are FIREFALL's. The tool
+calls, the numbers, the reviews and the report are the agents'. Lab tiles play back the result of a finished
+tool call; the FDS tile waits for the real run.
+
+Shortcuts: `?real=sim&example=1&start=1` starts a real review with `@sim` on the Apollo files; add `&auto=1`
+to answer every question with its first option. From the shell, without the UI:
+`node --import ./scripts/register.mjs scripts/real-review.ts sim` (in `web/`).
 
 ---
 

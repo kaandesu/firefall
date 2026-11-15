@@ -8,7 +8,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { z } from 'zod'
-import { ToolError, dropletTool, fireSpread, getCabin, limitingO2Tool, nearestTests, searchReport, searchStudies, smokeAlarm, spreadRateTool } from './core'
+import { ToolError, callsSince, recordCall, setCabin, dropletTool, fireSpread, getCabin, limitingO2Tool, nearestTests, searchReport, searchStudies, smokeAlarm, spreadRateTool } from './core'
 import { MAX_T_END, fdsStatus, listRuns, runFds } from './fds'
 
 const o2 = z.number().min(0.05).max(1).describe('O₂ mole fraction, 0..1 (0.21 is air, 0.34 the Artemis exploration atmosphere, 1 is pure oxygen)')
@@ -59,11 +59,15 @@ export function buildServer() {
   const server = new McpServer({ name: 'firefall-tools', version: '0.1.0' })
   for (const t of TOOLS)
     server.registerTool(t.name, { title: t.title, description: t.description, inputSchema: t.input }, async (args: unknown) => {
+      const t0 = Date.now()
+      const at = new Date().toISOString()
       try {
         const out = await (t.run as (a: unknown) => unknown)(args)
-        return { content: [{ type: 'text' as const, text: JSON.stringify(out, null, 1) }] }
+        recordCall({ tool: t.name, args, ok: true, result: out, at, ms: Date.now() - t0 })
+        return { content: [{ type: 'text' as const, text: JSON.stringify(out) }] }
       } catch (e) {
         if (!(e instanceof ToolError)) console.error(`[${t.name}]`, e)
+        recordCall({ tool: t.name, args, ok: false, result: (e as Error).message, at, ms: Date.now() - t0 })
         return { content: [{ type: 'text' as const, text: (e as Error).message }], isError: true }
       }
     })
@@ -83,6 +87,21 @@ async function main() {
     if (path === '/' && req.method === 'GET') {
       res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*' })
       return void res.end(JSON.stringify({ name: 'firefall-tools', mcp: `http://localhost:${port}/mcp`, tools: TOOLS.map((t) => t.name) }))
+    }
+    // For the FIREFALL app (another localhost port): the call log, and the intake files of the current review.
+    const cors = { 'content-type': 'application/json', 'access-control-allow-origin': '*' }
+    if (path === '/calls' && req.method === 'GET') {
+      const since = Number(new URL(req.url ?? '/', 'http://x').searchParams.get('since') ?? 0)
+      return void res.writeHead(200, cors).end(JSON.stringify({ calls: callsSince(since) }))
+    }
+    if (path === '/cabin' && req.method === 'POST') {
+      let body = ''
+      for await (const c of req) body += c
+      try {
+        return void res.writeHead(200, cors).end(JSON.stringify(setCabin(JSON.parse(body))))
+      } catch (e) {
+        return void res.writeHead(400, cors).end(JSON.stringify({ error: (e as Error).message }))
+      }
     }
     if (path !== '/mcp') return void res.writeHead(404).end()
     if (req.method !== 'POST') {

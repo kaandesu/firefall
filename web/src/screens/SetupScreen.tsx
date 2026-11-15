@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react'
 import { Avatar } from '@/components/bits'
 import { AGENT, MODEL_COLOR, ORGS, PEOPLE } from '@/demo/crew'
 import { cn } from '@/lib/utils'
-import { useReview } from '@/live/review'
 import { ROLES, TOOLS_URL, tunnelCommands, useRoster, type Address } from '@/live/roster'
 import { useMission } from '@/live/store'
 
@@ -324,11 +323,10 @@ function Server() {
   )
 }
 
-/** Start a real review: one online agent gets the brief and does the work with the firefall tools. */
+/** Pick the agent for a real review, then go to intake: same screens as the demo, real work. */
 function RealReview() {
   const addresses = useRoster((s) => s.addresses)
-  const start = useReview((s) => s.start)
-  const running = useReview((s) => s.turns.length > 0)
+  const setRealAgent = useMission((s) => s.setRealAgent)
   const setPhase = useMission((s) => s.setPhase)
   const online = addresses.filter((a) => a.kind === 'agent' && a.online)
   const [pick, setPick] = useState('')
@@ -343,10 +341,10 @@ function RealReview() {
     <div className="pane gap-2 p-3 pt-4">
       <header className="pane-head text-[11px]">
         <span className="tracking-[0.14em] text-ok">REAL REVIEW</span>
-        <span className="text-faint">one agent, the Apollo CM-012 cabin, real tool calls</span>
+        <span className="text-faint">your agents do the work</span>
       </header>
-      <p className="sans max-w-[860px] text-[12.5px] leading-snug text-muted-foreground">
-        The agent gets a brief (its role, a short knowledge base on spacecraft fire safety and Apollo 1, the cabin files, the steps) and does the work itself: it calls the models, searches the test data, starts an FDS run and writes the hazard report. Only the brief is scripted.
+      <p className="sans max-w-[900px] text-[12.5px] leading-snug text-muted-foreground">
+        Same screens as the demo, but each department’s step is a real task sent to an agent, which calls the models, searches the test data and runs FDS itself. A role you assigned on the left goes to that agent; every other role goes to the one you pick here. The plan and the briefs are fixed; the numbers, the reviews and the report are the agents’.
       </p>
       <div className="flex flex-wrap items-center gap-2">
         {online.length > 0 ? (
@@ -360,15 +358,18 @@ function RealReview() {
         ) : (
           <span className="sans text-[12px] text-warn">No agent is online. Add one below and run its “Claude Code with FIREFALL tools” command.</span>
         )}
-        <button type="button" disabled={!agent} onClick={() => agent && void start(agent)} className="rounded-sm bg-flame px-4 py-2 text-[12px] font-medium text-bg hover:brightness-110 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-faint">
-          start the review ▸
+        <button
+          type="button"
+          disabled={!agent || tools === false}
+          onClick={() => {
+            setRealAgent(agent)
+            setPhase('intake')
+          }}
+          className="rounded-sm bg-flame px-4 py-2 text-[12px] font-medium text-bg hover:brightness-110 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-faint"
+        >
+          continue to intake ▸
         </button>
-        {running && (
-          <button type="button" onClick={() => setPhase('live')} className="text-[11px] text-ug hover:underline">
-            back to the running review
-          </button>
-        )}
-        {tools === false && <span className="sans text-[11.5px] text-warn">The tools server is not running: start it with `pnpm tools` in web/, or the agent has nothing to call.</span>}
+        {tools === false && <span className="sans text-[11.5px] text-warn">The tools server is not running. Start it with `pnpm tools` in web/, then reload.</span>}
       </div>
     </div>
   )
@@ -377,6 +378,7 @@ function RealReview() {
 export function SetupScreen() {
   const setPhase = useMission((s) => s.setPhase)
   const net = useRoster((s) => s.net)
+  const setRealAgent = useMission((s) => s.setRealAgent)
   const live = net === 'lagrange'
   return (
     <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
@@ -395,7 +397,14 @@ export function SetupScreen() {
             ◂ back
           </button>
           {live ? (
-            <button type="button" onClick={() => setPhase('intake')} className="shrink-0 text-[11px] text-muted-foreground hover:text-ink">
+            <button
+              type="button"
+              onClick={() => {
+                setRealAgent(undefined)
+                setPhase('intake')
+              }}
+              className="shrink-0 text-[11px] text-muted-foreground hover:text-ink"
+            >
               scripted demo instead ▸
             </button>
           ) : (

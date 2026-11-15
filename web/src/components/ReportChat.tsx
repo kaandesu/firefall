@@ -133,7 +133,7 @@ export function ReportChat({ context, section, seed, onSeedUsed, renderPull, scr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed])
 
-  const sec = SECTIONS.find((s) => s.id === section)!
+  const sec = SECTIONS.find((s) => s.id === section) ?? SECTIONS[0]
   const chips = [...new Set([sec.ask, 'Why does this cabin fail?', 'What did the ACME data show?', 'Where should the smoke sensors go?', 'What did people decide?', "What's still open?"])].slice(0, 5)
 
   return (

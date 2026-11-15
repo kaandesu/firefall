@@ -166,7 +166,7 @@ export type KbEntry = { id: string; agent: string; text: string; source: { kind:
 
 /** A data-processing job an agent runs on its own org's compute (looks only in the demo). */
 /** What a lab tile draws for a job. */
-export type SceneId = 'acme-frames' | 'spread-duct' | 'lim-sweep' | 'gravity-flame' | 'smoke-cfd' | 'sensor-opt' | 'droplet' | 'chamber-test' | 'cabin-fire' | 'fds'
+export type SceneId = 'acme-frames' | 'spread-duct' | 'lim-sweep' | 'gravity-flame' | 'smoke-cfd' | 'sensor-opt' | 'droplet' | 'chamber-test' | 'cabin-fire' | 'fds' | 'saffire-frames' | 'bass-stills'
 
 export type Job = {
   id: string

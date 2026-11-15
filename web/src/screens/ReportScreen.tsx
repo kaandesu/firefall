@@ -1,6 +1,8 @@
 // The report: what the review found, section by section, with the data behind it (real ACME frames, the smoke CFD,
 // the fire runs) and who decided what. A table of contents on the left, the chat on the right that can pull any of it
 // up. Replaces the old one-card verdict.
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { Thumbnail } from '@remotion/player'
 import { ArrowLeft, Download, MessageSquare, Pin, Printer } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
@@ -11,7 +13,7 @@ import { useEvidenceRows } from './EvidenceScreen'
 import { signature } from '@/live/sign'
 import { targetOf } from '@/data/library'
 import { stageRuns } from '@/demo/apollo1'
-import { NODES, ORGS, agentColor, agentName } from '@/demo/crew'
+import { AGENT, NODES, ORGS, agentColor, agentName } from '@/demo/crew'
 import { BrightnessChart, FrameCanvas, SectionCanvas, useAcmeFrames } from '@/lab/tiles'
 import type { SmokeStudy } from '@/lab/smokeStudy'
 import { useSmokeStudy } from '@/lab/useSmokeStudy'
@@ -42,6 +44,8 @@ const alarm = (t: number | null) => (t === null ? 'never' : `${t.toFixed(0)} s`)
 
 export function ReportScreen() {
   const model = useMission((s) => s.model)
+  const real = useMission((s) => s.mode === 'agents')
+  const agentReport = model.dossier.find((d) => d.id === 'agent-report')?.body[0]
   const pkg = useMission((s) => s.pkg)
   const cabin = useMission((s) => s.cabin)
   const acme = useMission((s) => s.acme)
@@ -55,7 +59,8 @@ export function ReportScreen() {
   const { study } = useSmokeStudy(pkg, cabin)
   const frames = useAcmeFrames()
   const evidence = useEvidenceRows()
-  const runs = useMemo(() => (pkg && cabin ? stageRuns(pkg, cabin) : []), [pkg, cabin])
+  const fix = useMission((s) => s.fix)
+  const runs = useMemo(() => (pkg && cabin ? stageRuns(pkg, cabin, fix) : []), [pkg, cabin, fix])
   const input: ReportInput | undefined = pkg ? { model, pkg, runs, study, events: frames?.ev ?? acme?.events ?? [], sensors: acme?.sensors, evidence, pins } : undefined
   const r = useMemo(() => (input ? buildReport(input) : undefined), [input?.model, input?.study, input?.events, input?.evidence, input?.pins, runs]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -205,11 +210,37 @@ export function ReportScreen() {
               <span>{pkg.volume}</span>
               <span>crew {pkg.crew}</span>
               <span className="text-faint">·</span>
-              <span>{r.orgsUsed.length} orgs · {Object.keys(model.agents).length} agents</span>
+              {real ? <span className="text-ok">real review · {Object.values(model.agents).reduce((n, a) => n + a.tools.length, 0)} tool calls by agents</span> : <span>{r.orgsUsed.length} orgs · {Object.keys(model.agents).length} agents</span>}
               {minutes && <span>{minutes} min</span>}
-              <span className="text-ok">≈ {Math.round(model.saved.tokens / 1000)}k tokens saved</span>
+              {!real && <span className="text-ok">≈ {Math.round(model.saved.tokens / 1000)}k tokens saved</span>}
             </div>
           </header>
+
+          {agentReport && (
+            <section id="agent-report" className="scroll-mt-6 rounded-sm border border-ok/40 bg-surface-2 p-5">
+              <div className="flex items-center gap-2">
+                <div className="label text-ok">the agents’ report</div>
+                <span className="text-[10.5px] text-faint">written by the Report agent from the other agents’ findings · not edited by FIREFALL</span>
+                <button type="button" onClick={() => download('agent-hazard-report.md', agentReport, 'text/markdown')} className="ml-auto text-[10.5px] text-muted-foreground hover:text-ink print:hidden">
+                  download .md
+                </button>
+              </div>
+              {r.verdict?.would?.length ? (
+                <ul className="sans mt-3 space-y-1.5 text-[13.5px] leading-snug text-ink">
+                  {r.verdict.would.map((l) => (
+                    <li key={l} className="flex gap-2.5">
+                      <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-ok" />
+                      {l}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="report-md report-doc sans mt-4 text-[13px] leading-relaxed text-muted-foreground">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{agentReport}</ReactMarkdown>
+              </div>
+              <div className="sans mt-4 border-t border-line pt-3 text-[11.5px] text-faint">Below: FIREFALL’s own figures for the same cabin (charts, maps, tables), computed from the input files and the agents’ tool results.</div>
+            </section>
+          )}
 
           <section id="r-summary" className={cn('scroll-mt-6 rounded-sm border border-line-2 bg-surface-2 p-5', flash === 'r-summary' && 'border-ug/60')}>
             <div className="flex items-center">
@@ -491,6 +522,31 @@ export function ReportScreen() {
           </ReportSection>
 
           <ReportSection flash={flash} onAsk={ask} id="how" by={['flight']}>
+            {real ? (
+              <>
+                <div className="grid grid-cols-4 gap-2">
+                  <Mini n={String(Object.values(model.agents).reduce((n, a) => n + a.tools.length, 0))} l="tool calls by agents" />
+                  <Mini n={String(model.jobs.length)} l="jobs shown in the lab" />
+                  <Mini n={String(model.comms.filter((c) => c.kind === 'reply' || c.kind === 'review').length)} l="answers and reviews" />
+                  <Mini n={String(model.comms.filter((c) => c.kind === 'human').length)} l="decisions by a person" />
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {Object.values(model.agents)
+                    .filter((a) => a.tools.length || model.kb[a.handle]?.some((k) => k.source.ref === 'team'))
+                    .map((a) => (
+                      <div key={a.handle} className="rounded-sm border border-line bg-surface-2 px-2.5 py-2 text-[11px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-ink">{AGENT[a.handle]?.name ?? a.handle}</span>
+                          <span className="ml-auto text-ok">{model.kb[a.handle]?.find((k) => k.source.ref === 'team')?.text.match(/@[\w-]+/)?.[0]}</span>
+                        </div>
+                        <div className="mt-1 text-muted-foreground">{a.tools.length ? `${a.tools.length} tool calls: ${[...new Set(a.tools.map((t) => t.tool))].join(', ')}` : 'no tool calls'}</div>
+                      </div>
+                    ))}
+                </div>
+                <div className="sans text-[11.5px] text-faint">A real review: each role’s step was a task sent over Lagrange to the agent named above. The plan and the briefs were fixed by FIREFALL; the tool calls, findings, reviews and the report are the agents’. The models and FDS ran on this machine.</div>
+              </>
+            ) : (
+              <>
             <div className="grid grid-cols-4 gap-2">
               <Mini n={String(model.comms.length)} l="messages" />
               <Mini n={String(r.cross.length)} l="across org lines" />
@@ -517,6 +573,8 @@ export function ReportScreen() {
                 )
               })}
             </div>
+              </>
+            )}
           </ReportSection>
 
           <ReportSection flash={flash} onAsk={ask} id="sources">

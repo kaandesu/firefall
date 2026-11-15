@@ -274,12 +274,13 @@ parameters, and start real FDS runs that open in the FDS tab (`?view=fds&run=<id
 - `scripts/prep-psi.sh` turns raw PSI downloads (`data/PSI-98`, `data/PSI-25`, gitignored) into the WebP frames
   and the searchable report under `web/public/data/psi-*`, shown in the Library.
 
-**Real review:** on the Team screen, *start the review* sends one connected agent a brief (role, a short knowledge
-base, the cabin files, the steps; `web/src/live/brief.ts`). The agent does the work with the tools and writes the
-hazard report; you watch its tool calls live and can ask follow-ups. Only the brief is scripted.
+**Real review:** on the Team screen pick a connected agent and continue to intake. The same screens as the demo
+then run on real work: each department's step is a task sent over Lagrange to the agent that fills that role
+(`web/src/live/conductor.ts`), and every tool call it makes lights up the Lab, the Stage and the Findings. The
+Report agent writes the hazard report. The plan and the role briefs are fixed; the numbers are not.
 
-**What this does not do yet:** several agents working together. The nine-agent plan, run and report screens are
-still the scripted replay.
+**What this does not do yet:** agents do not message each other directly; the conductor passes each department's
+findings to the next. The plan is a fixed template, not written by a lead agent.
 
 ## Deploy the demo
 

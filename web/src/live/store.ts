@@ -2,7 +2,9 @@
 // from Lagrange entries, and the Halo-style panel layout (focus + size per panel).
 import { create } from 'zustand'
 import { HUMAN, type ComputeNode } from '@/demo/crew'
-import { apollo1, DECISIONS, LAB_GATE, MEDIATE_GATE, PLAN_GATE, SENSOR_GATE, type Decision, type ReviewInput } from '@/demo/apollo1'
+import { apollo1, DECISIONS, LAB_GATE, MEDIATE_GATE, PLAN_GATE, SENSOR_GATE, SIGN_GATE, type Decision, type Fix, type ReviewInput } from '@/demo/apollo1'
+import { Conductor } from './conductor'
+import { PROXY, TOOLS_URL, useRoster } from './roster'
 import { detectEvents, loadFrames, loadSensors, loadTestpoints, sensorStats } from '@/data/acme'
 import { buildEvidence } from '@/data/evidence'
 import { getSmokeStudy, startSmokeStudy, whenSmokeStudy } from '@/lab/useSmokeStudy'
@@ -14,7 +16,7 @@ import { Replay, type ReplayStatus } from './replay'
 import { LagrangeSource } from './lagrange'
 import type { Entry, SimRun } from './types'
 
-export type Phase = 'start' | 'setup' | 'live' | 'intake' | 'plan' | 'run' | 'done'
+export type Phase = 'start' | 'setup' | 'intake' | 'plan' | 'run' | 'done'
 
 export type SlotState<T> = { name: string; text: string; value?: T; error?: string }
 
@@ -66,7 +68,12 @@ type State = {
   planOpen: boolean
   /** The cabin intro is showing (once per review). */
   intro: boolean
-  mode: 'demo' | 'live'
+  /** demo: the scripted replay. live: a Lagrange stream. agents: a real review by connected agents (live/conductor.ts). */
+  mode: 'demo' | 'live' | 'agents'
+  /** The connected agent that does the next review (any role without its own agent goes to it). Unset: the scripted demo. */
+  realAgent?: string
+  /** The change the agents tried in a real review; the stage and the report show it as PR-1. */
+  fix?: Fix
   liveError?: string
   model: Model
   status: ReplayStatus
@@ -86,6 +93,9 @@ type State = {
   stagePlay: number
 
   setPhase: (p: Phase) => void
+  setRealAgent: (h?: string) => void
+  /** Answer every question with its first option after a moment (?auto=1), for a hands-off run. */
+  autoAnswer?: boolean
   addNode: (n: ComputeNode) => void
   addMcp: (agent: string, server: { name: string; url: string; tools: string[] }) => void
   setView: (v: State['view']) => void
@@ -126,6 +136,8 @@ type State = {
 
 let replay: Replay | null = null
 let live: LagrangeSource | null = null
+let conductor: Conductor | null = null
+let seq = 0
 let doneTimer: ReturnType<typeof setTimeout> | null = null
 
 const idleStatus: ReplayStatus = { playing: false, t: 0, total: 0, holding: false, finished: false }
@@ -176,6 +188,7 @@ export const useMission = create<State>((set, get) => ({
   stagePlay: 0,
 
   setPhase: (phase) => set({ phase }),
+  setRealAgent: (realAgent) => set({ realAgent }),
   addNode: (n) => set((s) => ({ nodes: [...s.nodes.filter((x) => x.id !== n.id), { ...n, added: true }] })),
   addMcp: (agent, server) => set((s) => ({ mcp: { ...s.mcp, [agent]: [...(s.mcp[agent] ?? []), server] } })),
   setView: (view) => set({ view }),
@@ -184,6 +197,7 @@ export const useMission = create<State>((set, get) => ({
     const s = get()
     if (s.model.waiting?.taskId === id) return s.answer(text)
     if (s.mode === 'live') live?.answer(id, text)
+    if (s.mode === 'agents') conductor?.answer(id, text)
   },
   skipIntro: () => set({ intro: false }),
   togglePin: (id) => set((s) => ({ pins: s.pins.includes(id) ? s.pins.filter((x) => x !== id) : [...s.pins, id] })),
@@ -220,13 +234,19 @@ export const useMission = create<State>((set, get) => ({
       }
     }
     replay?.dispose()
+    replay = null
+    conductor?.stop()
+    conductor = null
     live?.close()
     live = null
+    const agent = get().realAgent
     set({
       phase: 'plan',
       intro: new URLSearchParams(location.search).get('intro') !== '0',
       view: 'review',
-      mode: 'demo',
+      mode: agent ? 'agents' : 'demo',
+      fix: undefined,
+      liveError: undefined,
       pkg,
       cabin,
       skip: [],
@@ -244,6 +264,25 @@ export const useMission = create<State>((set, get) => ({
       layer: 'materials',
       variant: 'as-built',
     })
+    if (agent) {
+      const roster = useRoster.getState()
+      const online = new Set(roster.addresses.filter((a) => a.kind === 'agent' && a.online).map((a) => a.handle))
+      seq = 0
+      const c = new Conductor({
+        request: get().request,
+        pkg,
+        files: { cabin: intake.cabin!.text, materials: intake.materials!.text, model: intake.model!.text },
+        agentFor: (role) => (online.has(roster.assign[role]) ? roster.assign[role] : agent),
+        emit: (e) => conductor === c && get().ingest({ ...e, seq: ++seq, at: new Date().toISOString() } as Entry),
+        onFix: (fix) => set({ fix }),
+        lagrange: PROXY,
+        tools: TOOLS_URL.replace(/\/mcp$/, ''),
+      })
+      conductor = c
+      set({ status: { ...idleStatus, playing: true } })
+      c.start().catch((e: Error) => set({ liveError: e.message }))
+      return
+    }
     replay = new Replay(apollo1(input(get())), (e) => get().ingest(e), (status) => set({ status }))
     replay.setSpeed(get().speed)
     replay.play()
@@ -259,6 +298,13 @@ export const useMission = create<State>((set, get) => ({
     const extra = note?.trim() ? `. Note: ${note.trim()}` : ''
     if (s.mode === 'live') {
       live?.answer(PLAN_GATE, `Approve plan${extra}`)
+      return
+    }
+    if (s.mode === 'agents') {
+      const c = conductor
+      if (!c?.answer(PLAN_GATE, `Approve plan${s.skip.length ? ` (switched off: ${s.skip.join(', ')})` : ''}${extra}`)) return
+      set({ phase: 'run', intro: false, startedAt: Date.now() })
+      c.run(s.skip).catch((e: Error) => set({ liveError: e.message }))
       return
     }
     // The detection agent needs its CFD results; they run in a worker from the moment the case is loaded.
@@ -280,6 +326,12 @@ export const useMission = create<State>((set, get) => ({
       live?.answer(w.taskId, text)
       return
     }
+    if (s.mode === 'agents') {
+      if (w.taskId === SENSOR_GATE) set({ pr2: !/keep/i.test(text) })
+      if (w.taskId === MEDIATE_GATE) set({ decision: DECISIONS.find((d) => d.label === text)?.id ?? 'caveat' })
+      conductor?.answer(w.taskId, text)
+      return
+    }
     if (w.taskId === LAB_GATE) {
       set({ labTest: !/skip/i.test(text) })
       replay?.swap(apollo1(input(get())))
@@ -296,6 +348,7 @@ export const useMission = create<State>((set, get) => ({
   },
   ask: (text) => {
     const t = text.trim()
+    if (t && get().mode === 'agents') return void conductor?.chat(t)
     if (!t || !replay) return
     replay.inject({ kind: 'message', sender: HUMAN, recipient: 'flight', data: { name: 'fc.comm', kind: 'human', text: t } })
     const m = get().model
@@ -311,10 +364,12 @@ export const useMission = create<State>((set, get) => ({
   reset: () => {
     replay?.dispose()
     replay = null
+    conductor?.stop()
+    conductor = null
     live?.close()
     live = null
     if (doneTimer) clearTimeout(doneTimer)
-    set({ phase: 'intake', model: emptyModel(), status: idleStatus, pkg: undefined, cabin: undefined, skip: [] })
+    set({ phase: 'intake', mode: 'demo', fix: undefined, liveError: undefined, model: emptyModel(), status: idleStatus, pkg: undefined, cabin: undefined, skip: [] })
   },
   showVerdict: (on) => set({ phase: on ? 'done' : 'run' }),
   goLive: (url) => {
@@ -334,6 +389,10 @@ export const useMission = create<State>((set, get) => ({
     const d = e.data ?? {}
     const s = get()
     if (model.plan?.approved && s.phase === 'plan') set({ phase: 'run' })
+    if (s.autoAnswer && s.mode === 'agents' && model.waiting && model.waiting.taskId !== prev.waiting?.taskId && model.waiting.taskId !== SIGN_GATE) {
+      const w = model.waiting
+      setTimeout(() => get().model.waiting?.taskId === w.taskId && get().answer(w.options[0]), 2500)
+    }
     if (model.done && !prev.done) {
       if (doneTimer) clearTimeout(doneTimer)
       doneTimer = setTimeout(() => get().phase === 'run' && set({ phase: 'done' }), 2200)

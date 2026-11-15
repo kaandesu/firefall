@@ -77,12 +77,40 @@ export function fireRuns(pkg: DesignPackage, model: CabinModel): FireRun[] {
 }
 
 /** What the stage can show: the cabin as built, the proposal (PR-1), and the three atmosphere what-ifs. */
-export function stageRuns(pkg: DesignPackage, model: CabinModel): FireRun[] {
+export function stageRuns(pkg: DesignPackage, model: CabinModel, fix?: Fix): FireRun[] {
   const [asBuilt, ...rest] = fireRuns(pkg, model)
-  const prop = proposedPackage(pkg)
+  const prop = fix ? fixedPackage(pkg, fix) : proposedPackage(pkg)
   const v = variantsFor(prop)[0]
-  const propRun = simulateFire(model, prop, { ...v, id: 'proposal', short: 'PR-1', label: 'PR-1 · Beta cloth for nylon, 60/40 on the pad' })
+  const propRun = simulateFire(model, prop, { ...v, id: 'proposal', short: 'PR-1', label: fix ? `PR-1 · ${fixLabel(fix)}` : 'PR-1 · Beta cloth for nylon, 60/40 on the pad' })
   return [asBuilt, propRun, ...rest]
+}
+
+/** A change an agent tried with the fire_spread tool: another atmosphere, gravity, or materials swapped. */
+export type Fix = { o2?: number; psia?: number; g?: number; replace?: { from: string; to: string }[] }
+
+export const fixLabel = (f: Fix) =>
+  [
+    ...(f.replace ?? []).map((r) => `${MATERIALS[r.to]?.label.split(' ')[0] ?? r.to} for ${r.from}`),
+    f.o2 !== undefined ? `${Math.round(f.o2 * 100)} % O₂` : '',
+    f.psia !== undefined ? `${f.psia} psia` : '',
+    f.g !== undefined ? `${f.g} g` : '',
+  ]
+    .filter(Boolean)
+    .join(', ') || 'no change'
+
+export function fixedPackage(pkg: DesignPackage, f: Fix): DesignPackage {
+  const o2 = f.o2 ?? pkg.atmosphere.o2
+  const psi = f.psia ?? pkg.atmosphere.psi
+  const g = f.g ?? pkg.gravity.g
+  return {
+    ...pkg,
+    atmosphere: { o2, psi, label: `${Math.round(o2 * 100)} % O₂ · ${psi} psia` },
+    gravity: { g, label: g === 0 ? 'µg' : g === 1 ? 'Earth · 1 g' : `${g} g` },
+    bom: pkg.bom.map((b) => {
+      const r = f.replace?.find((x) => x.from.toLowerCase() === b.material)
+      return r && MATERIALS[r.to.toLowerCase()] ? { ...b, item: `${b.item} → ${MATERIALS[r.to.toLowerCase()].label.split(' ')[0]}`, material: r.to.toLowerCase() as typeof b.material } : b
+    }),
+  }
 }
 
 /** The proposed cabin: nylon swapped for Beta cloth (modelled as PTFE-coated glass), pad atmosphere 60/40. */

@@ -22,11 +22,31 @@ const gLabel = (g: number) => (g === 0 ? 'µg' : g === 1 ? '1 g' : `${g} g`)
 
 export type Cabin = { spec: CabinSpec; rows: MaterialRow[]; model: CabinModel }
 
-/** The example cabin (Apollo CM-012) from the same three input files the app reads. */
+let override: Cabin | undefined
+
+/** The cabin under review: the files the app sent for this review (setCabin), or else the Apollo CM-012 example. */
 export function loadCabin(): Cabin {
+  if (override) return override
   const read = (f: string) => readFileSync(join(EXAMPLE, f), 'utf8')
   return { spec: parseCabin(read('cabin.yaml')), rows: parseMaterials(read('materials.csv')), model: parseModel(read('cabin.model.json')) }
 }
+
+/** Use these intake files for every tool from now on. Throws if they do not parse. */
+export function setCabin(files: { cabin: string; materials: string; model: string }) {
+  override = { spec: parseCabin(files.cabin), rows: parseMaterials(files.materials), model: parseModel(files.model) }
+  return { vehicle: override.spec.vehicle, materials: override.rows.length }
+}
+
+export type CallRecord = { n: number; tool: string; args: unknown; ok: boolean; result: unknown; at: string; ms: number }
+const calls: CallRecord[] = []
+let callN = 0
+
+/** Every tool call with its full result, so the app can draw what an agent just did. */
+export function recordCall(c: Omit<CallRecord, 'n'>) {
+  calls.push({ ...c, n: ++callN })
+  if (calls.length > 400) calls.shift()
+}
+export const callsSince = (n: number) => calls.filter((c) => c.n > n)
 
 function material(id: string) {
   const m = MATERIALS[id.toLowerCase()]

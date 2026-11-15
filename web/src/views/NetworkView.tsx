@@ -320,6 +320,7 @@ function Callout({ at }: { at?: { x: number; y: number } }) {
 
 export function NetworkView() {
   const model = useMission((s) => s.model)
+  const real = useMission((s) => s.mode === 'agents')
   const selected = useMission((s) => s.selectedAgent)
   const selectAgent = useMission((s) => s.selectAgent)
   const focusPanel = useMission((s) => s.focusPanel)
@@ -369,7 +370,7 @@ export function NetworkView() {
           handle: h,
           state: h === HUMAN ? (asked ? 'waiting' : 'idle') : h === LAB ? (labBusy ? 'working' : 'idle') : (model.agents[h]?.state ?? 'idle'),
           doing: h === HUMAN ? '' : h === LAB ? (labBusy ? 'running Test 1 in chamber 3' : 'test technician') : (model.agents[h]?.doing ?? ''),
-          model: AGENT[h]?.model,
+          model: real ? undefined : AGENT[h]?.model,
           asked: h === asked || (h === LAB && !!labBusy),
           selected: h === selected,
         },

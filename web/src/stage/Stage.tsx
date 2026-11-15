@@ -59,7 +59,8 @@ export function Stage() {
   const [smokeG, setSmokeG] = useState(pkg?.gravity.g ?? 1)
   const [smokeLayout, setSmokeLayout] = useState<'designed' | 'proposed'>('designed')
 
-  const runs = useMemo(() => (pkg && cabin ? stageRuns(pkg, cabin) : []), [pkg, cabin])
+  const fix = useMission((s) => s.fix)
+  const runs = useMemo(() => (pkg && cabin ? stageRuns(pkg, cabin, fix) : []), [pkg, cabin, fix])
   const has = (id: string) => sims.some((s) => s.id === id)
   const ready: Record<Layer, boolean> = { materials: matrix.length > 0, spread: has('cabin-spread'), pressure: has('cabin-pressure'), smoke: has('cabin-smoke') && !!study, whatif: has('cabin-whatif') }
   const shown: StageLayer = ready[layer] ? layer : 'none'

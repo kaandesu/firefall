@@ -160,6 +160,7 @@ export function IntakeScreen() {
   const setRequest = useMission((s) => s.setRequest)
   const loadExample = useMission((s) => s.loadExample)
   const start = useMission((s) => s.start)
+  const realAgent = useMission((s) => s.realAgent)
   const errors = crossCheck(intake.cabin?.value, intake.materials?.value, intake.model?.value).filter((i) => i.level === 'error').length
   const ready = !!(intake.cabin?.value && intake.materials?.value && intake.model?.value) && errors === 0
   return (
@@ -170,6 +171,9 @@ export function IntakeScreen() {
             <div className="label">design-time fire safety review</div>
             <h1 className="sans mt-1 text-[26px] font-semibold leading-tight">Hand over the cabin. The agents review it.</h1>
             <p className="sans mt-1 text-[13px] text-muted-foreground">Three files and one question. The lead plans the review, you approve it, the departments run it over Lagrange.</p>
+            <p className="mt-1.5 text-[11.5px]">
+              {realAgent ? <span className="text-ok">real review · the work goes to @{realAgent} and the agents you assigned · about 4 minutes</span> : <span className="text-faint">scripted demo · the agents are simulated</span>}
+            </p>
           </div>
           <button type="button" onClick={() => void loadExample()} className="ml-auto shrink-0 rounded-sm border border-k-ask/60 px-3 py-1.5 text-[12px] text-k-ask hover:bg-k-ask/10">
             load example: Apollo CM-012

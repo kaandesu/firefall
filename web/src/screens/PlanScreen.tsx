@@ -16,6 +16,7 @@ export function PlanScreen() {
   const pkg = useMission((s) => s.pkg)
   const request = useMission((s) => s.request)
   const intro = useMission((s) => s.intro)
+  const liveError = useMission((s) => s.liveError)
   const [note, setNote] = useState('')
   const canApprove = waiting?.taskId === PLAN_GATE
   useEffect(() => {
@@ -38,6 +39,7 @@ export function PlanScreen() {
           </div>
         </div>
       </div>
+      {liveError && <div className="sans rounded-sm border border-bad/40 px-3 py-2 text-[12px] text-bad">{liveError}</div>}
       <div className="pane min-h-0 flex-1">
         <header className="pane-head text-[11px]">
           <span className="tracking-[0.14em] text-ink">PLAN</span>
