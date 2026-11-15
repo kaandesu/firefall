@@ -58,11 +58,13 @@ shows both as `up`.
 
 ```sh
 cp .env.example .env      # set POSTGRES_PASSWORD, the admin account, LAGRANGE_PUBLIC_URL
-docker compose up -d      # the first start builds Lagrange from source: a few minutes
+docker compose -f docker-compose.yml -f docker-compose.local.yml up -d   # first start builds Lagrange: a few minutes
 ```
 
-`docker-compose.yml` runs Lagrange and a Postgres with a named volume (`lagrange-pg`), so the data survives
-restarts and rebuilds. Only Lagrange exposes a port (8080). On a server, put it behind HTTPS and set
+`docker-compose.yml` runs the website, Lagrange and a Postgres with a named volume (`lagrange-pg`), so the data
+survives restarts and rebuilds. It publishes no host ports; `docker-compose.local.yml` adds the website on
+localhost:3000 and Lagrange on localhost:8080. On Coolify, use only `docker-compose.yml` and set the domains on
+the `web` and `lagrange` (`:8080`) services. On a server, put it behind HTTPS and set
 `LAGRANGE_PUBLIC_URL` to that address; the proxy must pass WebSockets (`/tunnel`) and must not buffer
 server-sent events (`/api/events`).
 

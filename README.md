@@ -269,7 +269,8 @@ Then **+ agent** on the Team screen prints a tunnel command; with the *Claude Co
 agent can search the test data and the BASS-II report, run the spread, smoke and cabin fire models with its own
 parameters, and start real FDS runs that open in the FDS tab (`?view=fds&run=<id>`).
 
-- `docker-compose.yml` runs the same Lagrange server with Postgres on a named volume (`cp .env.example .env`).
+- `docker-compose.yml` runs the website, the same Lagrange server, and Postgres on a named volume (`cp .env.example .env`;
+  add `-f docker-compose.local.yml` for localhost ports).
 - `web/tools/` is the MCP server. It wraps the app's own functions; nothing in it is scripted.
 - `scripts/prep-psi.sh` turns raw PSI downloads (`data/PSI-98`, `data/PSI-25`, gitignored) into the WebP frames
   and the searchable report under `web/public/data/psi-*`, shown in the Library.

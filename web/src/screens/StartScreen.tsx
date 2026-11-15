@@ -165,7 +165,7 @@ export function StartScreen() {
                   <Steps
                     items={[
                       ['No server yet? From the repo root. It also saves the key, so reload after it:', 'scripts/lagrange-local.sh up'],
-                      ['Or with Docker (Lagrange and Postgres):', 'cp .env.example .env && docker compose up -d'],
+                      ['Or with Docker (Lagrange and Postgres):', 'cp .env.example .env && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d'],
                       ['Your own server: a key from Settings → API keys. It is saved in web/.env.local and not sent to the browser again.', ''],
                     ]}
                   />

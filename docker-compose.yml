@@ -1,12 +1,26 @@
-# A Lagrange server with its own small Postgres, for a machine with Docker (a laptop, a VPS, Coolify).
+# FIREFALL in one compose: the website, a Lagrange server, and its Postgres.
 #
-#   cp .env.example .env     # set the passwords and LAGRANGE_PUBLIC_URL
-#   docker compose up -d     # the first start builds Lagrange from source (a few minutes)
+# Coolify: Build Pack = Docker Compose, then set the domains on the services:
+#   web       https://firefall.space
+#   lagrange  https://lagrange.firefall.space:8080   (":8080" is the container port, not a public one)
+# and the env vars from .env.example (LAGRANGE_PUBLIC_URL=https://lagrange.firefall.space, LAGRANGE_TRUST_PROXY=1).
 #
-# Then open LAGRANGE_PUBLIC_URL, log in with the admin account, and follow docs/get-started.md.
+# No ports are published here: Coolify's proxy reaches the containers over the Docker network.
+# On a laptop, add the local file to get localhost ports (web on 3000, Lagrange on 8080):
+#   cp .env.example .env
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d
+#
 # Behind a reverse proxy, WebSockets (/tunnel) and server-sent events (/api/events) must pass unbuffered.
-# No Docker? scripts/lagrange-local.sh does the same with a local Postgres.
+# No Docker? scripts/lagrange-local.sh runs Lagrange with a local Postgres.
 services:
+  web:
+    # The FIREFALL website (static, nginx). Build context is the repo root.
+    build: .
+    image: firefall-web:latest
+    restart: unless-stopped
+    expose:
+      - "80"
+
   postgres:
     image: postgres:17-alpine
     restart: unless-stopped
@@ -30,8 +44,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "${LAGRANGE_PORT:-8080}:8080"
+    expose:
+      - "8080"
     environment:
       DATABASE_URL: postgres://lagrange:${POSTGRES_PASSWORD}@postgres:5432/lagrange?sslmode=disable
       LAGRANGE_PUBLIC_URL: ${LAGRANGE_PUBLIC_URL:-http://localhost:8080}
