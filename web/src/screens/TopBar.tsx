@@ -58,10 +58,10 @@ export function TopBar() {
   const setView = useMission((s) => s.setView)
   const net = useRoster((s) => s.net)
   const clock = useClock(startedAt, phase === 'run' && !done)
-  const idx = STEPS.findIndex((s) => s.id === phase)
+  const idx = phase === 'live' ? 0 : STEPS.findIndex((s) => s.id === phase)
   const subs = plan?.subtasks.filter((s) => s.status !== 'skipped') ?? []
   const nDone = subs.filter((s) => s.status === 'done').length
-  const pre = phase === 'start' || phase === 'setup' || phase === 'intake'
+  const pre = phase === 'start' || phase === 'setup' || phase === 'live' || phase === 'intake'
   const online = pre ? 0 : 9
   const working = Object.values(agents).filter((a) => a.state === 'working' || a.state === 'asking').length
   const state = done ? 'done' : waiting ? 'waiting on you' : status.playing ? 'running' : pre ? 'idle' : 'paused'
@@ -139,8 +139,8 @@ export function TopBar() {
           </span>
         )}
         <span className="tnum text-ink">{clock}</span>
-        <span className={net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'text-gold' : 'text-faint'} title={net === 'lagrange' ? 'The team is read from your Lagrange server. The review is the scripted replay.' : 'A scripted replay'}>
-          {net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'lagrange' : 'demo'}
+        <span className={phase === 'live' ? 'text-ok' : net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'text-gold' : 'text-faint'} title={net === 'lagrange' ? 'The team is read from your Lagrange server. The review is the scripted replay.' : 'A scripted replay'}>
+          {phase === 'live' ? 'live review' : net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'lagrange' : 'demo'}
         </span>
       </span>
     </header>

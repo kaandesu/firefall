@@ -8,12 +8,13 @@ a Lagrange server, FIREFALL connected to it, and an agent that can call FIREFALL
  Step 2  FIREFALL connected        the Team screen lists your server
  Step 3  The tools server          12 tools on http://localhost:8765/mcp
  Step 4  An agent with the tools   it answers with numbers it computed
- Step 5  A real FDS run            it opens in the FDS tab
+ Step 5  A real review             the agent does the work and writes the hazard report
+ Step 6  More FDS                  ask for a longer run; it opens in the FDS tab
 ```
 
-**What is real here, and what is not yet.** The agents, their messages, the tool calls and the FDS runs in this
-setup are real. The review screens (plan, run, report) are still the scripted replay: connected agents do not
-drive them yet.
+**What is real here.** The agent, its tool calls, the FDS run and the report it writes. Only the brief it is sent
+is scripted (`web/src/live/brief.ts`: its role, a short knowledge base, the cabin files, the steps). The
+multi-agent demo (plan, run and report screens with nine agents) is still a scripted replay.
 
 [Lagrange](https://lagrange.3agents.dev) is the server every message goes through
 ([source](https://github.com/three-agent-problem/lagrange)). There is no hosted instance to sign up for yet, so
@@ -163,7 +164,21 @@ the tool calls it made: `limiting_o2`, `spread_rate`, `fire_spread`.
 
 ---
 
-## Step 5 · Let it run FDS
+## Step 5 · Run a real review
+
+On the Team screen, in the **REAL REVIEW** panel, pick the online agent and press **start the review**.
+
+The agent gets the brief and works through it: every material's limiting O₂ and spread rate, the nearest real
+tests, the cabin fire model as built and with a fix it chooses, smoke detection, suppression, a 5-second FDS
+run, and a passage from the BASS-II report. With Haiku this takes about 2 minutes and 20 or so tool calls.
+
+✅ **You should see** the tool calls tick off on the left as they happen, then a hazard report on the right
+(verdict, materials table, eight sections). Ask follow-ups in the box under it; they continue the same
+conversation. **download .md** saves the report.
+
+---
+
+## Step 6 · Let it run more FDS
 
 ```sh
 lagrange send @sim --wait "Start an FDS run of the cabin at Moon gravity with a 50 kW burner, 5 simulated \

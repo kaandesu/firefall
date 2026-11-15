@@ -274,8 +274,12 @@ parameters, and start real FDS runs that open in the FDS tab (`?view=fds&run=<id
 - `scripts/prep-psi.sh` turns raw PSI downloads (`data/PSI-98`, `data/PSI-25`, gitignored) into the WebP frames
   and the searchable report under `web/public/data/psi-*`, shown in the Library.
 
-**What this does not do yet:** connected agents do not drive the review. The plan, run and report screens are
-still the scripted replay. Sending each role its brief and reading a real plan back is M1 in `docs/mvp-roadmap.md`.
+**Real review:** on the Team screen, *start the review* sends one connected agent a brief (role, a short knowledge
+base, the cabin files, the steps; `web/src/live/brief.ts`). The agent does the work with the tools and writes the
+hazard report; you watch its tool calls live and can ask follow-ups. Only the brief is scripted.
+
+**What this does not do yet:** several agents working together. The nine-agent plan, run and report screens are
+still the scripted replay.
 
 ## Deploy the demo
 

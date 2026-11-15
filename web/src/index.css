@@ -286,3 +286,11 @@
 
 .input { height: 26px; border: 1px solid var(--line-2); border-radius: 2px; background: var(--surface); padding: 0 6px; color: var(--ink); outline: none; }
 .input:focus { border-color: color-mix(in srgb, var(--ug) 60%, transparent); }
+
+/* a full report written by a connected agent (LiveReviewScreen) */
+.report-md.report-doc h1 { font-size: 20px; font-weight: 600; color: var(--ink); margin: 0 0 0.5em; }
+.report-md.report-doc h2 { font-size: 14px; font-weight: 600; color: var(--ink); margin: 1.3em 0 0.4em; padding-top: 0.7em; border-top: 1px solid var(--line); }
+.report-md.report-doc h3 { font-size: 13px; font-weight: 600; color: var(--ink); margin: 1em 0 0.3em; }
+.report-md.report-doc table { font-size: 12px; width: 100%; display: block; overflow-x: auto; }
+.report-md.report-doc th { text-align: left; color: var(--ink); font-weight: 500; background: var(--surface-2); }
+.report-md.report-doc td, .report-md.report-doc th { padding: 4px 8px; }

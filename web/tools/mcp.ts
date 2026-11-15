@@ -81,7 +81,7 @@ async function main() {
     if (!/^(localhost|127\.0\.0\.1)(:\d+)?$/.test(req.headers.host ?? '')) return void res.writeHead(403).end()
     const path = (req.url ?? '/').split('?')[0]
     if (path === '/' && req.method === 'GET') {
-      res.writeHead(200, { 'content-type': 'application/json' })
+      res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*' })
       return void res.end(JSON.stringify({ name: 'firefall-tools', mcp: `http://localhost:${port}/mcp`, tools: TOOLS.map((t) => t.name) }))
     }
     if (path !== '/mcp') return void res.writeHead(404).end()

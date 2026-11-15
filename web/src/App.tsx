@@ -7,6 +7,7 @@ import { PlanScreen } from '@/screens/PlanScreen'
 import { RunScreen } from '@/screens/RunScreen'
 import { SetupScreen } from '@/screens/SetupScreen'
 import { StartScreen } from '@/screens/StartScreen'
+import { LiveReviewScreen } from '@/screens/LiveReviewScreen'
 import { TopBar } from '@/screens/TopBar'
 import { ComputeScreen } from '@/screens/ComputeScreen'
 import { EvidenceScreen } from '@/screens/EvidenceScreen'
@@ -56,6 +57,7 @@ export default function App() {
           <>
             {phase === 'start' && <StartScreen />}
             {phase === 'setup' && <SetupScreen />}
+            {phase === 'live' && <LiveReviewScreen />}
             {phase === 'intake' && <IntakeScreen />}
             {phase === 'plan' && <PlanScreen />}
             {phase === 'run' && <RunScreen />}

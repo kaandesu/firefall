@@ -14,7 +14,7 @@ import { Replay, type ReplayStatus } from './replay'
 import { LagrangeSource } from './lagrange'
 import type { Entry, SimRun } from './types'
 
-export type Phase = 'start' | 'setup' | 'intake' | 'plan' | 'run' | 'done'
+export type Phase = 'start' | 'setup' | 'live' | 'intake' | 'plan' | 'run' | 'done'
 
 export type SlotState<T> = { name: string; text: string; value?: T; error?: string }
 

@@ -6,7 +6,8 @@ import { useEffect, useState } from 'react'
 import { Avatar } from '@/components/bits'
 import { AGENT, MODEL_COLOR, ORGS, PEOPLE } from '@/demo/crew'
 import { cn } from '@/lib/utils'
-import { ROLES, tunnelCommands, useRoster, type Address } from '@/live/roster'
+import { useReview } from '@/live/review'
+import { ROLES, TOOLS_URL, tunnelCommands, useRoster, type Address } from '@/live/roster'
 import { useMission } from '@/live/store'
 
 const field = 'min-w-0 rounded-sm border border-line-2 bg-bg px-2 py-1 text-[11.5px] text-ink outline-none placeholder:text-faint focus:border-ug'
@@ -323,6 +324,56 @@ function Server() {
   )
 }
 
+/** Start a real review: one online agent gets the brief and does the work with the firefall tools. */
+function RealReview() {
+  const addresses = useRoster((s) => s.addresses)
+  const start = useReview((s) => s.start)
+  const running = useReview((s) => s.turns.length > 0)
+  const setPhase = useMission((s) => s.setPhase)
+  const online = addresses.filter((a) => a.kind === 'agent' && a.online)
+  const [pick, setPick] = useState('')
+  const [tools, setTools] = useState<boolean>()
+  const agent = online.find((a) => a.handle === pick)?.handle ?? online[0]?.handle
+  useEffect(() => {
+    fetch(TOOLS_URL.replace(/\/mcp$/, '/'))
+      .then((r) => setTools(r.ok))
+      .catch(() => setTools(false))
+  }, [])
+  return (
+    <div className="pane gap-2 p-3 pt-4">
+      <header className="pane-head text-[11px]">
+        <span className="tracking-[0.14em] text-ok">REAL REVIEW</span>
+        <span className="text-faint">one agent, the Apollo CM-012 cabin, real tool calls</span>
+      </header>
+      <p className="sans max-w-[860px] text-[12.5px] leading-snug text-muted-foreground">
+        The agent gets a brief (its role, a short knowledge base on spacecraft fire safety and Apollo 1, the cabin files, the steps) and does the work itself: it calls the models, searches the test data, starts an FDS run and writes the hazard report. Only the brief is scripted.
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        {online.length > 0 ? (
+          <select value={agent} onChange={(e) => setPick(e.target.value)} className={field} aria-label="agent that does the review">
+            {online.map((a) => (
+              <option key={a.handle} value={a.handle}>
+                @{a.handle}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="sans text-[12px] text-warn">No agent is online. Add one below and run its “Claude Code with FIREFALL tools” command.</span>
+        )}
+        <button type="button" disabled={!agent} onClick={() => agent && void start(agent)} className="rounded-sm bg-flame px-4 py-2 text-[12px] font-medium text-bg hover:brightness-110 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-faint">
+          start the review ▸
+        </button>
+        {running && (
+          <button type="button" onClick={() => setPhase('live')} className="text-[11px] text-ug hover:underline">
+            back to the running review
+          </button>
+        )}
+        {tools === false && <span className="sans text-[11.5px] text-warn">The tools server is not running: start it with `pnpm tools` in web/, or the agent has nothing to call.</span>}
+      </div>
+    </div>
+  )
+}
+
 export function SetupScreen() {
   const setPhase = useMission((s) => s.setPhase)
   const net = useRoster((s) => s.net)
@@ -343,15 +394,19 @@ export function SetupScreen() {
           <button type="button" onClick={() => setPhase('start')} className="shrink-0 text-[11px] text-muted-foreground hover:text-ink">
             ◂ back
           </button>
-          <button type="button" onClick={() => setPhase('intake')} className="shrink-0 rounded-sm bg-flame px-4 py-2 text-[12px] font-medium text-bg hover:brightness-110">
-            {live ? 'run the scripted review ▸' : 'continue to intake ▸'}
-          </button>
+          {live ? (
+            <button type="button" onClick={() => setPhase('intake')} className="shrink-0 text-[11px] text-muted-foreground hover:text-ink">
+              scripted demo instead ▸
+            </button>
+          ) : (
+            <button type="button" onClick={() => setPhase('intake')} className="shrink-0 rounded-sm bg-flame px-4 py-2 text-[12px] font-medium text-bg hover:brightness-110">
+              continue to intake ▸
+            </button>
+          )}
         </div>
 
         {live && (
-          <div className="sans rounded-sm border border-warn/40 bg-warn/5 px-3 py-2 text-[12px] leading-snug text-muted-foreground">
-            <span className="text-warn">Not wired up yet.</span> Your agents are on the network and answer the test message, but the review that follows is still the scripted replay. They do not drive it.
-          </div>
+          <RealReview />
         )}
 
         <div className="grid items-start gap-5 lg:grid-cols-2">
