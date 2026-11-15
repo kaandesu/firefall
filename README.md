@@ -283,13 +283,16 @@ Report agent writes the hazard report. The plan and the role briefs are fixed; t
 **What this does not do yet:** agents do not message each other directly; the conductor passes each department's
 findings to the next. The plan is a fixed template, not written by a lead agent.
 
-## Deploy the demo
+## Deploy
 
-The demo needs no backend: the scripted replay, the shipped FDS run and the report chat in scripted mode are all
-static files. The root `Dockerfile` builds `web/` and serves it with nginx (`deploy/nginx.conf`, port 80).
+`docker-compose.yml` runs the whole thing: the web app, a Lagrange server and its Postgres. The root `Dockerfile`
+builds `web/` and serves it with a small node server (`web/server/prod.ts`, port 80) that also forwards Connect to
+Lagrange. Each visitor connects with their own Lagrange API key, kept in a cookie the page cannot read.
 
-- **Coolify:** New resource → your Git repo → Build Pack **Dockerfile** (base directory `/`), port **80**, add a domain.
-- **By hand:** `docker build -t firefall-demo . && docker run -p 8080:80 firefall-demo`
+- **Coolify:** New resource → your Git repo → Build Pack **Docker Compose**. Domains: `web` → `https://your-domain`,
+  `lagrange` → `https://lagrange.your-domain:8080`. Env from `.env.example`, with `LAGRANGE_PUBLIC_URL` set to the
+  Lagrange domain and `LAGRANGE_TRUST_PROXY=1`.
+- **Only the demo:** `docker build -t firefall-demo . && docker run -p 8080:80 firefall-demo`
 
 Share `https://<domain>/?example=1&start=1` to drop people straight into the Apollo review.
 

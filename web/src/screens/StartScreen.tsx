@@ -104,7 +104,7 @@ export function StartScreen() {
             {conn.state !== 'checking' && !conn.proxy && (
               <>
                 <p className="sans text-[12px] leading-snug text-muted-foreground">
-                  This page is the hosted demo and has nowhere safe to keep an API key. Run FIREFALL on your own machine to connect it to a Lagrange server:
+                  This build has no server to keep an API key. Run FIREFALL with its server (pnpm dev, or the Docker image) to connect it to a Lagrange server:
                 </p>
                 <Steps
                   items={[
@@ -166,7 +166,7 @@ export function StartScreen() {
                     items={[
                       ['No server yet? From the repo root. It also saves the key, so reload after it:', 'scripts/lagrange-local.sh up'],
                       ['Or with Docker (Lagrange and Postgres):', 'cp .env.example .env && docker compose -f docker-compose.yml -f docker-compose.local.yml up -d'],
-                      ['Your own server: a key from Settings → API keys. It is saved in web/.env.local and not sent to the browser again.', ''],
+                      ['Your own server: a key from Settings → API keys. The FIREFALL server keeps it (web/.env.local, or a cookie the page cannot read) and does not send it to the browser again.', ''],
                     ]}
                   />
                 </div>

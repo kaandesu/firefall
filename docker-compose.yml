@@ -14,12 +14,15 @@
 # No Docker? scripts/lagrange-local.sh runs Lagrange with a local Postgres.
 services:
   web:
-    # The FIREFALL website (static, nginx). Build context is the repo root.
+    # The FIREFALL website, and the proxy its Connect uses to reach Lagrange. Build context is the repo root.
     build: .
     image: firefall-web:latest
     restart: unless-stopped
     expose:
       - "80"
+    environment:
+      LAGRANGE_URL: ${LAGRANGE_PUBLIC_URL:-http://localhost:8080}   # shown to visitors, the server they connect to
+      LAGRANGE_INTERNAL_URL: http://lagrange:8080                   # how this container reaches it
 
   postgres:
     image: postgres:17-alpine

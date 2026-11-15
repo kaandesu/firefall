@@ -32,7 +32,7 @@ export const ROLES: Role[] = [
 
 export type Conn = {
   state: 'checking' | 'none' | 'ok'
-  /** False on the static deploy: there is no dev server to hold the key. */
+  /** False when no FIREFALL server (dev or web/server/prod.ts) is there to hold the key. */
   proxy: boolean
   url?: string
   user?: string
@@ -147,7 +147,7 @@ export const useRoster = create<State>((set, get) => ({
       const c = await call<Omit<Conn, 'state' | 'proxy'> & { configured: boolean }>('/_config')
       set({ conn: { ...c, proxy: true, state: c.configured ? 'ok' : 'none' } })
     } catch {
-      // No dev server behind /api (the static deploy answers 404 with no JSON).
+      // No FIREFALL server behind /api (a static host answers 404 with no JSON).
       set({ conn: { state: 'none', proxy: false } })
     }
   },
