@@ -3,9 +3,10 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { askPlugin } from './server/ask'
+import { lagrangePlugin } from './server/lagrange'
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), askPlugin()],
+  plugins: [react(), tailwindcss(), askPlugin(), lagrangePlugin()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

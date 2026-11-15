@@ -60,8 +60,11 @@ export class Fluid {
   private p: Float32Array
   private div: Float32Array
   t = 0
+  readonly cfg: FluidConfig
 
-  constructor(readonly cfg: FluidConfig) {
+  // No parameter property: Node runs this file as is for the tools server and only strips plain types.
+  constructor(cfg: FluidConfig) {
+    this.cfg = cfg
     this.h = cfg.cell
     this.nx = Math.round(cfg.w / cfg.cell)
     this.ny = Math.round(cfg.h / cfg.cell)

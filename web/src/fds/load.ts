@@ -27,8 +27,14 @@ export type FdsManifest = {
     burner: { xb: number[]; kw: number; offAt: number; under?: string }
     surfs: { id: string; zone: string; material: string; hrrpua: number; ignitionC: number }[]
     summary: FdsSummary
+    /** Runs started through the tools server (web/tools/fds.ts): where the files are, and what was asked for. */
+    dir?: string
+    params?: { g: number; o2: number; psia: number; burner_kw: number; burner_off_s: number; t_end: number }
+    started?: string
   }[]
 }
+
+export const RUNS_INDEX = '/data/fds/runs/index.json'
 
 export type FdsRun = {
   id: string
@@ -51,11 +57,11 @@ async function fetchOk(url: string) {
   return r
 }
 
-export function loadRun(id: string, chid: string): Promise<FdsRun> {
+export function loadRun(id: string, chid: string, from?: string): Promise<FdsRun> {
   const key = `${id}/${chid}`
   let p = cache.get(key)
   if (!p) {
-    const dir = `${FDS_BASE}/${id}`
+    const dir = from ?? `${FDS_BASE}/${id}`
     p = (async () => {
       const [source, smvText, hrr, devc] = await Promise.all([
         fetchOk(`${dir}/${chid}.fds`).then((r) => r.text()),
@@ -87,27 +93,37 @@ export function loadRun(id: string, chid: string): Promise<FdsRun> {
 export function useFdsManifest() {
   const [m, setM] = useState<FdsManifest>()
   const [err, setErr] = useState<string>()
+  const [extra, setExtra] = useState<FdsManifest['cases']>([])
   useEffect(() => {
     fetchOk(`${FDS_BASE}/manifest.json`)
       .then((r) => r.json())
       .then(setM, (e: Error) => setErr(e.message))
+    // Runs an agent started land in runs/index.json while the app is open. No file (or no tools server) is fine.
+    const poll = () =>
+      fetch(RUNS_INDEX, { cache: 'no-store' })
+        .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('json') ? r.json() : { cases: [] }))
+        .then((x: { cases?: FdsManifest['cases'] }) => setExtra((old) => (old.length === (x.cases?.length ?? 0) ? old : (x.cases ?? []))))
+        .catch(() => undefined)
+    void poll()
+    const t = setInterval(poll, 5000)
+    return () => clearInterval(t)
   }, [])
-  return { manifest: m, error: err }
+  return { manifest: m, agentRuns: extra, error: err }
 }
 
-export function useFdsRun(id?: string, chid?: string) {
+export function useFdsRun(id?: string, chid?: string, dir?: string) {
   const [run, setRun] = useState<FdsRun>()
   const [err, setErr] = useState<string>()
   useEffect(() => {
     if (!id || !chid) return
     let live = true
-    loadRun(id, chid).then(
+    loadRun(id, chid, dir).then(
       (r) => live && setRun(r),
       (e: Error) => live && setErr(e.message),
     )
     return () => {
       live = false
     }
-  }, [id, chid])
+  }, [id, chid, dir])
   return { run: run?.id === id ? run : undefined, error: err }
 }

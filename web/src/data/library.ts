@@ -28,7 +28,7 @@ export type Study = {
   size: string
   files?: number
   /** Real data we can open in the app. */
-  data?: 'acme-flame-design' | 'acme-cfi-g'
+  data?: 'acme-flame-design' | 'acme-cfi-g' | 'saffire-f1c2' | 'bass-stills'
 }
 
 export const STUDIES: Study[] = [
@@ -49,7 +49,7 @@ export const STUDIES: Study[] = [
     obj: '(1) How rapidly a large-scale fire grows in low gravity; (2) low-g flammability limits vs NASA’s normal-gravity material screening test.',
     key: 'Large-scale fabric fire, 0.94 × 0.4 m, at 20 cm/s airflow; validates NASA’s material selection criteria.',
     varied: 'Single large-scale test', fixed: 'SIBAL fabric (75% cotton / 25% fiberglass), 0.94 × 0.4 m, flow 20 cm/s, cabin air',
-    sensors: '2 video cameras, thermocouples (flow, flame, plume), 2 radiometers, pressure, O₂ and CO₂ sensors, 2 anemometers' },
+    sensors: '2 video cameras, thermocouples (flow, flame, plume), 2 radiometers, pressure, O₂ and CO₂ sensors, 2 anemometers', data: 'saffire-f1c2' },
   { id: 'saffire-2', name: 'Saffire-II', psi: 'PSI-99', hw: 'Cygnus', fuel: 'solid', pillars: ['prevention'], o2: [0.21, 0.21], kpa: [101, 101], flow: 'ventilation', status: 'indexed', years: '2016', size: '22 GB',
     plain: 'Nine different spacecraft materials ignited one after another.', obj: 'Ignition and flammability of several materials.', key: 'Material-to-material comparison at scale.', varied: 'Material', fixed: 'Cabin air', sensors: 'Video, gas sensors' },
   { id: 'saffire-3', name: 'Saffire-III', psi: 'PSI-100', hw: 'Cygnus', fuel: 'solid', pillars: ['prevention'], o2: [0.21, 0.21], kpa: [101, 101], flow: 'ventilation', status: 'indexed', years: '2017', size: '31 GB',
@@ -57,7 +57,7 @@ export const STUDIES: Study[] = [
   { id: 'bass', name: 'BASS', psi: 'PSI-26', hw: 'MSG duct', fuel: 'solid', pillars: ['prevention', 'suppression'], o2: [0.17, 0.21], kpa: [101, 101], flow: 'ventilation', status: 'indexed', size: '9 GB',
     plain: 'Burned fabric and plastic samples in moving air to see how fast flames spread and whether airflow alone puts them out.', obj: 'Burning and suppression of solid materials in a flow duct.', key: 'Material flammability vs airflow in microgravity.', varied: 'Material, airflow, O₂ (nominal)', fixed: 'SPICE flow duct', sensors: 'Video, thermocouples, radiometer' },
   { id: 'bass-ii', name: 'BASS-II', psi: 'PSI-25', hw: 'MSG duct', fuel: 'solid', pillars: ['prevention', 'suppression'], o2: [0.15, 0.21], kpa: [101, 101], flow: 'ventilation', status: 'indexed', size: '12 GB',
-    plain: 'Follow-up to BASS with more materials and lower oxygen levels.', obj: 'Extended solid-fuel burning and suppression tests.', key: 'Flammability boundaries of solids vs flow and O₂.', varied: 'Material, flow, O₂ (nominal)', fixed: 'SPICE flow duct', sensors: 'Video, thermocouples' },
+    plain: 'Follow-up to BASS with more materials and lower oxygen levels.', obj: 'Extended solid-fuel burning and suppression tests.', key: 'Flammability boundaries of solids vs flow and O₂.', varied: 'Material, flow, O₂ (nominal)', fixed: 'SPICE flow duct', sensors: 'Video, thermocouples', data: 'bass-stills' },
   { id: 'brei', name: 'ACME BRE', psi: 'PSI-20', hw: 'ACME / CIR', fuel: 'gas_solid_emulator', pillars: ['prevention'], o2: [0.21, 0.4], kpa: [101, 101], flow: 'quiescent', status: 'indexed', size: '4 GB',
     plain: 'Used gas burners to imitate burning solids, so material properties can be tested without real samples.', obj: 'Emulate condensed-fuel burning to study flammability vs material properties.', key: 'Bridges gas-flame physics to solid materials.', varied: 'Fuel mix, flow (nominal)', fixed: 'Porous flat burners', sensors: 'Heat flux, thermocouples, cameras' },
   { id: 'e-field', name: 'ACME E-FIELD Flames', psi: 'PSI-22', hw: 'ACME / CIR', fuel: 'gas', pillars: ['supporting'], o2: [0.21, 0.21], kpa: [101, 101], flow: 'low', status: 'indexed', size: '6 GB',

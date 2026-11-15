@@ -14,7 +14,7 @@ import { Replay, type ReplayStatus } from './replay'
 import { LagrangeSource } from './lagrange'
 import type { Entry, SimRun } from './types'
 
-export type Phase = 'setup' | 'intake' | 'plan' | 'run' | 'done'
+export type Phase = 'start' | 'setup' | 'intake' | 'plan' | 'run' | 'done'
 
 export type SlotState<T> = { name: string; text: string; value?: T; error?: string }
 
@@ -53,8 +53,6 @@ type State = {
   decision: Decision
   pr2: boolean
   acme?: ReviewInput['acme']
-  /** Agents connected from outside on the setup screen (demo). */
-  connected: string[]
   /** Servers / GPU farms an org added on the compute screen (demo). */
   nodes: ComputeNode[]
   /** MCP servers added per agent (demo handshake). */
@@ -88,7 +86,6 @@ type State = {
   stagePlay: number
 
   setPhase: (p: Phase) => void
-  connect: (url: string) => void
   addNode: (n: ComputeNode) => void
   addMcp: (agent: string, server: { name: string; url: string; tools: string[] }) => void
   setView: (v: State['view']) => void
@@ -104,7 +101,8 @@ type State = {
   setRequest: (r: string) => void
   start: () => Promise<void>
   toggleSkip: (id: string) => void
-  approve: () => Promise<void>
+  /** Approve the plan, with an optional note for the lead. */
+  approve: (note?: string) => Promise<void>
   answer: (text: string) => void
   ask: (text: string) => void
   play: () => void
@@ -150,12 +148,11 @@ export function runAgents(_m?: Model): string[] {
 }
 
 export const useMission = create<State>((set, get) => ({
-  phase: 'setup',
+  phase: 'start',
   intake: {},
   labTest: true,
   decision: 'caveat',
   pr2: true,
-  connected: [],
   nodes: [],
   mcp: {},
   view: 'review',
@@ -179,7 +176,6 @@ export const useMission = create<State>((set, get) => ({
   stagePlay: 0,
 
   setPhase: (phase) => set({ phase }),
-  connect: (url) => set((s) => ({ connected: s.connected.includes(url) ? s.connected : [...s.connected, url] })),
   addNode: (n) => set((s) => ({ nodes: [...s.nodes.filter((x) => x.id !== n.id), { ...n, added: true }] })),
   addMcp: (agent, server) => set((s) => ({ mcp: { ...s.mcp, [agent]: [...(s.mcp[agent] ?? []), server] } })),
   setView: (view) => set({ view }),
@@ -257,11 +253,12 @@ export const useMission = create<State>((set, get) => ({
     if (!sub || sub.required || get().model.plan?.approved) return
     set((s) => ({ skip: s.skip.includes(id) ? s.skip.filter((x) => x !== id) : [...s.skip, id] }))
   },
-  approve: async () => {
+  approve: async (note) => {
     let s = get()
     if (s.model.waiting?.taskId !== PLAN_GATE) return
+    const extra = note?.trim() ? `. Note: ${note.trim()}` : ''
     if (s.mode === 'live') {
-      live?.answer(PLAN_GATE, 'Approve plan')
+      live?.answer(PLAN_GATE, `Approve plan${extra}`)
       return
     }
     // The detection agent needs its CFD results; they run in a worker from the moment the case is loaded.
@@ -271,7 +268,7 @@ export const useMission = create<State>((set, get) => ({
     // The skipped subtasks change what comes after the gate.
     replay?.swap(apollo1(input(s)))
     const off = s.skip.length ? ` (switched off: ${s.skip.join(', ')})` : ''
-    replay?.answer(`Approve plan${off}`)
+    replay?.answer(`Approve plan${off}${extra}`)
     set({ phase: 'run', intro: false, startedAt: Date.now() })
   },
   answer: (text) => {

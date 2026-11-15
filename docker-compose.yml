@@ -1,0 +1,46 @@
+# A Lagrange server with its own small Postgres, for a machine with Docker (a laptop, a VPS, Coolify).
+#
+#   cp .env.example .env     # set the passwords and LAGRANGE_PUBLIC_URL
+#   docker compose up -d     # the first start builds Lagrange from source (a few minutes)
+#
+# Then open LAGRANGE_PUBLIC_URL, log in with the admin account, and follow docs/get-started.md.
+# Behind a reverse proxy, WebSockets (/tunnel) and server-sent events (/api/events) must pass unbuffered.
+# No Docker? scripts/lagrange-local.sh does the same with a local Postgres.
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lagrange
+      POSTGRES_USER: lagrange
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - lagrange-pg:/var/lib/postgresql/data   # agents, tasks and accounts survive restarts and rebuilds
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lagrange -d lagrange"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  lagrange:
+    # Built from the public repository: there is no published image to pull yet.
+    build: https://github.com/three-agent-problem/lagrange.git#main
+    image: firefall-lagrange:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${LAGRANGE_PORT:-8080}:8080"
+    environment:
+      DATABASE_URL: postgres://lagrange:${POSTGRES_PASSWORD}@postgres:5432/lagrange?sslmode=disable
+      LAGRANGE_PUBLIC_URL: ${LAGRANGE_PUBLIC_URL:-http://localhost:8080}
+      LAGRANGE_ADMIN_EMAIL: ${LAGRANGE_ADMIN_EMAIL:?set LAGRANGE_ADMIN_EMAIL in .env}
+      LAGRANGE_ADMIN_PASSWORD: ${LAGRANGE_ADMIN_PASSWORD:?set LAGRANGE_ADMIN_PASSWORD in .env}
+      LAGRANGE_ADMIN_NAME: ${LAGRANGE_ADMIN_NAME:-You}
+      LAGRANGE_ADMIN_HANDLE: ${LAGRANGE_ADMIN_HANDLE:-you}
+      LAGRANGE_SIGNUP: ${LAGRANGE_SIGNUP:-invite}
+      LAGRANGE_TRUST_PROXY: ${LAGRANGE_TRUST_PROXY:-0}
+
+volumes:
+  lagrange-pg:

@@ -5,3 +5,6 @@
 web/.env.local
 .git
 .claude
+web/public/data/fds/runs
+.firefall
+data/PSI-*

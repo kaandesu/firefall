@@ -5,9 +5,10 @@ import { useMission, type Phase } from '@/live/store'
 import { cn } from '@/lib/utils'
 import { openFor } from '@/live/sign'
 import { HUMAN, LAB } from '@/demo/crew'
+import { useRoster } from '@/live/roster'
 
 const STEPS: { id: Phase; label: string }[] = [
-  { id: 'setup', label: 'NETWORK' },
+  { id: 'setup', label: 'TEAM' },
   { id: 'intake', label: 'INTAKE' },
   { id: 'plan', label: 'PLAN' },
   { id: 'run', label: 'RUN' },
@@ -55,13 +56,15 @@ export function TopBar() {
   const inbox = useMission((s) => s.model.inbox)
   const nYou = openFor(inbox, HUMAN), nLab = openFor(inbox, LAB)
   const setView = useMission((s) => s.setView)
+  const net = useRoster((s) => s.net)
   const clock = useClock(startedAt, phase === 'run' && !done)
   const idx = STEPS.findIndex((s) => s.id === phase)
   const subs = plan?.subtasks.filter((s) => s.status !== 'skipped') ?? []
   const nDone = subs.filter((s) => s.status === 'done').length
-  const online = phase === 'intake' || phase === 'setup' ? 0 : 9
+  const pre = phase === 'start' || phase === 'setup' || phase === 'intake'
+  const online = pre ? 0 : 9
   const working = Object.values(agents).filter((a) => a.state === 'working' || a.state === 'asking').length
-  const state = done ? 'done' : waiting ? 'waiting on you' : status.playing ? 'running' : phase === 'intake' ? 'idle' : 'paused'
+  const state = done ? 'done' : waiting ? 'waiting on you' : status.playing ? 'running' : pre ? 'idle' : 'paused'
 
   return (
     <header className="flex h-9 shrink-0 items-center gap-3 overflow-hidden whitespace-nowrap border-b border-line px-3 text-[11.5px]">
@@ -76,7 +79,7 @@ export function TopBar() {
             {i > 0 && <span className="text-line-2">▸</span>}
             <button
               type="button"
-              disabled={!(s.id === 'done' ? done : s.id === 'run' ? done : s.id === 'setup' || s.id === 'intake' ? phase === 'setup' || phase === 'intake' : false)}
+              disabled={!(s.id === 'done' ? done : s.id === 'run' ? done : s.id === 'setup' || s.id === 'intake' ? pre : false)}
               onClick={() => {
                 setView('review')
                 if (s.id === 'setup' || s.id === 'intake') setPhase(s.id)
@@ -102,7 +105,7 @@ export function TopBar() {
           decision waiting →
         </button>
       )}
-      {phase !== 'intake' && (
+      {!pre && (
         <>
           <span className={cn(waiting ? 'text-warn' : done ? 'text-ok' : 'text-k-task')}>{state}</span>
           {plan && (
@@ -113,7 +116,7 @@ export function TopBar() {
         </>
       )}
       <span className="ml-auto flex items-center gap-4 text-muted-foreground">
-        {phase !== 'intake' && !done && (
+        {!pre && !done && (
           <span className="flex items-center gap-1.5">
             <button type="button" onClick={() => (status.playing ? pause() : play())} className="hover:text-ink" title="pause / resume the demo (space)">
               {status.playing ? <Pause size={12} /> : <Play size={12} />}
@@ -136,7 +139,9 @@ export function TopBar() {
           </span>
         )}
         <span className="tnum text-ink">{clock}</span>
-        <span className="text-faint">demo</span>
+        <span className={net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'text-gold' : 'text-faint'} title={net === 'lagrange' ? 'The team is read from your Lagrange server. The review is the scripted replay.' : 'A scripted replay'}>
+          {net === 'lagrange' && (phase === 'setup' || phase === 'start') ? 'lagrange' : 'demo'}
+        </span>
       </span>
     </header>
   )

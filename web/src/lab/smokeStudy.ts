@@ -6,7 +6,7 @@ import type { CabinModel } from '@/intake/parse'
 import { MATERIALS, detectorEfficiency } from '@/sims/models'
 import { Fluid, G_CASES, cabinSection, mountable, optimizeSensors, simulate, worstFirstAlarm, type FluidConfig, type FluidRun, type SensorSpec, type Vec2 } from './fluid'
 
-export type StudyInput = { model: CabinModel; pkg: Pick<DesignPackage, 'ventFlow' | 'ignitionZones' | 'sensors' | 'bom'>; seconds?: number }
+export type StudyInput = { model: CabinModel; pkg: Pick<DesignPackage, 'ventFlow' | 'ignitionZones' | 'sensors' | 'bom'>; seconds?: number; /** Gravity cases to run (default: µg, Moon, 1 g). */ gCases?: readonly { label: string; g: number }[] }
 
 export type SourceDef = { id: string; label: string; zone: string; at: Vec2; listed: boolean }
 
@@ -70,7 +70,7 @@ export function sourcesFor(model: CabinModel, listed: string[]): SourceDef[] {
   })
 }
 
-export function smokeStudy({ model, pkg, seconds = 60 }: StudyInput, onProgress?: (done: number, total: number) => void): SmokeStudy {
+export function smokeStudy({ model, pkg, seconds = 60, gCases = G_CASES }: StudyInput, onProgress?: (done: number, total: number) => void): SmokeStudy {
   const sec = cabinSection(model)
   const probe = new Fluid({ ...sec, cell: CELL, g: 0, vent: 0, inlet: [0, 0], outlet: [0, 0], source: [0, 0], smokeD: 0.5, sensors: [] })
   const sources = sourcesFor(model, pkg.ignitionZones ?? []).map((s) => ({ ...s, at: intoAir(probe, s.at) }))
@@ -96,13 +96,13 @@ export function smokeStudy({ model, pkg, seconds = 60 }: StudyInput, onProgress?
     sensors,
   })
 
-  const total = sources.length * G_CASES.length
+  const total = sources.length * gCases.length
   let done = 0
   const runs: FluidRun[] = []
   const cases: StudyCase[] = []
   const frames: SmokeStudy['frames'] = []
   for (const s of sources)
-    for (const gc of G_CASES) {
+    for (const gc of gCases) {
       const r = simulate(base(gc.g, s.at, designed), seconds, DT, 1)
       runs.push(r)
       const ts = Object.values(r.alarms).filter((t): t is number => t !== null)
@@ -127,7 +127,7 @@ export function smokeStudy({ model, pkg, seconds = 60 }: StudyInput, onProgress?
   // Check the proposed layout with the detector physics (particle size), not just smoke arrival.
   const proposedCases: StudyCase[] = []
   for (const s of sources)
-    for (const gc of G_CASES) {
+    for (const gc of gCases) {
       const r = simulate(base(gc.g, s.at, proposed), seconds, DT, 5)
       const ts = Object.values(r.alarms).filter((t): t is number => t !== null)
       proposedCases.push({ source: s.id, g: gc.g, gLabel: gc.label, alarms: r.alarms, firstAlarm: ts.length ? Math.min(...ts) : null })

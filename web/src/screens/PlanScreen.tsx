@@ -1,6 +1,6 @@
 // 2 PLAN: the lead's plan as a graph. Switch steps off, then approve. Nothing runs before that.
 import { Loader2 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Avatar } from '@/components/bits'
 import { PLAN_GATE } from '@/demo/apollo1'
 import { useMission } from '@/live/store'
@@ -16,12 +16,14 @@ export function PlanScreen() {
   const pkg = useMission((s) => s.pkg)
   const request = useMission((s) => s.request)
   const intro = useMission((s) => s.intro)
+  const [note, setNote] = useState('')
   const canApprove = waiting?.taskId === PLAN_GATE
   useEffect(() => {
-    const k = (e: KeyboardEvent) => e.key === 'a' && canApprove && approve()
+    // `a` approves, except while typing the note.
+    const k = (e: KeyboardEvent) => e.key === 'a' && canApprove && !(e.target instanceof HTMLInputElement) && approve(note)
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
-  }, [canApprove, approve])
+  }, [canApprove, approve, note])
   return (
     <div className="relative flex min-h-0 flex-1 flex-col gap-4 p-4 pt-5">
       {intro && <IntroScreen />}
@@ -52,7 +54,16 @@ export function PlanScreen() {
       <div className="flex items-center gap-3">
         <span className="text-[11.5px] text-warn">{canApprove ? 'waiting for your approval · nothing has run yet' : plan ? '' : ''}</span>
         {skip.length > 0 && <span className="text-[11.5px] text-faint">switched off: {skip.join(', ')}</span>}
-        <button type="button" disabled={!canApprove} onClick={approve} className="ml-auto rounded-sm bg-warn px-5 py-2 text-[12.5px] font-medium text-bg hover:brightness-110 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-faint">
+        <input
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && canApprove && approve(note)}
+          disabled={!canApprove}
+          placeholder="note for the lead (optional), e.g. keep the lab test short"
+          aria-label="note for the lead"
+          className="ml-auto w-full max-w-[380px] rounded-sm border border-line-2 bg-bg px-2 py-1.5 text-[12px] text-ink outline-none placeholder:text-faint focus:border-ug disabled:opacity-40"
+        />
+        <button type="button" disabled={!canApprove} onClick={() => approve(note)} className="shrink-0 rounded-sm bg-warn px-5 py-2 text-[12.5px] font-medium text-bg hover:brightness-110 disabled:cursor-not-allowed disabled:bg-surface-3 disabled:text-faint">
           <span className="mr-2 opacity-60">a</span>approve plan
         </button>
       </div>

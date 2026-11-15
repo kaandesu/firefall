@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { CiteChip } from '@/components/bits'
 import { loadSensors, sensorStats, type SensorLog } from '@/data/acme'
 import { STUDIES, fit, targetOf, type Pillar, type Study } from '@/data/library'
+import { searchPages, type Report } from '@/data/report'
 import { BrightnessChart, FrameCanvas, useAcmeFrames } from '@/lab/tiles'
 import { useMission } from '@/live/store'
 import { cn } from '@/lib/utils'
@@ -23,7 +24,8 @@ export function LibraryScreen() {
   const [pillar, setPillar] = useState<Pillar | 'all'>('all')
   const [onlyData, setOnlyData] = useState(false)
   const [qtext, setQ] = useState('')
-  const [open, setOpen] = useState<string>()
+  // ?study=<id> opens a study straight away (e.g. ?view=library&study=bass-ii).
+  const [open, setOpen] = useState<string | undefined>(() => new URLSearchParams(location.search).get('study') ?? undefined)
   const rows = useMemo(
     () =>
       STUDIES.map((s) => fit(s, target))
@@ -165,6 +167,10 @@ function StudyDrawer({ study, target, onClose }: { study: Study; target: ReturnT
           </>
         ) : study.data === 'acme-cfi-g' ? (
           <CfigData />
+        ) : study.data === 'saffire-f1c2' ? (
+          <SaffireFrames />
+        ) : study.data === 'bass-stills' ? (
+          <BassData />
         ) : (
           <FlameDesignData target={target} />
         )}
@@ -179,6 +185,108 @@ function Row({ k, v }: { k: string; v: string }) {
       <span className="w-20 shrink-0 text-faint">{k}</span>
       <span className="sans text-ink">{v}</span>
     </div>
+  )
+}
+
+function useJson<T>(url: string) {
+  const [d, setD] = useState<T | null>()
+  useEffect(() => {
+    let live = true
+    fetch(url)
+      .then((r) => (r.ok && (r.headers.get('content-type') ?? '').includes('json') ? (r.json() as Promise<T>) : null))
+      .then((x) => live && setD(x))
+      .catch(() => live && setD(null))
+    return () => {
+      live = false
+    }
+  }, [url])
+  return d
+}
+
+const NotPrepared = ({ what }: { what: string }) => <div className="sans text-[12px] text-muted-foreground">The {what} files are not in this build. Run scripts/prep-psi.sh with the raw download in data/.</div>
+
+type SaffireIndex = { series: string; what: string; captured: string; frames_total: number; duration_s: number; every: number; frames: { t: number; src: string }[] }
+
+/** Saffire-I series F1C2: the real downlinked frames of the pre-test flow visualisation. Not a burn. */
+function SaffireFrames() {
+  const d = useJson<SaffireIndex>('/data/psi-98/index.json')
+  const [i, setI] = useState(0)
+  const [playing, setPlaying] = useState(false)
+  const n = d?.frames.length ?? 0
+  useEffect(() => {
+    if (!playing || !n) return
+    const t = setInterval(() => setI((x) => (x + 1) % n), 160)
+    return () => clearInterval(t)
+  }, [playing, n])
+  if (d === undefined) return <div className="text-faint">loading the frames…</div>
+  if (d === null) return <NotPrepared what="Saffire-I" />
+  const f = d.frames[Math.min(i, n - 1)]
+  return (
+    <>
+      <div className="flex items-center gap-2 text-[11px]">
+        <FileStack size={12} className="text-k-ask" />
+        <span className="text-ink">series {d.series} · camera 2</span>
+        <span className="text-faint">
+          {d.frames_total} frames · {d.duration_s} s · {new Date(d.captured).toISOString().slice(0, 10)}
+        </span>
+      </div>
+      <img src={`/data/psi-98/${f.src}`} alt={`Saffire-I ${d.series} frame at T+${f.t.toFixed(1)} s`} width={640} height={459} className="h-auto w-full rounded-sm border border-line bg-viewport" />
+      <div className="flex items-center gap-2 text-[11px]">
+        <button type="button" onClick={() => setPlaying((p) => !p)} className="rounded-sm border border-line-2 px-2 py-0.5 text-muted-foreground hover:text-ink">
+          {playing ? 'pause' : 'play'}
+        </button>
+        <input type="range" min={0} max={n - 1} value={Math.min(i, n - 1)} onChange={(e) => (setPlaying(false), setI(+e.target.value))} className="flex-1 accent-[var(--ug)]" aria-label="frame" />
+        <span className="w-20 text-right text-ink tnum">T+{f.t.toFixed(1)} s</span>
+      </div>
+      <div className="sans rounded-sm border-l-2 border-warn bg-surface-2 px-3 py-2 text-[12px] leading-snug text-muted-foreground">
+        <span className="text-warn">Not the fire.</span> {d.what} Shown is every {d.every}th frame. The burn itself is in series S1C1 and S1C2 of the same dataset, which are not downloaded here.
+      </div>
+    </>
+  )
+}
+
+type BassIndex = { what: string; stills: { id: string; src: string }[] }
+
+/** BASS-II: the crew's raw stills, and NASA's summary report, searchable. */
+function BassData() {
+  const d = useJson<BassIndex>('/data/psi-25/index.json')
+  const report = useJson<Report>('/data/psi-25/report.json')
+  const [i, setI] = useState(0)
+  const [q, setQ] = useState('Nomex flammability limit')
+  if (d === undefined) return <div className="text-faint">loading the stills…</div>
+  if (d === null) return <NotPrepared what="BASS-II" />
+  const s = d.stills[Math.min(i, d.stills.length - 1)]
+  const hits = report ? searchPages(report.pages, q, 3, 700) : []
+  return (
+    <>
+      <div className="flex items-center gap-2 text-[11px]">
+        <FileStack size={12} className="text-k-ask" />
+        <span className="text-ink">{d.stills.length} raw stills</span>
+        <span className="text-faint">{s.id.toUpperCase().replace(/^(ISS\d{3})(E)(\d+)$/, '$1-$2-$3')}</span>
+      </div>
+      <img src={`/data/psi-25/${s.src}`} alt={`BASS-II still ${s.id}`} width={1600} height={1062} className="h-auto w-full rounded-sm border border-line bg-viewport" />
+      <div className="flex items-center gap-2 text-[11px]">
+        <input type="range" min={0} max={d.stills.length - 1} value={i} onChange={(e) => setI(+e.target.value)} className="flex-1 accent-[var(--ug)]" aria-label="still" />
+        <span className="w-16 text-right text-ink tnum">
+          {i + 1} / {d.stills.length}
+        </span>
+      </div>
+      <div className="sans text-[11.5px] leading-snug text-muted-foreground">{d.what} Converted from the Nikon .NEF files; they are dark because the glovebox lights are off during a burn.</div>
+      {report && (
+        <div className="space-y-2 border-t border-line pt-3">
+          <div className="label">search the summary report · {report.pages.length} pages</div>
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. blowoff limit acrylic" className="w-full rounded-sm border border-line-2 bg-bg px-2 py-1 text-[12px] text-ink outline-none placeholder:text-faint focus:border-ug" aria-label="search the BASS-II report" />
+          {hits.length === 0 && <div className="sans text-[11.5px] text-faint">No page matches.</div>}
+          {hits.map((h) => (
+            <div key={h.page} className="rounded-sm border border-line bg-surface-2 px-3 py-2">
+              <div className="text-[10.5px] text-k-ask">page {h.page}</div>
+              <div className="sans mt-0.5 whitespace-pre-line text-[11.5px] leading-snug text-muted-foreground">{h.text}</div>
+            </div>
+          ))}
+          <div className="sans text-[10.5px] text-faint">{report.title}. Agents read the same text through the search_report tool.</div>
+        </div>
+      )}
+    </>
   )
 }
 

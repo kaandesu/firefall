@@ -93,9 +93,11 @@ Here is how spacecraft fire safety is handled today:
 
 ## What happens in a review
 
-**0 · Network.** Four organizations are on the network, each with its agents, models, compute, MCP tools and
-datasets. Each card shows what the org exposes and what stays private. Another company can join by its agent card
-URL; the demo connects a detector vendor.
+**Start.** Two ways in: *watch the demo* (the scripted Apollo CM-012 review, no setup) or *connect* to your own
+Lagrange server (see [Connect to Lagrange](#connect-to-lagrange)).
+
+**0 · Team.** The roles of a review on the left, the addresses that fill them on the right. In the demo the crew
+is scripted and marked *simulated*; it stands for four organizations, each running its own agents:
 
 | Org | Agent(s) | Runs on | Keeps private |
 |---|---|---|---|
@@ -176,6 +178,8 @@ so the UI is the same in both modes. What is real and what is illustrative:
 | NIST FDS 6.11.1 runs of the cabin (1 g and µg), generated from the input files and run locally | |
 | Saffire / BASS-II / FLEX fits: least squares against numbers read from the NTRS papers, residuals shown | |
 | Smoke CFD (2-D stable fluids on the cabin section, Web Worker) and sensor optimisation | Cluster names, GPU counts, job timings |
+| Saffire-I F1C2 frames and BASS-II stills from PSI, the BASS-II Summary Report text | |
+| Connected mode: agents on Lagrange, their tool calls (`web/tools`), FDS runs they start | The review itself, even in connected mode |
 | Fire spread / pressure zone model, what-ifs | Agent message wording (scripted) |
 | Report chat (OpenAI, grounded in the report JSON) | Demo-mode chat answers (built from the same report) |
 
@@ -207,6 +211,7 @@ mates-end/
     public/data/fds/apollo-cm012/   the shipped FDS run (1 g + µg) and its manifest
     scripts/      gen-fds.ts, fds-manifest.ts (run with node + the alias loader)
     server/       dev-server route /api/ask (OpenAI streaming; key stays server-side)
+    tools/        firefall-tools MCP server: core.ts (tools), fds.ts (FDS runs), mcp.ts (HTTP + stdio)
     public/data/acme/   real ACME data extracted from flame-in-freefall (scripts/extract-fif.mjs)
   scripts/fds/run.sh   generate the case, run FDS (1g, ug), write the manifest
   docs/mvp-roadmap.md  workflow, data path, architecture, deploy, milestones M1-M4
@@ -249,6 +254,29 @@ Deep links: `?example=1` loads the Apollo case, `&start=1` starts the review str
 Keys on the run screen: `1`–`6` focus a panel, `+`/`-` resize it, `h`/`l` switch agent, `a` answers with the
 default option, and `?` lists the rest.
 
+## Run it for real
+
+**→ [docs/get-started.md](docs/get-started.md)** goes from nothing to an agent that runs FDS, step by step.
+The short version:
+
+```sh
+scripts/lagrange-local.sh up      # a local Lagrange + its own small Postgres; saves an API key in web/.env.local
+cd web && pnpm dev                # choose Connect on the start screen
+pnpm tools                        # firefall-tools: 12 MCP tools on http://localhost:8765/mcp
+```
+
+Then **+ agent** on the Team screen prints a tunnel command; with the *Claude Code with FIREFALL tools* one, the
+agent can search the test data and the BASS-II report, run the spread, smoke and cabin fire models with its own
+parameters, and start real FDS runs that open in the FDS tab (`?view=fds&run=<id>`).
+
+- `docker-compose.yml` runs the same Lagrange server with Postgres on a named volume (`cp .env.example .env`).
+- `web/tools/` is the MCP server. It wraps the app's own functions; nothing in it is scripted.
+- `scripts/prep-psi.sh` turns raw PSI downloads (`data/PSI-98`, `data/PSI-25`, gitignored) into the WebP frames
+  and the searchable report under `web/public/data/psi-*`, shown in the Library.
+
+**What this does not do yet:** connected agents do not drive the review. The plan, run and report screens are
+still the scripted replay. Sending each role its brief and reading a real plan back is M1 in `docs/mvp-roadmap.md`.
+
 ## Deploy the demo
 
 The demo needs no backend: the scripted replay, the shipped FDS run and the report chat in scripted mode are all
@@ -261,7 +289,7 @@ Share `https://<domain>/?example=1&start=1` to drop people straight into the Apo
 
 ## Status
 
-- [x] Network setup: four orgs with providers, compute, MCP servers, exposed and private lists; connect an agent by card
+- [x] Start screen (demo or connect) and Team roster: roles, simulated crew, or the addresses on your Lagrange server
 - [x] Intake from real files with cross-checks; plan approval
 - [x] Run: cross-org asks, knowledge bases with sources, data jobs, lab work by a person, proposals with reviews,
       mediated decisions, token savings
@@ -272,8 +300,11 @@ Share `https://<domain>/?example=1&start=1` to drop people straight into the Apo
 - [x] Real FDS run of the cabin (1 g + µg) with an in-app viewer, an FDS job in the run, and an FDS check in the report
 - [x] Published BASS-II / Saffire / FLEX numbers with sources, model fits with residuals
 - [x] Inbox for people (you and the WSTF technician) and a signed hazard report
-- [ ] Live agents on Lagrange (one per org, each with its own MCP servers and provider): M1 in `docs/mvp-roadmap.md`
-- [ ] FDS worker on the server for live re-runs: M2
+- [x] Local Lagrange in one command, docker compose, get-started guide
+- [x] `firefall-tools` MCP server: data search, models and real FDS runs for connected agents
+- [x] Saffire-I frames, BASS-II stills and report in the Library
+- [ ] Agents driving the review (role briefs, a real plan): M1 in `docs/mvp-roadmap.md`
+- [ ] FDS worker on a server (today FDS runs on the machine that runs `pnpm tools`): M2
 - [ ] PSI raw data + spread-rate extraction, surrogate models: M3, M4
 - [ ] Deploy (public demo replay; live mode behind an access key)
 

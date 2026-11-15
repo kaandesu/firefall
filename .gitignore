@@ -8,3 +8,9 @@ dist/
 .claude/settings.local.json
 # downloaded PSI datasets (large; keep only the public metadata snapshot)
 data/psi/*/
+
+# local Lagrange data (scripts/lagrange-local.sh) and raw PSI downloads
+.firefall/
+data/PSI-*/
+# FDS runs started by agents
+web/public/data/fds/runs/

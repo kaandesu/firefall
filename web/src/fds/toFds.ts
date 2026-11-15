@@ -41,6 +41,9 @@ export type FdsCaseOptions = {
   /** Cell size, m. */
   dx?: number
   title?: string
+  /** The igniting burner: heat release in kW (default 75) and when it switches off, s (default 20). */
+  burnerKw?: number
+  burnerOffS?: number
 }
 
 export type FdsCase = {
@@ -248,8 +251,8 @@ export function toFds(spec: CabinSpec, rows: MaterialRow[], model: CabinModel, o
   // Odd cell count across: centre on a half cell so every face lands on a grid line.
   const hc = (v: number) => snap(v - dx / 2) + dx / 2
   const bx = hc(tx), by = hc(ty), bz = Math.max(z0 + dx, snap(ic[2]))
-  const kw = 75
-  const offAt = 20
+  const kw = opts.burnerKw ?? 75
+  const offAt = opts.burnerOffS ?? 20
   const burner = [bx - bw / 2, bx + bw / 2, by - bw / 2, by + bw / 2, bz - dx, bz]
   L(`Ignition: ${ign ? `${ign.id} (${ign.note})` : 'first part'} - a ${kw} kW burner, off at ${offAt} s,`)
   if (target) L(`placed under the nearest listed burnable item: ${nearest.part} (${nearest.distance ?? '?'} m from the fault).`)

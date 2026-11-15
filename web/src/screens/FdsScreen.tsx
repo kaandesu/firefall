@@ -18,11 +18,12 @@ type Case = FdsManifest['cases'][number]
 const fmt = (v: number | null | undefined, d = 1, u = ' s') => (v === null || v === undefined ? 'never' : `${v.toFixed(d)}${u}`)
 
 export function FdsScreen() {
-  const { manifest, error } = useFdsManifest()
-  const [caseId, setCaseId] = useState('1g')
+  const { manifest, agentRuns, error } = useFdsManifest()
+  // ?run=<id> opens a run an agent started.
+  const [caseId, setCaseId] = useState(() => new URLSearchParams(location.search).get('run') ?? '1g')
   const [mode, setMode] = useState<'input' | 'output'>('output')
-  const c = manifest?.cases.find((x) => x.id === caseId)
-  const { run, error: runErr } = useFdsRun(c?.id, c?.chid)
+  const c = manifest?.cases.find((x) => x.id === caseId) ?? agentRuns.find((x) => x.id === caseId) ?? manifest?.cases[0]
+  const { run, error: runErr } = useFdsRun(c?.id, c?.chid, c?.dir)
   const [sliceIdx, setSliceIdx] = useState(0)
   const [frame, setFrame] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -63,7 +64,22 @@ export function FdsScreen() {
             <div className="label text-ug">fds · {manifest.fds}</div>
             <div className="sans text-[15px] font-semibold text-ink">Apollo CM-012 in real NIST FDS</div>
           </div>
-          <Seg value={caseId} onChange={setCaseId} options={manifest.cases.map((x) => ({ id: x.id, label: x.label }))} />
+          <Seg value={c.id} onChange={setCaseId} options={manifest.cases.map((x) => ({ id: x.id, label: x.label }))} />
+          {agentRuns.length > 0 && (
+            <select
+              value={c.dir ? c.id : ''}
+              onChange={(e) => e.target.value && setCaseId(e.target.value)}
+              aria-label="runs started by agents"
+              className={cn('rounded-sm border bg-bg px-1.5 py-1 text-[11px] outline-none', c.dir ? 'border-ug/60 text-ink' : 'border-line text-muted-foreground')}
+            >
+              <option value="">agent runs ({agentRuns.length})</option>
+              {[...agentRuns].reverse().map((x) => (
+                <option key={x.id} value={x.id}>
+                  {x.label}
+                </option>
+              ))}
+            </select>
+          )}
           <Seg value={mode} onChange={(v) => setMode(v as 'input' | 'output')} options={[{ id: 'input', label: 'Input' }, { id: 'output', label: 'Output' }]} />
           {mode === 'output' && run && (
             <div className="flex items-center gap-2 text-[10.5px]">
@@ -216,7 +232,9 @@ function RunCard({ c, manifest }: { c: Case; manifest: FdsManifest }) {
       <Row k="solver" v={manifest.fds} />
       <Row k="mesh" v={`${c.ijk.join(' × ')} = ${c.cells.toLocaleString()} cells · ${c.dx * 100} cm`} />
       <Row k="simulated" v={`${c.t_end.toFixed(0)} s in ${c.steps} steps`} />
-      <Row k="wall clock" v={`${c.runtime_s} s on ${manifest.machine}`} />
+      <Row k="wall clock" v={c.dir ? `${c.runtime_s} s on this machine` : `${c.runtime_s} s on ${manifest.machine}`} />
+      {c.params && <Row k="atmosphere" v={`${Math.round(c.params.o2 * 100)} % O₂ · ${c.params.psia} psia`} />}
+      {c.started && <Row k="started" v={`by a tool call · ${new Date(c.started).toLocaleString()}`} />}
       <Row k="gravity" v={c.g ? `${c.g} g (GVEC 0, 0, −9.81)` : 'µg (GVEC 0, 0, 0)'} />
       <Row k="ignition" v={`${c.burner.kw} kW burner until ${c.burner.offAt} s${c.burner.under ? `, under ${c.burner.under.toLowerCase()}` : ''}`} />
       <div className="mt-2 text-[10.5px] leading-snug text-muted-foreground">
