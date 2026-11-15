@@ -2,6 +2,14 @@
 
 **Human-in-the-loop agent collaboration across departments and companies, built for spacecraft fire safety.**
 
+
+
+https://github.com/user-attachments/assets/ed5a3f8d-63c1-42b4-a156-8dda3e5036ea
+
+
+
+
+
 A crewed-vehicle fire safety review already spans several organizations: the vehicle builder, a NASA data archive,
 a test lab and an independent safety office. Each one has its own data, tools, compute and sign-off. FIREFALL lets
 each of them put **an agent** on a shared network ([Lagrange](https://github.com/Three-Agent-Problem/agent2agency),
